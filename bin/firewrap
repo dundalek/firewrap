@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+DIR="$(dirname "$(realpath "$0")")"
+# Workaround since Babaska cannot do exec replacing its own process.
+# Evaling arbitrary code is not ideal.
+# Should try using bwrap --args parameter that takes fd.
+eval "$("$DIR/firewrap-profile" "$0" "$@")"
