@@ -11,6 +11,15 @@
    (system/system-network)
    (system/dev-bind "/")])
 
+;; For debugging when --unshare-all causes problems to determine the namespaces that cause issues by toggling individually
+(def unshare-all
+  ["--unshare-user-try"
+   "--unshare-ipc"
+   "--unshare-pid"
+   "--unshare-net"
+   "--unshare-uts"
+   "--unshare-cgroup-try"])
+
 ;; Then trying selective restrictions and trial-and-error next to define the sandbox
 (def step2-toplevel-dirs
   [(system/base)

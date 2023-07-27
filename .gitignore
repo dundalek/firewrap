@@ -1,3 +1,5 @@
 /tmp
 .nrepl-port
 .cpcache
+.clj-kondo
+!.clj-kondo/config.edn

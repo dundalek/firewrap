@@ -18,4 +18,5 @@
      (system/gpu)
      (system/fonts)
      (system/system-network)
+     (system/xdg-open)
      (system/run-appimage appimage)]))

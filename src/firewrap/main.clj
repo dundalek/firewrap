@@ -4,6 +4,7 @@
    [firewrap.profiles.chatall :as chatall]
    [firewrap.profiles.cheese :as cheese]
    [firewrap.profiles.notify-send :as notify-send]
+   [firewrap.profiles.xdg-open :as xdg-open]
    [firewrap.system :as system]))
 
 (defn run-bwrap [args]
@@ -25,4 +26,7 @@
       "notify-send" (run-bwrap [(notify-send/profile)
                                 cmd
                                 ; (with-strace cmd)
-                                args]))))
+                                args])
+      "xdg-open" (run-bwrap [(xdg-open/profile)
+                             cmd
+                             args]))))

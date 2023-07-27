@@ -1,6 +1,7 @@
 (ns firewrap.system
   (:require
-   [babashka.fs :as fs]))
+   [babashka.fs :as fs]
+   [clojure.string :as str]))
 
 (defn escape-shell [s]
   ;; TODO
@@ -38,7 +39,7 @@
 (defn system-network []
   ["--share-net"
    (ro-bind "/etc/resolv.conf")
-   "--ro-bind-try /run/systemd/resolve /run/systemd/resolve"])
+   (ro-bind-try "/run/systemd/resolve")])
 
 (defn fonts []
   [(ro-bind "/etc/fonts")
@@ -56,8 +57,11 @@
    "--ro-bind-try /sys/devices /sys/devices"])
 
 (defn isolated-home [appname]
-  (let [HOME (System/getenv "HOME")]
-    ["--bind" (escape-shell (str HOME "/sandboxes/" appname)) (escape-shell HOME)]))
+  (let [HOME (System/getenv "HOME")
+        source-path (str HOME "/sandboxes/" appname)]
+    ;; Side-effect! Ideally make it pure and interpret side effects separately
+    (fs/create-dirs source-path)
+    ["--bind" (escape-shell source-path) (escape-shell HOME)]))
 
 (defn libs []
   ["--ro-bind-try /usr/lib /usr/lib"
@@ -75,13 +79,37 @@
 (defn run-appimage [appimage]
   ["--perms 0555 --ro-bind-data 9 /app.AppImage"
    "--perms 0555 --ro-bind-data 8 /run.sh"
+
+   ; (ro-bind "/usr/bin/strace")
+
    "/run.sh"
    "9<" (escape-shell appimage)
    "8<<END
 #!/usr/bin/env sh
 cd /tmp
 /app.AppImage --appimage-extract"
+   ; "\nstrace -f bash squashfs-root/AppRun"
+   ;; run with bash in case script hardcodes #!/bin/bash
    "\nbash squashfs-root/AppRun"
    ; "\nbash"
    "\nEND"])
 
+(defn dbus-bus-path []
+  (-> (System/getenv "DBUS_SESSION_BUS_ADDRESS")
+      (str/replace #"^unix:path=" "")))
+
+(defn dbus-unrestricted []
+  ;; todo filter with xdg-dbus-proxy
+  [(ro-bind "/etc/machine-id")
+   (ro-bind "/var/lib/dbus/machine-id")
+   ;; Bind also /run/dbus/system_bus_socket ?
+   (ro-bind (dbus-bus-path))])
+
+(defn xdg-open []
+  ;; Needs xdg-flatpak-utils
+  ;; sudo apt install flatpak-xdg-utils
+  ;; Opens via portal, ideally should ask user
+  [(dbus-unrestricted)
+   ;; org.freedesktop.portal.OpenURI
+  ; https://github.com/flatpak/flatpak-xdg-utils/blob/main/src/xdg-open.c
+   (ro-bind "/usr/libexec/flatpak-xdg-utils/xdg-open" "/usr/bin/xdg-open")])
