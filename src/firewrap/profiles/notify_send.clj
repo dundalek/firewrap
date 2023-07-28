@@ -7,7 +7,7 @@
    (system/base)
    (system/libs)
    ;; hardcoded binary path - take as parameter?
-   (system/ro-bind "/usr/bin/notify-send")
+   (system/bind-ro "/usr/bin/notify-send")
    (system/dbus-talk "org.freedesktop.Notifications")))
 
    ;; notify-send tries to read locales for some reason

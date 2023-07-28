@@ -23,10 +23,10 @@
    ; (system/dev-bind "/var")
    (system/tmp)
 
-   (system/ro-bind "/etc/localtime")
+   (system/bind-ro "/etc/localtime")
    (system/dev-bind "/dev/null")
 
-   (system/ro-bind "/usr/bin/cheese")
+   (system/bind-ro "/usr/bin/cheese")
    (system/dev-bind "/run/user/1000")
    (system/dbus-unrestricted)
    (system/gpu)

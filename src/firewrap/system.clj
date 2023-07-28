@@ -15,9 +15,9 @@
 (defn add-bwrap-args [ctx & args]
   (update ctx :bwrap-args (fnil into []) args))
 
-(defn ro-bind
+(defn bind-ro
   ([ctx path]
-   (ro-bind ctx path path))
+   (bind-ro ctx path path))
   ([ctx source destination]
    (add-bwrap-args ctx "--ro-bind" (escape-shell source) (escape-shell destination))))
 
@@ -56,22 +56,22 @@
 (defn network [ctx]
   (-> ctx
       (add-bwrap-args "--share-net")
-      (ro-bind "/etc/resolv.conf")
+      (bind-ro "/etc/resolv.conf")
       (ro-bind-try "/run/systemd/resolve")))
 
 (defn fonts [ctx]
   (-> ctx
-      (ro-bind "/etc/fonts")
-      (ro-bind "/usr/share/fonts")
+      (bind-ro "/etc/fonts")
+      (bind-ro "/usr/share/fonts")
       (ro-bind-try (str (System/getenv "HOME") "/.fonts"))
       (ro-bind-try (str (System/getenv "HOME") "/.local/share/fonts"))))
 
 (defn dconf [ctx]
   (-> ctx
-      (ro-bind "/etc/dconf")
-      (ro-bind "/run/user/1000/dconf")
-      (ro-bind "/usr/local/share/dconf")
-      (ro-bind "/user/share/dconf")))
+      (bind-ro "/etc/dconf")
+      (bind-ro "/run/user/1000/dconf")
+      (bind-ro "/usr/local/share/dconf")
+      (bind-ro "/user/share/dconf")))
 
 (defn gpu [ctx]
   (-> ctx
@@ -133,10 +133,10 @@ cd /tmp
 
 (defn dbus-unrestricted [ctx]
   (-> ctx
-      (ro-bind "/etc/machine-id")
-      (ro-bind "/var/lib/dbus/machine-id")
+      (bind-ro "/etc/machine-id")
+      (bind-ro "/var/lib/dbus/machine-id")
    ;; Bind also /run/dbus/system_bus_socket ?
-      (ro-bind (dbus-bus-path))))
+      (bind-ro (dbus-bus-path))))
 
 #_(defn dbus-see [])
 
@@ -157,4 +157,4 @@ cd /tmp
       (dbus-unrestricted)
       ;; org.freedesktop.portal.OpenURI
       ; https://github.com/flatpak/flatpak-xdg-utils/blob/main/src/xdg-open.c
-      (ro-bind "/usr/libexec/flatpak-xdg-utils/xdg-open" "/usr/bin/xdg-open")))
+      (bind-ro "/usr/libexec/flatpak-xdg-utils/xdg-open" "/usr/bin/xdg-open")))

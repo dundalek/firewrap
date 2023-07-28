@@ -17,7 +17,7 @@
 
 (defn with-strace [ctx cmd]
   (-> ctx
-      (system/ro-bind "/usr/bin/strace")
+      (system/bind-ro "/usr/bin/strace")
       (system/add-bwrap-args "strace -s 1024 -f" cmd)))
 
 (defn -main [cmd & args]

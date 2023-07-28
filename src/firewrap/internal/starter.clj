@@ -1,4 +1,4 @@
-(ns starter
+(ns firewrap.internal.starter
   (:require
    [firewrap.system :as system]))
 
@@ -22,8 +22,8 @@
 
 (def lazy-sandbox
   [(system/base)
-   (system/system-network)
-   (system/ro-bind "/")
+   (system/network)
+   (system/bind-ro "/")
    (system/isolated-home "my-app")
    (system/tmp)])
 
@@ -34,13 +34,13 @@
    ; (system/rw-bind "/home")
    (system/isolated-home "my-app")
    (system/dev-bind "/dev")
-   (system/ro-bind "/etc")
+   (system/bind-ro "/etc")
    (system/dev-bind "/proc")
    (system/dev-bind "/run")
    (system/dev-bind "/sys")
-   (system/ro-bind "/usr")
-   ; (system/ro-bind "/usr/bin/my-app")
-   ; (system/ro-bind "/usr/bin")
-   ; (system/ro-bind "/usr/share")
+   (system/bind-ro "/usr")
+   ; (system/bind-ro "/usr/bin/my-app")
+   ; (system/bind-ro "/usr/bin")
+   ; (system/bind-ro "/usr/share")
    (system/dev-bind "/var")
    (system/tmp)])

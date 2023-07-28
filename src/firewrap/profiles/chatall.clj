@@ -7,7 +7,7 @@
    (system/base)
    (system/isolated-home "chatall")
    ;; Figure out which specific binaries are needed
-   (system/ro-bind "/usr/bin")
+   (system/bind-ro "/usr/bin")
    (system/libs)
    (system/processes)
    (system/tmp)
