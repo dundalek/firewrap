@@ -21,7 +21,7 @@
   ([ctx source destination]
    (add-bwrap-args ctx "--ro-bind" (escape-shell source) (escape-shell destination))))
 
-(defn ro-bind-try [ctx path]
+(defn bind-ro-try [ctx path]
   (add-bwrap-args ctx  "--ro-bind-try" (escape-shell path) (escape-shell path)))
 
 (defn rw-bind
@@ -57,14 +57,14 @@
   (-> ctx
       (add-bwrap-args "--share-net")
       (bind-ro "/etc/resolv.conf")
-      (ro-bind-try "/run/systemd/resolve")))
+      (bind-ro-try "/run/systemd/resolve")))
 
 (defn fonts [ctx]
   (-> ctx
       (bind-ro "/etc/fonts")
       (bind-ro "/usr/share/fonts")
-      (ro-bind-try (str (System/getenv "HOME") "/.fonts"))
-      (ro-bind-try (str (System/getenv "HOME") "/.local/share/fonts"))))
+      (bind-ro-try (str (System/getenv "HOME") "/.fonts"))
+      (bind-ro-try (str (System/getenv "HOME") "/.local/share/fonts"))))
 
 (defn dconf [ctx]
   (-> ctx
@@ -76,8 +76,8 @@
 (defn gpu [ctx]
   (-> ctx
       (bind-dev-try "/dev/dri")
-      (ro-bind-try "/sys/dev")
-      (ro-bind-try "/sys/devices")))
+      (bind-ro-try "/sys/dev")
+      (bind-ro-try "/sys/devices")))
 
 (defn isolated-home [ctx appname]
   (let [HOME (System/getenv "HOME")
@@ -89,10 +89,10 @@
 
 (defn libs [ctx]
   (-> ctx
-      (ro-bind-try "/etc/ld.so.cache")
-      (ro-bind-try "/usr/lib")
-      (ro-bind-try "/lib")
-      (ro-bind-try "/lib64")))
+      (bind-ro-try "/etc/ld.so.cache")
+      (bind-ro-try "/usr/lib")
+      (bind-ro-try "/lib")
+      (bind-ro-try "/lib64")))
 
 (defn processes [ctx]
   ;; Should restrict /proc but how to whitelist individual pids?

@@ -4,8 +4,8 @@
 
 (defn gtk [ctx]
   (-> ctx
-      (system/ro-bind-try "/etc/gtk-3.0")
-      (system/ro-bind-try "/home/me/.config/gtk-3.0")))
+      (system/bind-ro-try "/etc/gtk-3.0")
+      (system/bind-ro-try "/home/me/.config/gtk-3.0")))
 
 (defn profile []
   (->
@@ -20,21 +20,21 @@
    ;; uses `enchant` which is a generic wrapper supporting multiple spell checkers
    ;; tries to also read some aspell/hspell/hunspell configs related to spellcheck
 
-   (system/ro-bind-try "/etc/localtime")
+   (system/bind-ro-try "/etc/localtime")
 
-   (system/ro-bind-try "/etc/locale.alias")
+   (system/bind-ro-try "/etc/locale.alias")
 
-   (system/ro-bind-try (str (System/getenv "HOME") "/.config/ibus/bus"))
+   (system/bind-ro-try (str (System/getenv "HOME") "/.config/ibus/bus"))
 
-   (system/ro-bind-try "/home/me/.local/share/icons")
-   (system/ro-bind-try "/home/me/.nix-profile/share/icons")
+   (system/bind-ro-try "/home/me/.local/share/icons")
+   (system/bind-ro-try "/home/me/.nix-profile/share/icons")
 
-   (system/ro-bind-try "/home/me/.local/share/mime")
-   (system/ro-bind-try "/home/me/.config/dconf/user")
+   (system/bind-ro-try "/home/me/.local/share/mime")
+   (system/bind-ro-try "/home/me/.config/dconf/user")
 
    ; (system/ro-bind-try "/usr/share/gnome/mime")
-   (system/ro-bind-try "/proc/filesystems")
-   (system/ro-bind-try "/proc/mounts")
+   (system/bind-ro-try "/proc/filesystems")
+   (system/bind-ro-try "/proc/mounts")
 
    (gtk)
    (system/dev-bind "/run")
@@ -43,13 +43,13 @@
    ; (system/dev-bind "/sys")
    (system/bind-ro "/usr")
    (system/fonts)
-   (system/ro-bind-try "/usr/share/glib-2.0")
+   (system/bind-ro-try "/usr/share/glib-2.0")
    (system/bind-ro "/usr/bin/gedit")
    ; (system/ro-bind "/usr/bin")
    ; (system/ro-bind "/usr/share")
    ; (system/dev-bind "/var")
-   (system/ro-bind-try "/home/me/.cache/fontconfig")
-   (system/ro-bind-try "/var/cache/fontconfig")
+   (system/bind-ro-try "/home/me/.cache/fontconfig")
+   (system/bind-ro-try "/var/cache/fontconfig")
    ; (system/dev-bind "/tmp")])
    (system/tmp)
    (system/dev-bind "/tmp/.X11-unix")))
