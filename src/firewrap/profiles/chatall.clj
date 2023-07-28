@@ -16,6 +16,6 @@
    (system/dev-bind "/dev/shm")
    (system/gpu)
    (system/fonts)
-   (system/system-network)
+   (system/network)
    (system/xdg-open)
    (system/run-appimage appimage)))

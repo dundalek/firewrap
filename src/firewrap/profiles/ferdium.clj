@@ -5,7 +5,7 @@
 (defn profile [appimage]
   (->
    (system/base)
-   (system/system-network)
+   (system/network)
    (system/dev-bind "/")
    (system/isolated-home "ferdium")
    (system/tmp)

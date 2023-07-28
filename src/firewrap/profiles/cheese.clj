@@ -6,7 +6,7 @@
   (->
    (system/base)
    ;; Why does cheese need network? - perhaps tries wifi connected webcams?
-   (system/system-network)
+   (system/network)
    (system/isolated-home "cheese")
 
    (system/libs)

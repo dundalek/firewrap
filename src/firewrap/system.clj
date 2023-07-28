@@ -53,7 +53,7 @@
    ;; See https://github.com/containers/bubblewrap/issues/555
    "--new-session"))
 
-(defn system-network [ctx]
+(defn network [ctx]
   (-> ctx
       (add-bwrap-args "--share-net")
       (ro-bind "/etc/resolv.conf")
