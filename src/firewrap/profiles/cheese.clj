@@ -2,7 +2,7 @@
   (:require
    [firewrap.system :as system]))
 
-(defn profile []
+(defn profile [{:keys [executable]}]
   (->
    (system/base)
    ;; Why does cheese need network? - perhaps tries wifi connected webcams?
@@ -26,7 +26,7 @@
    (system/bind-ro "/etc/localtime")
    (system/bind-dev "/dev/null")
 
-   (system/bind-ro "/usr/bin/cheese")
+   (system/bind-ro executable)
    (system/bind-dev "/run/user/1000")
    (system/dbus-unrestricted)
    (system/gpu)

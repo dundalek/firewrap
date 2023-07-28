@@ -7,7 +7,7 @@
       (system/bind-ro-try "/etc/gtk-3.0")
       (system/bind-ro-try "/home/me/.config/gtk-3.0")))
 
-(defn profile []
+(defn profile [{:keys [executable]}]
   (->
    (system/base)
    (system/libs)
@@ -44,7 +44,7 @@
    (system/bind-ro "/usr")
    (system/fonts)
    (system/bind-ro-try "/usr/share/glib-2.0")
-   (system/bind-ro "/usr/bin/gedit")
+   (system/bind-ro executable)
    ; (system/ro-bind "/usr/bin")
    ; (system/ro-bind "/usr/share")
    ; (system/dev-bind "/var")

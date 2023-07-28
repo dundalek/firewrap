@@ -6,6 +6,7 @@
   (->
    (system/base)
    (system/network)
+   ;; Make it tighter instead of dev binding /
    (system/bind-dev "/")
    (system/isolated-home "ferdium")
    (system/tmp)

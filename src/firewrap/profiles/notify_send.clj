@@ -2,12 +2,11 @@
   (:require
    [firewrap.system :as system]))
 
-(defn profile []
+(defn profile [{:keys [executable]}]
   (->
    (system/base)
    (system/libs)
-   ;; hardcoded binary path - take as parameter?
-   (system/bind-ro "/usr/bin/notify-send")
+   (system/bind-ro executable)
    (system/dbus-talk "org.freedesktop.Notifications")))
 
    ;; notify-send tries to read locales for some reason
