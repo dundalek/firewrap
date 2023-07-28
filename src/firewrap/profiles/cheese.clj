@@ -57,7 +57,7 @@
    (system/dev-bind "/dev/urandom")
    (system/bind-ro-try "/usr/share/thumbnailers")
    (system/bind-ro-try "/usr/bin/gdk-pixbuf-thumbnailer")
-   (system/rw-bind "/home/me/.cache/gnome-desktop-thumbnailer")
-   (system/rw-bind "/home/me/.cache/thumbnails")))
+   (system/bind-rw "/home/me/.cache/gnome-desktop-thumbnailer")
+   (system/bind-rw "/home/me/.cache/thumbnails")))
 
    ; (system/dev-bind "/tmp/.X11-unix")])

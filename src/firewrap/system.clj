@@ -24,9 +24,9 @@
 (defn bind-ro-try [ctx path]
   (add-bwrap-args ctx  "--ro-bind-try" (escape-shell path) (escape-shell path)))
 
-(defn rw-bind
+(defn bind-rw
   ([ctx path]
-   (rw-bind ctx path path))
+   (bind-rw ctx path path))
   ([ctx source destination]
    (add-bwrap-args ctx "--bind" (escape-shell source) (escape-shell destination))))
 
@@ -85,7 +85,7 @@
     ;; Side-effect! Ideally make it pure and interpret side effects separately
     (fs/create-dirs source-path)
     (-> ctx
-        (rw-bind (escape-shell source-path) (escape-shell HOME)))))
+        (bind-rw (escape-shell source-path) (escape-shell HOME)))))
 
 (defn libs [ctx]
   (-> ctx
