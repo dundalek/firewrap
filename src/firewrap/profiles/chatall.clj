@@ -2,21 +2,19 @@
   (:require
    [firewrap.system :as system]))
 
-(defn profile []
-  (let [appimage (system/glob-one (str (System/getenv "HOME") "/bin/vendor/")
-                                  "ChatALL-*.AppImage")]
-    [(system/base)
-     (system/isolated-home "chatall")
+(defn profile [appimage]
+  [(system/base)
+   (system/isolated-home "chatall")
      ;; Figure out which specific binaries are needed
-     "--ro-bind-try /usr/bin /usr/bin"
-     (system/libs)
-     (system/processes)
-     (system/tmp)
-     (system/dev-bind "/dev/null")
-     (system/dev-bind "/dev/urandom")
-     (system/dev-bind "/dev/shm")
-     (system/gpu)
-     (system/fonts)
-     (system/system-network)
-     (system/xdg-open)
-     (system/run-appimage appimage)]))
+   "--ro-bind-try /usr/bin /usr/bin"
+   (system/libs)
+   (system/processes)
+   (system/tmp)
+   (system/dev-bind "/dev/null")
+   (system/dev-bind "/dev/urandom")
+   (system/dev-bind "/dev/shm")
+   (system/gpu)
+   (system/fonts)
+   (system/system-network)
+   (system/xdg-open)
+   (system/run-appimage appimage)])

@@ -43,7 +43,9 @@
 
 (defn fonts []
   [(ro-bind "/etc/fonts")
-   (ro-bind "/usr/share/fonts")])
+   (ro-bind "/usr/share/fonts")
+   (ro-bind-try (str (System/getenv "HOME") "/.fonts"))
+   (ro-bind-try (str (System/getenv "HOME") "/.local/share/fonts"))])
 
 (defn dconf []
   [(ro-bind "/etc/dconf")
@@ -64,9 +66,10 @@
     ["--bind" (escape-shell source-path) (escape-shell HOME)]))
 
 (defn libs []
-  ["--ro-bind-try /usr/lib /usr/lib"
-   "--ro-bind-try /lib /lib"
-   "--ro-bind-try /lib64 /lib64"])
+  [(ro-bind-try "/etc/ld.so.cache")
+   (ro-bind-try "/usr/lib")
+   (ro-bind-try "/lib")
+   (ro-bind-try "/lib64")])
 
 (defn processes []
   ;; Should restrict /proc but how to whitelist individual pids?
@@ -77,17 +80,23 @@
   ["--tmpfs /tmp"])
 
 (defn run-appimage [appimage]
-  ["--perms 0555 --ro-bind-data 9 /app.AppImage"
-   "--perms 0555 --ro-bind-data 8 /run.sh"
+  ;; We want to avoid execuring the appimage binary outside of sandbox.
+  ;; The issue is that mounting on which the appimage relies is not allowed inside the sandbox.
+  ;; As a workaround we extract it inside the sandbox to tmpfs with --appimage-extract.
+
+  ;; Might need to ro-bind bash/sh as well.
+
+  ["--perms 0555 --ro-bind-data 9 /tmp/app.AppImage"
+   "--perms 0555 --ro-bind-data 8 /tmp/run.sh"
 
    ; (ro-bind "/usr/bin/strace")
 
-   "/run.sh"
+   "/tmp/run.sh"
    "9<" (escape-shell appimage)
    "8<<END
 #!/usr/bin/env sh
 cd /tmp
-/app.AppImage --appimage-extract"
+./app.AppImage --appimage-extract"
    ; "\nstrace -f bash squashfs-root/AppRun"
    ;; run with bash in case script hardcodes #!/bin/bash
    "\nbash squashfs-root/AppRun"
@@ -99,11 +108,20 @@ cd /tmp
       (str/replace #"^unix:path=" "")))
 
 (defn dbus-unrestricted []
-  ;; todo filter with xdg-dbus-proxy
   [(ro-bind "/etc/machine-id")
    (ro-bind "/var/lib/dbus/machine-id")
    ;; Bind also /run/dbus/system_bus_socket ?
    (ro-bind (dbus-bus-path))])
+
+#_(defn dbus-see [])
+
+(defn dbus-talk [name]
+  ;; todo filter with xdg-dbus-proxy
+  ; (system/ro-bind "/tmp/my-dbus-proxy" "/run/user/1000/bus")])
+  ;; hook it with --filter and --talk
+  [(dbus-unrestricted)])
+
+#_(defn dbus-own [])
 
 (defn xdg-open []
   ;; Needs xdg-flatpak-utils

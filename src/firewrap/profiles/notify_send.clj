@@ -7,7 +7,11 @@
    (system/libs)
    ;; hardcoded binary path - take as parameter?
    (system/ro-bind "/usr/bin/notify-send")
-   ;; hardcoded userid in the bus path
-   ; (system/ro-bind "/run/user/1000/bus")
-   (system/ro-bind "/tmp/my-dbus-proxy" "/run/user/1000/bus")])
+   (system/dbus-talk "org.freedesktop.Notifications")])
+
+   ;; notify-send tries to read locales for some reason
+   ; (system/ro-bind-try "/proc/filesystems")])
+
    ;; also seems to try to read locales, are those needed for anything?
+   ; (system/ro-bind-try "/usr/share/locale")
+   ; (system/ro-bind-try "/usr/share/locale-langpack")])

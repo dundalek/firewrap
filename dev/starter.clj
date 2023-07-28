@@ -20,6 +20,13 @@
    "--unshare-uts"
    "--unshare-cgroup-try"])
 
+(def lazy-sandbox
+  [(system/base)
+   (system/system-network)
+   (system/ro-bind "/")
+   (system/isolated-home "my-app")
+   (system/tmp)])
+
 ;; Then trying selective restrictions and trial-and-error next to define the sandbox
 (def step2-toplevel-dirs
   [(system/base)
