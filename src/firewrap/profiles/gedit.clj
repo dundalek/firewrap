@@ -37,8 +37,8 @@
    (system/bind-ro-try "/proc/mounts")
 
    (gtk)
-   (system/dev-bind "/run")
-   (system/dev-bind "/dev/urandom")
+   (system/bind-dev "/run")
+   (system/bind-dev "/dev/urandom")
    (system/dbus-unrestricted)
    ; (system/dev-bind "/sys")
    (system/bind-ro "/usr")
@@ -52,5 +52,5 @@
    (system/bind-ro-try "/var/cache/fontconfig")
    ; (system/dev-bind "/tmp")])
    (system/tmp)
-   (system/dev-bind "/tmp/.X11-unix")))
+   (system/bind-dev "/tmp/.X11-unix")))
    ; (system/dev-bind "/tmp/.X11-unix/X11")])

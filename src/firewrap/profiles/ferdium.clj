@@ -6,7 +6,7 @@
   (->
    (system/base)
    (system/network)
-   (system/dev-bind "/")
+   (system/bind-dev "/")
    (system/isolated-home "ferdium")
    (system/tmp)
    ; (system/xdg-open)

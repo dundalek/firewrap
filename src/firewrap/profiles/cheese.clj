@@ -24,10 +24,10 @@
    (system/tmp)
 
    (system/bind-ro "/etc/localtime")
-   (system/dev-bind "/dev/null")
+   (system/bind-dev "/dev/null")
 
    (system/bind-ro "/usr/bin/cheese")
-   (system/dev-bind "/run/user/1000")
+   (system/bind-dev "/run/user/1000")
    (system/dbus-unrestricted)
    (system/gpu)
    (system/fonts)
@@ -54,7 +54,7 @@
    ;; Unsuccessfull trial and error trying to make thumbnails to work
    ;; It is hard to read strace because Cheese is continuously reading from camera
    ;; it seems unsandboxed cheese runs the  pixbuf-thumbnailer in bwrap sandbox and has oldroot and newroot paths
-   (system/dev-bind "/dev/urandom")
+   (system/bind-dev "/dev/urandom")
    (system/bind-ro-try "/usr/share/thumbnailers")
    (system/bind-ro-try "/usr/bin/gdk-pixbuf-thumbnailer")
    (system/bind-rw "/home/me/.cache/gnome-desktop-thumbnailer")

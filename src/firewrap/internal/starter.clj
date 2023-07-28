@@ -9,7 +9,7 @@
 (def step1-minimal-restrictions
   [(system/base)
    (system/system-network)
-   (system/dev-bind "/")])
+   (system/bind-dev "/")])
 
 ;; For debugging when --unshare-all causes problems to determine the namespaces that cause issues by toggling individually
 (def unshare-all
@@ -33,14 +33,14 @@
    (system/libs)
    ; (system/rw-bind "/home")
    (system/isolated-home "my-app")
-   (system/dev-bind "/dev")
+   (system/bind-dev "/dev")
    (system/bind-ro "/etc")
-   (system/dev-bind "/proc")
-   (system/dev-bind "/run")
-   (system/dev-bind "/sys")
+   (system/bind-dev "/proc")
+   (system/bind-dev "/run")
+   (system/bind-dev "/sys")
    (system/bind-ro "/usr")
    ; (system/bind-ro "/usr/bin/my-app")
    ; (system/bind-ro "/usr/bin")
    ; (system/bind-ro "/usr/share")
-   (system/dev-bind "/var")
+   (system/bind-dev "/var")
    (system/tmp)])

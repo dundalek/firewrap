@@ -30,9 +30,9 @@
   ([ctx source destination]
    (add-bwrap-args ctx "--bind" (escape-shell source) (escape-shell destination))))
 
-(defn dev-bind
+(defn bind-dev
   ([ctx path]
-   (dev-bind ctx path path))
+   (bind-dev ctx path path))
   ([ctx source destination]
    (add-bwrap-args ctx "--dev-bind" (escape-shell source) (escape-shell destination))))
 
