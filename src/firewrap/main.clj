@@ -2,10 +2,7 @@
   (:require
    [clojure.string :as str]
    [firewrap.profiles.chatall :as chatall]
-   [firewrap.profiles.cheese :as cheese]
    [firewrap.profiles.ferdium :as ferdium]
-   [firewrap.profiles.gedit :as gedit]
-   [firewrap.profiles.notify-send :as notify-send]
    [firewrap.profiles.xdg-open :as xdg-open]
    [firewrap.system :as system]))
 
@@ -32,25 +29,36 @@
       (system/bind-ro "/usr/bin/wc")
       (system/add-bwrap-args shell)))
 
+(defn resolve-profile [appname]
+  (try
+    (requiring-resolve (symbol (str "firewrap.profiles." appname) "profile"))
+    (catch Exception _)))
+
 (defn -main [cmd & args]
-  (let [[_ appname] (re-find #"([^/]+)$" cmd)]
-    (case appname
-      "ChatALL" (run-bwrap (chatall/profile
-                            (system/glob-one (str (System/getenv "HOME") "/Applications/")
-                                             "ChatALL-*.AppImage")))
-      "cheese" (run-bwrap (-> (cheese/profile {:executable "/usr/bin/cheese"})
-                              (system/add-bwrap-args cmd)))
-                              ; (with-strace cmd)))
-      "ferdium" (run-bwrap (ferdium/profile
-                            (system/glob-one (str (System/getenv "HOME") "/Applications/")
-                                             "Ferdium-*.AppImage")))
-      "gedit" (run-bwrap (-> (gedit/profile {:executable "/usr/bin/gedit"})
-                              ; (system/add-bwrap-args cmd)
-                             (with-strace cmd)))
-      "notify-send" (run-bwrap (-> (notify-send/profile {:executable cmd})
-                                   (with-shell)))
-                                   ; (system/add-bwrap-args cmd)
-                                   ; (with-strace cmd)
-                                   ; (system/add-bwrap-args args)))
-      "xdg-open" (run-bwrap (-> (xdg-open/profile)
-                                (system/add-bwrap-args cmd args))))))
+  (let [appname (some-> (re-find #"([^/]+)$" cmd)
+                        second
+                        (str/lower-case))]
+    (if-let [profile (resolve-profile appname)]
+      (run-bwrap
+       (-> (profile {:executable cmd})
+           (system/add-bwrap-args cmd args)))
+      (case appname
+        "chatall" (run-bwrap (chatall/profile
+                              (system/glob-one (str (System/getenv "HOME") "/Applications/")
+                                               "ChatALL-*.AppImage")))
+        ; "cheese" (run-bwrap (-> (cheese/profile {:executable "/usr/bin/cheese"})
+        ;                         (system/add-bwrap-args cmd)))
+        ;                          ; (with-strace cmd)))
+        "ferdium" (run-bwrap (ferdium/profile
+                              (system/glob-one (str (System/getenv "HOME") "/Applications/")
+                                               "Ferdium-*.AppImage")))
+         ; "gedit" (run-bwrap (-> (gedit/profile {:executable "/usr/bin/gedit"})
+         ;                         ; (system/add-bwrap-args cmd)
+         ;                        (with-strace cmd)))
+        ; "notify-send" (run-bwrap (-> (notify-send/profile {:executable cmd})
+        ;                               ; (with-shell
+        ;                              (system/add-bwrap-args cmd)
+        ;                                ; (with-strace cmd)
+        ;                              (system/add-bwrap-args args)))
+        "xdg-open" (run-bwrap (-> (xdg-open/profile)
+                                  (system/add-bwrap-args cmd args)))))))
