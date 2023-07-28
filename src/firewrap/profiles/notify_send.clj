@@ -3,11 +3,12 @@
    [firewrap.system :as system]))
 
 (defn profile []
-  [(system/base)
+  (->
+   (system/base)
    (system/libs)
    ;; hardcoded binary path - take as parameter?
    (system/ro-bind "/usr/bin/notify-send")
-   (system/dbus-talk "org.freedesktop.Notifications")])
+   (system/dbus-talk "org.freedesktop.Notifications")))
 
    ;; notify-send tries to read locales for some reason
    ; (system/ro-bind-try "/proc/filesystems")])

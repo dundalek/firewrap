@@ -3,10 +3,11 @@
    [firewrap.system :as system]))
 
 (defn profile [appimage]
-  [(system/base)
+  (->
+   (system/base)
    (system/isolated-home "chatall")
-     ;; Figure out which specific binaries are needed
-   "--ro-bind-try /usr/bin /usr/bin"
+   ;; Figure out which specific binaries are needed
+   (system/ro-bind "/usr/bin")
    (system/libs)
    (system/processes)
    (system/tmp)
@@ -17,4 +18,4 @@
    (system/fonts)
    (system/system-network)
    (system/xdg-open)
-   (system/run-appimage appimage)])
+   (system/run-appimage appimage)))

@@ -3,7 +3,8 @@
    [firewrap.system :as system]))
 
 (defn profile []
-  [(system/base)
+  (->
+   (system/base)
    ;; Why does cheese need network? - perhaps tries wifi connected webcams?
    (system/system-network)
    (system/isolated-home "cheese")
@@ -57,6 +58,6 @@
    (system/ro-bind-try "/usr/share/thumbnailers")
    (system/ro-bind-try "/usr/bin/gdk-pixbuf-thumbnailer")
    (system/rw-bind "/home/me/.cache/gnome-desktop-thumbnailer")
-   (system/rw-bind "/home/me/.cache/thumbnails")])
+   (system/rw-bind "/home/me/.cache/thumbnails")))
 
    ; (system/dev-bind "/tmp/.X11-unix")])

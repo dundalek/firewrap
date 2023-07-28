@@ -6,6 +6,7 @@
 ;; issues with xdg-open and verifying it works inside a sandbox when other apps
 ;; depend on it for example for opening browser links.
 (defn profile []
-  [(system/base)
+  (->
+   (system/base)
    (system/libs)
-   (system/xdg-open)])
+   (system/xdg-open)))

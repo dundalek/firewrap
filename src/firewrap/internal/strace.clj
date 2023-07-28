@@ -86,25 +86,13 @@
                               (mapcat (fn [[k v]]
                                         (let [path (str parent-path "/" k)
                                               children (bind-autogen v path)]
-                                          (cond-> [(list 'system/ro-bind path)]
+                                          (cond-> [(list 'system/ro-bind-try path)]
                                             (some? children) (conj children)))))
                               seq)]
+      ;; could also wrap it in vectors or (->)
       (concat ['do] bindings))))
 
 (comment
-  (tree-seq #(and (map? %))
-            keys
-            tree)
-
-  (tree-seq seq? identity '((1 2 (3)) (4)))
-
-  (tree-seq sequential? seq tree)
-  (->> (tree-seq sequential? seq '((1 2 (3)) (4)))
-       rest
-       (filter (complement sequential?)))
-
-  (keys tree)
-
   (extract-filepaths "tmp/gedit-strace")
   (extract-filepaths "tmp/gedit-strace-sandbox")
 

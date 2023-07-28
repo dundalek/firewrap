@@ -2,12 +2,14 @@
   (:require
    [firewrap.system :as system]))
 
-(defn gtk []
-  [(system/ro-bind-try "/etc/gtk-3.0")
-   (system/ro-bind-try "/home/me/.config/gtk-3.0")])
+(defn gtk [ctx]
+  (-> ctx
+      (system/ro-bind-try "/etc/gtk-3.0")
+      (system/ro-bind-try "/home/me/.config/gtk-3.0")))
 
 (defn profile []
-  [(system/base)
+  (->
+   (system/base)
    (system/libs)
    ; (system/rw-bind "/home")
    ; (system/isolated-home "gedit")
@@ -50,5 +52,5 @@
    (system/ro-bind-try "/var/cache/fontconfig")
    ; (system/dev-bind "/tmp")])
    (system/tmp)
-   (system/dev-bind "/tmp/.X11-unix")])
+   (system/dev-bind "/tmp/.X11-unix")))
    ; (system/dev-bind "/tmp/.X11-unix/X11")])
