@@ -26,10 +26,9 @@
 
    (system/bind-ro-try (str (System/getenv "HOME") "/.config/ibus/bus"))
 
-   (system/bind-ro-try "/home/me/.local/share/icons")
-   (system/bind-ro-try "/home/me/.nix-profile/share/icons")
+   (system/bind-ro-try-many
+    (system/xdg-data-dirs "icons" "mime"))
 
-   (system/bind-ro-try "/home/me/.local/share/mime")
    (system/bind-ro-try "/home/me/.config/dconf/user")
 
    ; (system/ro-bind-try "/usr/share/gnome/mime")

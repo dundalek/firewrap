@@ -24,6 +24,12 @@
 (defn bind-ro-try [ctx path]
   (add-bwrap-args ctx  "--ro-bind-try" (escape-shell path) (escape-shell path)))
 
+;; might need helpers like this since ctx would be in wrong position using `->`
+;; alternative that comes to mind is `(-> ctx ((partial reduce bind-ro-try) paths))`
+;; which looks somewhat complicated
+(defn bind-ro-try-many [ctx paths]
+  (reduce bind-ro-try ctx paths))
+
 (defn bind-rw
   ([ctx path]
    (bind-rw ctx path path))
@@ -128,6 +134,7 @@ cd /tmp
    "\nEND"))
 
 (defn dbus-bus-path []
+  ;; if missing could fallback to $XDG_RUNTIME_DIR/bus
   (-> (System/getenv "DBUS_SESSION_BUS_ADDRESS")
       (str/replace #"^unix:path=" "")))
 
@@ -158,3 +165,23 @@ cd /tmp
       ;; org.freedesktop.portal.OpenURI
       ; https://github.com/flatpak/flatpak-xdg-utils/blob/main/src/xdg-open.c
       (bind-ro "/usr/libexec/flatpak-xdg-utils/xdg-open" "/usr/bin/xdg-open")))
+
+(defn- xdg-dirs [dirs-env subfolders]
+  (let [dirs (some-> dirs-env
+                     (str/split #":"))]
+    (for [subfolder subfolders
+          dir dirs]
+      (str (str/replace dir #"\/+$" "")
+           "/" subfolder))))
+
+(defn xdg-data-dirs [& subfolders]
+  (xdg-dirs (System/getenv "XDG_DATA_DIRS") subfolders))
+
+(comment
+  (xdg-data-dirs "icons" "themes"))
+
+(defn xdg-config-dirs [& subfolders]
+  (xdg-dirs (System/getenv "XDG_CONFIG_DIRS") subfolders))
+
+(comment
+  (xdg-config-dirs "gtk-3.0" "glib-2.0"))
