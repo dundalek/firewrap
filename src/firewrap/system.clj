@@ -59,6 +59,10 @@
    ;; See https://github.com/containers/bubblewrap/issues/555
    "--new-session"))
 
+(defn xdg-runtime-dir []
+  ;; fallback to "/run/user/$(id -u)" if missing?
+  (System/getenv "XDG_RUNTIME_DIR"))
+
 (defn network [ctx]
   (-> ctx
       (add-bwrap-args "--share-net")
@@ -75,7 +79,7 @@
 (defn dconf [ctx]
   (-> ctx
       (bind-ro "/etc/dconf")
-      (bind-ro "/run/user/1000/dconf")
+      (bind-ro (str (xdg-runtime-dir) "/dconf"))
       (bind-ro "/usr/local/share/dconf")
       (bind-ro "/user/share/dconf")))
 
@@ -149,7 +153,7 @@ cd /tmp
 
 (defn dbus-talk [ctx name]
   ;; todo filter with xdg-dbus-proxy
-  ; (system/ro-bind "/tmp/my-dbus-proxy" "/run/user/1000/bus")])
+  ; (system/ro-bind "/tmp/my-dbus-proxy" (dbus-bus-path)
   ;; hook it with --filter and --talk
   (-> ctx
       (dbus-unrestricted)))
@@ -185,3 +189,4 @@ cd /tmp
 
 (comment
   (xdg-config-dirs "gtk-3.0" "glib-2.0"))
+

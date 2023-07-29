@@ -27,7 +27,8 @@
    (system/bind-dev "/dev/null")
 
    (system/bind-ro executable)
-   (system/bind-dev "/run/user/1000")
+   ;; whole runtime dir likely too wide
+   (system/bind-dev (system/xdg-runtime-dir))
    (system/dbus-unrestricted)
    (system/gpu)
    (system/fonts)
