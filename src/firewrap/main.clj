@@ -6,8 +6,8 @@
    [firewrap.profiles.xdg-open :as xdg-open]
    [firewrap.system :as system]))
 
-(defn run-bwrap [{:keys [bwrap-args]}]
-  (->> ["exec bwrap" bwrap-args]
+(defn run-bwrap [{:keys [bwrap-args executable]}]
+  (->> ["exec bwrap" bwrap-args executable]
        (flatten)
        (str/join " ")
        (println)))
@@ -38,20 +38,16 @@
   (let [appname (some-> (re-find #"([^/]+)$" cmd)
                         second
                         (str/lower-case))]
-    (if-let [profile (resolve-profile appname)]
-      (run-bwrap
-       (-> (profile {:executable cmd})
-           (system/add-bwrap-args cmd args)))
-      (case appname
-        "chatall" (run-bwrap (chatall/profile
-                              (system/glob-one (str (System/getenv "HOME") "/Applications/")
-                                               "ChatALL-*.AppImage")))
+    (case appname
+      "chatall" (run-bwrap (chatall/profile
+                            (system/glob-one (str (System/getenv "HOME") "/Applications/")
+                                             "ChatALL-*.AppImage")))
         ; "cheese" (run-bwrap (-> (cheese/profile {:executable "/usr/bin/cheese"})
         ;                         (system/add-bwrap-args cmd)))
         ;                          ; (with-strace cmd)))
-        "ferdium" (run-bwrap (ferdium/profile
-                              (system/glob-one (str (System/getenv "HOME") "/Applications/")
-                                               "Ferdium-*.AppImage")))
+      "ferdium" (run-bwrap (ferdium/profile
+                            (system/glob-one (str (System/getenv "HOME") "/Applications/")
+                                             "Ferdium-*.AppImage")))
          ; "gedit" (run-bwrap (-> (gedit/profile {:executable "/usr/bin/gedit"})
          ;                         ; (system/add-bwrap-args cmd)
          ;                        (with-strace cmd)))
@@ -60,5 +56,10 @@
         ;                              (system/add-bwrap-args cmd)
         ;                                ; (with-strace cmd)
         ;                              (system/add-bwrap-args args)))
-        "xdg-open" (run-bwrap (-> (xdg-open/profile)
-                                  (system/add-bwrap-args cmd args)))))))
+      "xdg-open" (run-bwrap (-> (xdg-open/profile)
+                                (system/add-bwrap-args cmd args)))
+      (if-let [profile (resolve-profile appname)]
+        (run-bwrap
+         (-> (profile {:executable cmd})
+             (system/add-bwrap-args cmd args)))
+        (println "echo Cannot resolve profile" (system/escape-shell appname))))))

@@ -2,11 +2,6 @@
   (:require
    [firewrap.system :as system]))
 
-(defn gtk [ctx]
-  (-> ctx
-      (system/bind-ro-try "/etc/gtk-3.0")
-      (system/bind-ro-try "/home/me/.config/gtk-3.0")))
-
 (defn profile [{:keys [executable]}]
   (->
    (system/base)
@@ -35,7 +30,7 @@
    (system/bind-ro-try "/proc/filesystems")
    (system/bind-ro-try "/proc/mounts")
 
-   (gtk)
+   (system/gtk)
    (system/bind-dev "/run")
    (system/bind-dev "/dev/urandom")
    (system/dbus-unrestricted)

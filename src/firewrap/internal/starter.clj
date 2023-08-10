@@ -7,9 +7,9 @@
 
 ;; First no fs restrictions, just unsharing namespaces to verify if an app still works
 (def step1-minimal-restrictions
-  [(system/base)
-   (system/system-network)
-   (system/bind-dev "/")])
+  (-> (system/base)
+      (system/network)
+      (system/bind-dev "/")))
 
 ;; For debugging when --unshare-all causes problems to determine the namespaces that cause issues by toggling individually
 (def unshare-all
@@ -21,15 +21,17 @@
    "--unshare-cgroup-try"])
 
 (def lazy-sandbox
-  [(system/base)
+  (->
+   (system/base)
    (system/network)
    (system/bind-ro "/")
    (system/isolated-home "my-app")
-   (system/tmp)])
+   (system/tmp)))
 
 ;; Then trying selective restrictions and trial-and-error next to define the sandbox
 (def step2-toplevel-dirs
-  [(system/base)
+  (->
+   (system/base)
    (system/libs)
    ; (system/rw-bind "/home")
    (system/isolated-home "my-app")
@@ -43,4 +45,4 @@
    ; (system/bind-ro "/usr/bin")
    ; (system/bind-ro "/usr/share")
    (system/bind-dev "/var")
-   (system/tmp)])
+   (system/tmp)))

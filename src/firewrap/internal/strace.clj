@@ -4,7 +4,8 @@
    [cheshire.core :as json]
    [clojure.java.io :as io]
    [clojure.pprint :refer [pprint]]
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [firewrap.system :as system]))
 
 (def fs-call?
   #{"access"
@@ -18,13 +19,21 @@
     "statx"
     "unlink"})
 
+(def data-call?
+  #{"read"
+    "write"
+    "recvfrom"
+    "sendto"
+    "pread64"
+    "pwrite64"})
+
 (defn arg->path [arg]
   (cond
     (and (string? arg) (str/includes? arg "/")) arg
     (map? arg) (:sun_path arg))) ; connect syscall
 
 (defn syscall->file-paths [{:keys [syscall args]}]
-  (when-not (#{"read" "write" "recvfrom" "sendto" "pread64" "pwrite64"} syscall)
+  (when-not (data-call? syscall)
     ;; there are syscalls that take two file paths like `mount`, `rename`, `symlink` so keep vector of paths
     (let [paths (->> args
                      (keep arg->path))
@@ -86,11 +95,73 @@
                               (mapcat (fn [[k v]]
                                         (let [path (str parent-path "/" k)
                                               children (bind-autogen v path)]
-                                          (cond-> [(list 'system/ro-bind-try path)]
+                                          (cond-> [(list 'system/bind-ro-try path)]
                                             (some? children) (conj children)))))
                               seq)]
       ;; could also wrap it in vectors or (->)
       (concat ['do] bindings))))
+
+(def bind-params
+  #{"--ro-bind"
+    "--ro-bind-try"
+    "--bind"
+    "--bind-try"
+    "--dev-bind"
+    "--dev-bind-try"})
+
+(defn bwrap->paths [ctx]
+  (->> (:bwrap-args ctx)
+       (keep (fn [argv]
+               ;; does not handle nesting which works with flatten
+               (when (and (vector? argv)
+                          (bind-params (first argv)))
+                 (let [[_type _source destination] argv]
+                   destination))))
+       (into #{})))
+
+(def abstractions
+  (let [ctx {:getenv (fn [k] (System/getenv k))}]
+    (->> ['system/network
+          'system/fontconfig
+          'system/fontconfig-shared-cache
+          'system/fonts
+          'system/icons
+          'system/locale
+          'system/themes
+          'system/dconf
+          'system/gpu
+          'system/libs
+          'system/dbus-unrestricted
+          'system/x11
+          'system/gtk
+          'system/dev-urandom
+          'system/dev-null
+          'system/at-spi]
+         (map (fn [sym]
+                [sym (bwrap->paths ((resolve sym) ctx))]))
+         (into {}))))
+
+(defn match-xdg-runtime-dir [path]
+  (let [runtime-dir (System/getenv "XDG_RUNTIME_DIR")]
+    (when (str/starts-with? path runtime-dir)
+      (list 'system/xdg-runtime-dir (str/replace path (str runtime-dir "/") "")))))
+
+(defn match-path [path]
+  (let [matches (->> abstractions
+                     (keep (fn [[k prefixes]]
+                             (when-some [match (->> prefixes
+                                                    (filter #(str/starts-with? path %))
+                                                    first)]
+                               [k match]))))
+        matches (if (seq matches)
+                  matches
+                  (when-some [match (match-xdg-runtime-dir path)]
+                    [[match]]))]
+    matches))
+
+(comment
+  (match-xdg-runtime-dir "/run/user/1000/at-spi/bus_1")
+  (match-xdg-runtime-dir "/dev/null"))
 
 (comment
   (extract-filepaths "tmp/gedit-strace")
@@ -109,6 +180,55 @@
 
   (def lines (read-trace  "tmp/gedit-strace"))
 
+  (def lines (read-trace  "tmp/_usr_bin_gnome-calculator-strace")))
+
+(comment
+
+  (->> lines
+       (mapcat syscall->file-paths)
+       (count))
+
+  (def matches
+    (->> lines
+         (mapcat syscall->file-paths)
+         (reduce
+          (fn [m path]
+            (let [matches (match-path path)]
+              (if (seq matches)
+                (reduce
+                 (fn [m match]
+                   (update-in m match (fnil conj []) path))
+                 m
+                 matches)
+                (update-in m [:binding :paths] (fnil conj []) path))))
+          {})))
+
+  (update-vals matches #(update-vals % count))
+
+  (->> matches
+       (reduce-kv
+        (fn [m k v]
+          (let [total (count (get abstractions k))]
+            (assoc m k
+                   (when (pos? total)
+                     (* 1.0 (/ (count v) total))))))
+        {}))
+       ; (sort-by first)))
+
+  (->> lines
+       (mapcat (fn [item]
+                 (->> (syscall->file-paths item)
+                      (map (fn [path]
+                             [path item])))))
+       (remove (fn [[path item]]
+                 (seq (match-path path))))
+       (map first)
+       (distinct)
+       sort))
+       ; count)
+       ; (take 200))
+
+(comment
   (count lines)
   (first lines)
 

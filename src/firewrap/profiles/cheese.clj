@@ -28,7 +28,7 @@
 
    (system/bind-ro executable)
    ;; whole runtime dir likely too wide
-   (system/bind-dev (system/xdg-runtime-dir))
+   ; (system/bind-dev (system/xdg-runtime-dir-path ctx))
    (system/dbus-unrestricted)
    (system/gpu)
    (system/fonts)

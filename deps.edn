@@ -1,3 +1,6 @@
 {:deps {cheshire/cheshire {:mvn/version "5.11.0"}
         babashka/process {:mvn/version "0.5.21"}}
- :aliases {}}
+
+ :aliases {:test
+           {:extra-deps {lambdaisland/kaocha {:mvn/version "1.85.1342"}}
+            :main-opts ["-m" "kaocha.runner"]}}}
