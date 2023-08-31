@@ -37,10 +37,15 @@
     "pread64"
     "pwrite64"})
 
+;; todo do it properly
+(defn normalize-path [path]
+  (str/replace path #"//" "/"))
+
 (defn arg->path [arg]
-  (cond
-    (and (string? arg) (str/includes? arg "/")) arg
-    (map? arg) (:sun_path arg))) ; connect syscall
+  (some-> (cond
+            (and (string? arg) (str/includes? arg "/")) arg
+            (map? arg) (:sun_path arg)) ; connect syscall
+          (normalize-path)))
 
 (defn syscall->file-paths [{:keys [syscall args]}]
   (when-not (data-call? syscall)
@@ -97,19 +102,24 @@
          (str/join "\n")
          (spit out-path))))
 
-(defn bind-autogen [tree parent-path]
-  (when (map? tree)
-    (when-some [bindings (->> tree
-                              (filter (comp string? key))
-                              (sort-by key)
-                              (mapcat (fn [[k v]]
-                                        (let [path (str parent-path "/" k)
-                                              children (bind-autogen v path)]
-                                          (cond-> [(list 'system/bind-ro-try path)]
-                                            (some? children) (conj children)))))
-                              seq)]
-      ;; could also wrap it in vectors or (->)
-      (concat ['do] bindings))))
+(defn bind-autogen
+  ([tree parent-path]
+   (bind-autogen tree parent-path 'system/bind-ro-try))
+  ([tree parent-path symb]
+   (when (map? tree)
+     (when-some [bindings (->> tree
+                               (filter (comp string? key))
+                               (sort-by key)
+                               (mapcat (fn [[k v]]
+                                         (let [path (if parent-path
+                                                      (str parent-path "/" k)
+                                                      k)
+                                               children (bind-autogen v path symb)]
+                                           (cond-> [(list symb path)]
+                                             (some? children) (conj children)))))
+                               seq)]
+       ;; could also wrap it in vectors or (->)
+       (concat ['->] bindings)))))
 
 (def bind-params
   #{"--ro-bind"
@@ -270,10 +280,42 @@
 
   (update-vals matches #(update-vals % count))
 
-  (->> matches
-       (keys)
-       sort
-       (walk/postwalk (fn [x] (if (vector? x) (seq x) x))))
+  #_(def bindings
+      (->> matches
+           (keys)
+           sort
+           (walk/postwalk (fn [x] (if (vector? x) (seq x) x)))
+           (concat ['-> 'ctx])))
+
+  (def bindings
+    (let [{without-args false
+           with-args true} (->> matches
+                                (keys)
+                                (group-by (fn [[_ & args]]
+                                            (pos? (count args)))))]
+      (concat
+       ['-> '(system/base)]
+       (->> without-args
+            (sort)
+            (walk/postwalk (fn [x] (if (vector? x) (seq x) x))))
+       (->> with-args
+            (group-by first)
+            (sort-by key)
+            (mapcat (fn [[k items]]
+                      (let [path-tree (->> items
+                                        ;; assumption: all args are paths
+                                           (mapcat (fn [[_ & args]]
+                                                     args))
+                                           (reduce (fn [m path]
+                                                     (let [segments (str/split path #"/")]
+                                                       (update-in m segments merge {})))
+                                                   {}))]
+                        [(bind-autogen path-tree nil k)])))))))
+
+  (with-open [writer (io/writer "tmp/bindings.clj")]
+    (.write writer "#_:clj-kondo/ignore")
+    (.write writer "\n")
+    (pprint bindings writer))
 
   (->> matches
        (reduce-kv
