@@ -3,6 +3,7 @@
    [clojure.string :as str]
    [firewrap.profiles.chatall :as chatall]
    [firewrap.profiles.ferdium :as ferdium]
+   [firewrap.profiles.godmode :as godmode]
    [firewrap.profiles.xdg-open :as xdg-open]
    [firewrap.system :as system]))
 
@@ -42,6 +43,9 @@
       "chatall" (run-bwrap (chatall/profile
                             (system/glob-one (str (System/getenv "HOME") "/Applications/")
                                              "ChatALL-*.AppImage")))
+      "godmode" (run-bwrap (godmode/profile
+                            (system/glob-one (str (System/getenv "HOME") "/Applications/")
+                                             "GodMode-*.AppImage")))
         ; "cheese" (run-bwrap (-> (cheese/profile {:executable "/usr/bin/cheese"})
         ;                         (system/add-bwrap-args cmd)))
         ;                          ; (with-strace cmd)))
