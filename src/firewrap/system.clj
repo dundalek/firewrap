@@ -115,6 +115,21 @@
 (defn xdg-state-home-paths [& subfolders]
   (xdg-dirs (xdg-state-home-path) subfolders))
 
+(defn xdg-data-dir [ctx & subfolders]
+  (bind-ro-try-many ctx (apply xdg-data-dir-paths subfolders)))
+
+(defn xdg-data-home [ctx & subfolders]
+  (bind-ro-try-many ctx (apply xdg-data-home-paths subfolders)))
+
+(defn xdg-cache-home [ctx & subfolders]
+  (bind-ro-try-many ctx (apply xdg-cache-home-paths subfolders)))
+
+(defn xdg-config-home [ctx & subfolders]
+  (bind-ro-try-many ctx (apply xdg-config-home-paths subfolders)))
+
+(defn xdg-state-home [ctx & subfolders]
+  (bind-ro-try-many ctx (apply xdg-state-home-paths subfolders)))
+
 (defn base  []
   (add-bwrap-args
    {:getenv (fn [k] (System/getenv k))}
@@ -189,7 +204,7 @@
       ;; is there a difference between user and profile?
       ; (bind-ro-try (str (xdg-runtime-dir-path ctx) "/dconf/user"))
       ; (bind-ro-try (str (xdg-runtime-dir-path ctx) "/dconf/profile"))
-      (bind-ro-try (str (xdg-runtime-dir-path ctx) "/dconf"))
+      (bind-rw-try (str (xdg-runtime-dir-path ctx) "/dconf"))
       (bind-ro-try-many (xdg-data-dir-paths "dconf"))))
       ; (bind-ro "/user/share/dconf/user")))
 
@@ -310,9 +325,9 @@ cd /tmp
   (-> ctx
       (glib)
       (bind-ro-try "/etc/gtk-3.0")
-      (bind-ro-try (str (getenv ctx "HOME") "/.config/gtk-3.0"))
-      (bind-ro-try-many (xdg-config-dir-paths "gtk-3.0"))))
+      (bind-ro-try-many (xdg-config-dir-paths "gtk-3.0"))
+      (bind-ro-try-many (xdg-data-dir-paths "gtk-3.0"))))
 
 (defn mime-cache [ctx]
   (-> ctx
-      (xdg-data-dir-paths "mime/mime.cache")))
+      (bind-ro-try-many (xdg-data-dir-paths "mime/mime.cache"))))
