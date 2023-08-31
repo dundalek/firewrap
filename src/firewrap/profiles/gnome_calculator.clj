@@ -12,7 +12,7 @@
    (system/icons)
    (system/themes)
    ;; move glib to gtk?
-   (system/bind-ro-try-many (system/xdg-data-dirs "glib-2.0" "pixmaps"))
+   (system/bind-ro-try-many (system/xdg-data-dir-paths "glib-2.0" "pixmaps"))
    (system/dconf)
    (system/gtk)
    (system/dbus-unrestricted)

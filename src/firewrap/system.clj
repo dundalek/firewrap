@@ -66,18 +66,18 @@
       (str (str/replace dir #"\/+$" "")
            "/" subfolder))))
 
-(defn xdg-data-dirs [& subfolders]
+(defn xdg-data-dir-paths [& subfolders]
   ;; e.g. $HOME/.local/share /usr/local/share /usr/share
   (xdg-dirs (System/getenv "XDG_DATA_DIRS") subfolders))
 
 (comment
-  (xdg-data-dirs "icons" "themes"))
+  (xdg-data-dir-paths "icons" "themes"))
 
-(defn xdg-config-dirs [& subfolders]
+(defn xdg-config-dir-paths [& subfolders]
   (xdg-dirs (System/getenv "XDG_CONFIG_DIRS") subfolders))
 
 (comment
-  (xdg-config-dirs "gtk-3.0" "glib-2.0"))
+  (xdg-config-dir-paths "gtk-3.0" "glib-2.0"))
 
 (defn base  []
   (add-bwrap-args
@@ -154,7 +154,7 @@
       ; (bind-ro-try (str (xdg-runtime-dir-path ctx) "/dconf/user"))
       ; (bind-ro-try (str (xdg-runtime-dir-path ctx) "/dconf/profile"))
       (bind-ro-try (str (xdg-runtime-dir-path ctx) "/dconf"))
-      (bind-ro-try-many (xdg-data-dirs "dconf"))))
+      (bind-ro-try-many (xdg-data-dir-paths "dconf"))))
       ; (bind-ro "/user/share/dconf/user")))
 
 (defn at-spi [ctx]
@@ -267,7 +267,7 @@ cd /tmp
 
 (defn glib [ctx]
   (-> ctx
-      (bind-ro-try-many (xdg-data-dirs "glib-2.0"))))
+      (bind-ro-try-many (xdg-data-dir-paths "glib-2.0"))))
 
 (defn gtk [ctx]
   ;; add X11 and Wayland
@@ -275,8 +275,8 @@ cd /tmp
       (glib)
       (bind-ro-try "/etc/gtk-3.0")
       (bind-ro-try (str (getenv ctx "HOME") "/.config/gtk-3.0"))
-      (bind-ro-try-many (xdg-config-dirs "gtk-3.0"))))
+      (bind-ro-try-many (xdg-config-dir-paths "gtk-3.0"))))
 
 (defn mime-cache [ctx]
   (-> ctx
-      (xdg-data-dirs "mime/mime.cache")))
+      (xdg-data-dir-paths "mime/mime.cache")))

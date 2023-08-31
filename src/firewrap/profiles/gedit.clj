@@ -22,7 +22,7 @@
    (system/bind-ro-try (str (System/getenv "HOME") "/.config/ibus/bus"))
 
    (system/bind-ro-try-many
-    (system/xdg-data-dirs "icons" "mime"))
+    (system/xdg-data-dir-paths "icons" "mime"))
 
    (system/bind-ro-try "/home/me/.config/dconf/user")
 
