@@ -66,18 +66,54 @@
       (str (str/replace dir #"\/+$" "")
            "/" subfolder))))
 
+(defn xdg-data-dirs-path []
+  (or (System/getenv "XDG_DATA_DIRS")
+      "/usr/local/share/:/usr/share/"))
+
 (defn xdg-data-dir-paths [& subfolders]
   ;; e.g. $HOME/.local/share /usr/local/share /usr/share
-  (xdg-dirs (System/getenv "XDG_DATA_DIRS") subfolders))
+  (xdg-dirs (xdg-data-dirs-path) subfolders))
 
 (comment
   (xdg-data-dir-paths "icons" "themes"))
 
+(defn xdg-config-dirs-path []
+  (or (System/getenv "XDG_CONFIG_DIRS")
+      "/etc/xdg"))
+
 (defn xdg-config-dir-paths [& subfolders]
-  (xdg-dirs (System/getenv "XDG_CONFIG_DIRS") subfolders))
+  (xdg-dirs (xdg-config-dirs-path) subfolders))
 
 (comment
   (xdg-config-dir-paths "gtk-3.0" "glib-2.0"))
+
+(defn xdg-data-home-path []
+  (or (System/getenv "XDG_DATA_HOME")
+      (str (System/getenv "HOME") "/.local/share")))
+
+(defn xdg-data-home-paths [& subfolders]
+  (xdg-dirs (xdg-data-home-path) subfolders))
+
+(defn xdg-config-home-path []
+  (or (System/getenv "XDG_CONFIG_HOME")
+      (str (System/getenv "HOME") "/.config")))
+
+(defn xdg-config-home-paths [& subfolders]
+  (xdg-dirs (xdg-config-home-path) subfolders))
+
+(defn xdg-cache-home-path []
+  (or (System/getenv "XDG_CACHE_HOME")
+      (str (System/getenv "HOME") "/.cache")))
+
+(defn xdg-cache-home-paths [& subfolders]
+  (xdg-dirs (xdg-cache-home-path) subfolders))
+
+(defn xdg-state-home-path []
+  (or (System/getenv "XDG_STATE_HOME")
+      (str (System/getenv "HOME") "/.local/state")))
+
+(defn xdg-state-home-paths [& subfolders]
+  (xdg-dirs (xdg-state-home-path) subfolders))
 
 (defn base  []
   (add-bwrap-args

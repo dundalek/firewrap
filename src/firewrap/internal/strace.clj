@@ -174,6 +174,22 @@
   (when-some [subdir (match-xdg-dir (System/getenv "XDG_CONFIG_DIRS") path)]
     [(list 'system/bind-ro-try (list 'system/xdg-data-dir-paths subdir))]))
 
+(defn match-xdg-data-home [path]
+  (when-some [subdir (match-xdg-dir (system/xdg-data-home-path) path)]
+    [(list 'system/bind-ro-try (list 'system/xdg-data-home-paths subdir))]))
+
+(defn match-xdg-config-home [path]
+  (when-some [subdir (match-xdg-dir (system/xdg-config-home-path) path)]
+    [(list 'system/bind-ro-try (list 'system/xdg-config-home-paths subdir))]))
+
+(defn match-xdg-cache-home [path]
+  (when-some [subdir (match-xdg-dir (system/xdg-cache-home-path) path)]
+    [(list 'system/bind-ro-try (list 'system/xdg-cache-home-paths subdir))]))
+
+(defn match-xdg-state-home [path]
+  (when-some [subdir (match-xdg-dir (system/xdg-state-home-path) path)]
+    [(list 'system/bind-ro-try (list 'system/xdg-state-home-paths subdir))]))
+
 (comment
   (match-xdg-data-dir "/usr/share/somedir/somefile")
   (match-xdg-data-dir "/tmp/somedir/somefile")
@@ -187,7 +203,11 @@
 (def matchers
   [match-xdg-runtime-dir
    match-xdg-data-dir
-   match-xdg-config-dir])
+   match-xdg-config-dir
+   match-xdg-data-home
+   match-xdg-config-home
+   match-xdg-cache-home
+   match-xdg-state-home])
 
 (defn match-path [path]
   (let [matches (->> abstractions
@@ -246,6 +266,10 @@
           {})))
 
   (update-vals matches #(update-vals % count))
+  (->> (keys matches)
+       #_(sort-by first))
+
+  (-> matches :binding)
 
   (->> matches
        (reduce-kv
