@@ -157,7 +157,8 @@
           'system/gtk
           'system/dev-urandom
           'system/dev-null
-          'system/at-spi]
+          'system/at-spi
+          'system/mime-cache]
          (map (fn [sym]
                 [(vector sym) (bwrap->paths ((resolve sym) ctx))]))
          (into {}))))
