@@ -7,6 +7,15 @@
    [clojure.string :as str]
    [firewrap.system :as system]))
 
+; Using strace parser:
+;     https://github.com/dannykopping/b3
+; Alternative strace parsers (did not try any)
+;     https://gitlab.com/gitlab-com/support/toolbox/strace-parser
+;     https://github.com/chrahunt/strace-parser
+;     https://pypi.org/project/strace-parser/
+; alternative to strace with JSON output
+;     https://github.com/JakWai01/lurk
+
 (def fs-call?
   #{"access"
     "connect"
@@ -119,6 +128,7 @@
                    destination))))
        (into #{})))
 
+;; abstractions are static matches, taking no arguments besides context
 (def abstractions
   (let [ctx {:getenv (fn [k] (System/getenv k))}]
     (->> ['system/network
@@ -144,7 +154,40 @@
 (defn match-xdg-runtime-dir [path]
   (let [runtime-dir (System/getenv "XDG_RUNTIME_DIR")]
     (when (str/starts-with? path runtime-dir)
-      (list 'system/xdg-runtime-dir (str/replace path (str runtime-dir "/") "")))))
+      [(list 'system/xdg-runtime-dir (str/replace path (str runtime-dir "/") ""))])))
+
+;; will need to take into account what kind of access is being made to decide if to use bind-ro, bind-rw or other variants
+;; todo proper path handling to normalize slashes
+(defn match-xdg-dir [dirs-str path]
+  (let [dirs (some-> dirs-str (str/split #":"))]
+    (when-some [matched (some (fn [xdg-dir]
+                                (when (str/starts-with? path xdg-dir)
+                                  xdg-dir))
+                              dirs)]
+      (str/replace-first path matched ""))))
+
+(defn match-xdg-data-dir [path]
+  (when-some [subdir (match-xdg-dir (System/getenv "XDG_DATA_DIRS") path)]
+    [(list 'system/bind-ro-try (list 'system/xdg-data-dir-paths subdir))]))
+
+(defn match-xdg-config-dir [path]
+  (when-some [subdir (match-xdg-dir (System/getenv "XDG_CONFIG_DIRS") path)]
+    [(list 'system/bind-ro-try (list 'system/xdg-data-dir-paths subdir))]))
+
+(comment
+  (match-xdg-data-dir "/usr/share/somedir/somefile")
+  (match-xdg-data-dir "/tmp/somedir/somefile")
+
+  (match-xdg-config-dir "/etc/xdg/somedir/somefile")
+  (match-xdg-config-dir "/tmp/somedir/somefile"))
+
+;; matchers are dynamic abstractions, taking some parameter
+;; taking it all the way bind-* fns could be viewed as dynamic matchers as well,
+;; although the fact they are hierarchical makes it more complicated
+(def matchers
+  [match-xdg-runtime-dir
+   match-xdg-data-dir
+   match-xdg-config-dir])
 
 (defn match-path [path]
   (let [matches (->> abstractions
@@ -155,8 +198,7 @@
                                [k match]))))
         matches (if (seq matches)
                   matches
-                  (when-some [match (match-xdg-runtime-dir path)]
-                    [[match]]))]
+                  (keep (fn [matcher] (matcher path)) matchers))]
     matches))
 
 (comment
