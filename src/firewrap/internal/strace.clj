@@ -5,6 +5,7 @@
    [clojure.java.io :as io]
    [clojure.pprint :refer [pprint]]
    [clojure.string :as str]
+   [clojure.walk :as walk]
    [firewrap.system :as system]))
 
 ; Using strace parser:
@@ -148,13 +149,13 @@
           'system/dev-null
           'system/at-spi]
          (map (fn [sym]
-                [sym (bwrap->paths ((resolve sym) ctx))]))
+                [(vector sym) (bwrap->paths ((resolve sym) ctx))]))
          (into {}))))
 
 (defn match-xdg-runtime-dir [path]
   (let [runtime-dir (System/getenv "XDG_RUNTIME_DIR")]
     (when (str/starts-with? path runtime-dir)
-      [(list 'system/xdg-runtime-dir (str/replace path (str runtime-dir "/") ""))])))
+      [(vector 'system/xdg-runtime-dir (str/replace path (str runtime-dir "/") ""))])))
 
 ;; will need to take into account what kind of access is being made to decide if to use bind-ro, bind-rw or other variants
 ;; todo proper path handling to normalize slashes
@@ -164,31 +165,33 @@
                                 (when (str/starts-with? path xdg-dir)
                                   xdg-dir))
                               dirs)]
-      (str/replace-first path matched ""))))
+      (-> path
+          (str/replace-first matched "")
+          (str/replace #"^/+|/+$" "")))))
 
 (defn match-xdg-data-dir [path]
   (when-some [subdir (match-xdg-dir (System/getenv "XDG_DATA_DIRS") path)]
-    [(list 'system/bind-ro-try (list 'system/xdg-data-dir-paths subdir))]))
+    [(vector 'system/xdg-data-dir subdir)]))
 
 (defn match-xdg-config-dir [path]
   (when-some [subdir (match-xdg-dir (System/getenv "XDG_CONFIG_DIRS") path)]
-    [(list 'system/bind-ro-try (list 'system/xdg-data-dir-paths subdir))]))
+    [(vector 'system/xdg-config-dir subdir)]))
 
 (defn match-xdg-data-home [path]
   (when-some [subdir (match-xdg-dir (system/xdg-data-home-path) path)]
-    [(list 'system/bind-ro-try (list 'system/xdg-data-home-paths subdir))]))
+    [(vector 'system/xdg-data-home subdir)]))
 
 (defn match-xdg-config-home [path]
   (when-some [subdir (match-xdg-dir (system/xdg-config-home-path) path)]
-    [(list 'system/bind-ro-try (list 'system/xdg-config-home-paths subdir))]))
+    [(vector 'system/xdg-config-home subdir)]))
 
 (defn match-xdg-cache-home [path]
   (when-some [subdir (match-xdg-dir (system/xdg-cache-home-path) path)]
-    [(list 'system/bind-ro-try (list 'system/xdg-cache-home-paths subdir))]))
+    [(vector 'system/xdg-cache-home subdir)]))
 
 (defn match-xdg-state-home [path]
   (when-some [subdir (match-xdg-dir (system/xdg-state-home-path) path)]
-    [(list 'system/bind-ro-try (list 'system/xdg-state-home-paths subdir))]))
+    [(vector 'system/xdg-state-home subdir)]))
 
 (comment
   (match-xdg-data-dir "/usr/share/somedir/somefile")
@@ -262,14 +265,15 @@
                    (update-in m match (fnil conj []) path))
                  m
                  matches)
-                (update-in m [:binding :paths] (fnil conj []) path))))
+                (update-in m [(vector 'system/bind-ro-try path)] (fnil conj []) path))))
           {})))
 
   (update-vals matches #(update-vals % count))
-  (->> (keys matches)
-       #_(sort-by first))
 
-  (-> matches :binding)
+  (->> matches
+       (keys)
+       sort
+       (walk/postwalk (fn [x] (if (vector? x) (seq x) x))))
 
   (->> matches
        (reduce-kv
