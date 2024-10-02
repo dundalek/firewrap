@@ -241,8 +241,12 @@
   (add-bwrap-args ctx "--proc /proc"))
   ; (ro-bind "/proc/self")
 
+(defn tmpfs [ctx path]
+  (add-bwrap-args ctx ["--tmpfs" path]))
+
 (defn tmp [ctx]
-  (add-bwrap-args ctx "--tmpfs /tmp"))
+  (tmpfs ctx "/tmp"))
+  ; (add-bwrap-args ctx "--tmpfs /tmp")))
 
 (defn dev-urandom [ctx]
   (-> ctx
@@ -283,11 +287,15 @@ cd /tmp
   (-> (System/getenv "DBUS_SESSION_BUS_ADDRESS")
       (str/replace #"^unix:path=" "")))
 
+(defn dbus-system-bus [ctx]
+  (-> ctx
+      (bind-ro-try "/run/dbus/system_bus_socket")
+      (bind-ro-try "/var/run/dbus/system_bus_socket")))
+
 (defn dbus-unrestricted [ctx]
   (-> ctx
       (bind-ro "/etc/machine-id")
       (bind-ro "/var/lib/dbus/machine-id")
-   ;; Bind also /run/dbus/system_bus_socket ?
       (bind-ro (dbus-bus-path))))
 
 #_(defn dbus-see [])
@@ -326,7 +334,8 @@ cd /tmp
       (glib)
       (bind-ro-try "/etc/gtk-3.0")
       (bind-ro-try-many (xdg-config-dir-paths "gtk-3.0"))
-      (bind-ro-try-many (xdg-data-dir-paths "gtk-3.0"))))
+      (bind-ro-try-many (xdg-data-dir-paths "gtk-3.0"))
+      (xdg-config-home "gtk-3.0")))
 
 (defn mime-cache [ctx]
   (-> ctx

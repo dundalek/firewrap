@@ -1,7 +1,4 @@
 
-
-sh -c 'eval "$(bin/firewrap-profile /usr/bin/cheese)"'
-
 Dependencies
 - babashka
 - bubblewrap

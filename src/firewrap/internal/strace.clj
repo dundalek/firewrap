@@ -153,6 +153,7 @@
           'system/gpu
           'system/libs
           'system/dbus-unrestricted
+          'system/dbus-system-bus
           'system/x11
           'system/gtk
           'system/dev-urandom
@@ -255,6 +256,7 @@
   (def lines (read-trace "tmp/xdg-open-strace"))
 
   (def lines (read-trace  "tmp/gedit-strace"))
+  (def lines (read-trace  "tmp/peek-strace"))
 
   (def lines (read-trace  "tmp/_usr_bin_gnome-calculator-strace")))
 
