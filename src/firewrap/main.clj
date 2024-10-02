@@ -59,6 +59,7 @@
       ;; bins and libs
       (system/bind-dev "/")
       (system/tmpfs (System/getenv "HOME"))
+      (system/bind-ro (str (System/getenv "HOME") "/.nix-profile/bin"))
       (system/tmp)))
 
 (defn fw-net [_]
@@ -70,15 +71,25 @@
     (-> (fw-small nil)
         (system/isolated-home appname))))
 
-(defn fw-nethome [args]
+(defn fw-homenet [args]
   (-> (fw-home args)
+      (system/network)))
+
+(defn fw-cwd [_]
+  (-> (fw-small nil)
+      (system/bind-rw (str (fs/absolutize (fs/cwd))))))
+
+(defn fw-cwdnet [_]
+  (-> (fw-cwd nil)
       (system/network)))
 
 (def presets
   [["--small" fw-small "small profile with temporary home"]
+   ["--cwd" fw-cwd "\tsmall including current working directory"]
    ["--home" fw-home "isolated home based on app name"]
    ["--net" fw-net "\tsmall with network"]
-   ["--nethome" fw-nethome "isolated home and network"]])
+   ["--cwdnet" fw-cwdnet "small with network and current working directory"]
+   ["--homenet" fw-homenet "isolated home and network"]])
 
 (def preset-map (into {}
                       (map (fn [[name f]]
