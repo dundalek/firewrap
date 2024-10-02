@@ -48,7 +48,12 @@
     (requiring-resolve (symbol (str "firewrap.profiles." appname) "profile"))
     (catch Exception _)))
 
-(defn fw-small []
+(defn path->appname [path]
+  (some-> (re-find #"([^/]+)$" path)
+          second
+          (str/lower-case)))
+
+(defn fw-small [_]
   (-> (system/base)
       ;; Make it tighter instead of dev binding /
       ;; bins and libs
@@ -56,22 +61,38 @@
       (system/tmpfs (System/getenv "HOME"))
       (system/tmp)))
 
-(defn fw-net []
-  (-> (fw-small)
+(defn fw-net [_]
+  (-> (fw-small nil)
       (system/network)))
 
-(defn fw-home [appname]
-  (-> (fw-small)
-      (system/isolated-home appname)))
+(defn fw-home [[cmd]]
+  (let [appname (path->appname cmd)]
+    (-> (fw-small nil)
+        (system/isolated-home appname))))
 
-(defn fw-nethome [appname]
-  (-> (fw-home appname)
+(defn fw-nethome [args]
+  (-> (fw-home args)
       (system/network)))
+
+(def presets
+  [["--small" fw-small "small profile with temporary home"]
+   ["--home" fw-home "isolated home based on app name"]
+   ["--net" fw-net "\tsmall with network"]
+   ["--nethome" fw-nethome "isolated home and network"]])
+
+(def preset-map (into {}
+                      (map (fn [[name f]]
+                             [name f]))
+                      presets))
+
+(defn print-help []
+  (println "Available presets:")
+  (->> presets
+       (run! (fn [[name _ desc]]
+               (println (str "  " name "\t" desc))))))
 
 (defn -main [cmd & args]
-  (let [appname (some-> (re-find #"([^/]+)$" cmd)
-                        second
-                        (str/lower-case))]
+  (let [appname (path->appname cmd)]
     (case appname
       "chatall" (run-bwrap-sh (chatall/profile
                                (system/glob-one (str (System/getenv "HOME") "/Applications/")
@@ -79,43 +100,35 @@
       "godmode" (run-bwrap-sh (godmode/profile
                                (system/glob-one (str (System/getenv "HOME") "/Applications/")
                                                 "GodMode-*.AppImage")))
-        ; "cheese" (run-bwrap (-> (cheese/profile {:executable "/usr/bin/cheese"})
-        ;                         (system/add-bwrap-args cmd)))
-        ;                          ; (with-strace cmd)))
+       ; "cheese" (run-bwrap (-> (cheese/profile {:executable "/usr/bin/cheese"})
+       ;                         (system/add-bwrap-args cmd)))
+       ;                          ; (with-strace cmd)))
       "ferdium" (run-bwrap-sh (ferdium/profile
                                (system/glob-one (str (System/getenv "HOME") "/Applications/")
                                                 "Ferdium-*.AppImage")))
-         ; "gedit" (run-bwrap (-> (gedit/profile {:executable "/usr/bin/gedit"})
-         ;                         ; (system/add-bwrap-args cmd)
-         ;                        (with-strace cmd)))
-        ; "notify-send" (run-bwrap (-> (notify-send/profile {:executable cmd})
-        ;                               ; (with-shell
-        ;                              (system/add-bwrap-args cmd)
-        ;                                ; (with-strace cmd)
-        ;                              (system/add-bwrap-args args)))
+        ; "gedit" (run-bwrap (-> (gedit/profile {:executable "/usr/bin/gedit"})
+        ;                         ; (system/add-bwrap-args cmd)
+        ;                        (with-strace cmd)))
+       ; "notify-send" (run-bwrap (-> (notify-send/profile {:executable cmd})
+       ;                               ; (with-shell
+       ;                              (system/add-bwrap-args cmd)
+       ;                                ; (with-strace cmd)
+       ;                              (system/add-bwrap-args args)))
       "xdg-open" (run-bwrap (-> (xdg-open/profile)
                                 (system/add-bwrap-args cmd args)))
+
       "firewrap"
       (let [[cmd & args] args]
-        (case cmd
-          "--small" (run-bwrap (-> (fw-small)
-                                   (system/add-bwrap-args args)))
-          "--home" (run-bwrap (-> (fw-home (first args))
-                                  (system/add-bwrap-args args)))
-          "--net" (run-bwrap (-> (fw-net)
-                                 (system/add-bwrap-args args)))
-          "--nethome" (run-bwrap (-> (fw-nethome (first args))
-                                     (system/add-bwrap-args args)))))
+        (if-some [preset-fn (get preset-map cmd)]
+          (let [params (-> (preset-fn args)
+                           (system/add-bwrap-args args))]
+            ; (println "Running preset" cmd params)
+            (run-bwrap params))
+          (print-help)))
+
       (if-let [profile (resolve-profile appname)]
         (run-bwrap
          (-> (profile {:executable cmd})
              (system/add-bwrap-args cmd args)))
-        ;; maybe just print it to stderr?
+       ;; maybe just print it to stderr?
         (println "echo Cannot resolve profile" (system/escape-shell appname))))))
-
-; (defn -main [cmd & args]
-;   (let [appname (some-> (re-find #"([^/]+)$" cmd)
-;                         second
-;                         (str/lower-case))]
-;     (println "cmd:" cmd)
-;     (println "appname:" appname)))
