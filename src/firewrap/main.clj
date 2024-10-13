@@ -17,13 +17,14 @@
                     (str/join " "))
         f (fs/file (fs/create-temp-file {:prefix "firewrap"}))]
     (spit f script)
+    (println "Firewrap sandbox:" script)
     (process/exec "sh" f)))
 
 (defn run-bwrap [{:keys [bwrap-args executable]}]
   (let [params (flatten (concat ["bwrap"]
                                 bwrap-args
                                 (when executable [executable])))]
-    (println params)
+    (println "Firewrap sandbox:" params)
     (apply process/exec params)))
 
 (defn with-strace [ctx cmd]
@@ -57,13 +58,19 @@
   (-> ctx
       (system/bind-rw (str (fs/absolutize (fs/cwd))))))
 
+(defn bind-nix-profile-bin-ro [ctx]
+  (system/bind-ro ctx (str (System/getenv "HOME") "/.nix-profile/bin")))
+
+;; presets
+
 (defn fw-small [_]
   (-> (system/base)
       ;; Make it tighter instead of dev binding /
       ;; bins and libs
       (system/bind-dev "/")
+      (system/bind-ro "/nix") ; by default user can write to nix (daemonless setup), maliciuos actor could rewrite some binary there? therefore rebind as ro
       (system/tmpfs (System/getenv "HOME"))
-      (system/bind-ro (str (System/getenv "HOME") "/.nix-profile/bin"))
+      (bind-nix-profile-bin-ro)
       (system/tmp)))
 
 (defn fw-net [_]
@@ -73,7 +80,8 @@
 (defn fw-home [[cmd]]
   (let [appname (path->appname cmd)]
     (-> (fw-small nil)
-        (system/isolated-home appname))))
+        (system/isolated-home appname)
+        (bind-nix-profile-bin-ro)))) ; need to rebind nix-profile again over home
 
 (defn fw-homenet [args]
   (-> (fw-home args)
@@ -141,7 +149,7 @@
       "xdg-open" (run-bwrap (-> (xdg-open/profile)
                                 (system/add-bwrap-args cmd args)))
 
-      "firewrap"
+      ("firewrap" "frap" "fw")
       (let [[cmd & args] args]
         (if-some [preset-fn (get preset-map cmd)]
           (let [params (-> (preset-fn args)
