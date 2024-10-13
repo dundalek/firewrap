@@ -53,6 +53,10 @@
           second
           (str/lower-case)))
 
+(defn bind-cwd-rw [ctx]
+  (-> ctx
+      (system/bind-rw (str (fs/absolutize (fs/cwd))))))
+
 (defn fw-small [_]
   (-> (system/base)
       ;; Make it tighter instead of dev binding /
@@ -77,7 +81,7 @@
 
 (defn fw-cwd [_]
   (-> (fw-small nil)
-      (system/bind-rw (str (fs/absolutize (fs/cwd))))))
+      (bind-cwd-rw)))
 
 (defn fw-cwdnet [_]
   (-> (fw-cwd nil)
@@ -102,6 +106,11 @@
        (run! (fn [[name _ desc]]
                (println (str "  " name "\t" desc))))))
 
+(defn cursor-profile [args appimage]
+  (cond-> (fw-homenet ["cursor"])
+    (= (first args) "--cwd") (bind-cwd-rw)
+    :always (system/run-appimage appimage)))
+
 (defn -main [cmd & args]
   (let [appname (path->appname cmd)]
     (case appname
@@ -117,6 +126,10 @@
       "ferdium" (run-bwrap-sh (ferdium/profile
                                (system/glob-one (str (System/getenv "HOME") "/Applications/")
                                                 "Ferdium-*.AppImage")))
+      "cursor" (run-bwrap-sh (cursor-profile
+                              args
+                              (system/glob-one (str (System/getenv "HOME") "/Applications/")
+                                               "cursor-*.AppImage")))
         ; "gedit" (run-bwrap (-> (gedit/profile {:executable "/usr/bin/gedit"})
         ;                         ; (system/add-bwrap-args cmd)
         ;                        (with-strace cmd)))
