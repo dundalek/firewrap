@@ -55,22 +55,28 @@
           (str/lower-case)))
 
 (defn bind-cwd-rw [ctx]
-  (-> ctx
-      (system/bind-rw (str (fs/absolutize (fs/cwd))))))
+  (let [cwd (str (fs/absolutize (fs/cwd)))]
+    (-> ctx
+        (system/bind-rw cwd)
+        ;; Make sure cwd is set to current dir when we bind cwd
+        (system/add-bwrap-args "--chdir" cwd))))
 
 (defn bind-nix-profile-bin-ro [ctx]
   (system/bind-ro ctx (str (System/getenv "HOME") "/.nix-profile/bin")))
 
 ;; presets
 
-(defn fw-small [_]
+(defn fw-small-no-tmpfs [_]
   (-> (system/base)
       ;; Make it tighter instead of dev binding /
       ;; bins and libs
       (system/bind-dev "/")
       (system/bind-ro "/nix") ; by default user can write to nix (daemonless setup), maliciuos actor could rewrite some binary there? therefore rebind as ro
       (system/tmpfs (System/getenv "HOME"))
-      (bind-nix-profile-bin-ro)
+      (bind-nix-profile-bin-ro)))
+
+(defn fw-small [_]
+  (-> (fw-small-no-tmpfs _)
       (system/tmp)))
 
 (defn fw-net [_]
@@ -87,6 +93,16 @@
   (-> (fw-home args)
       (system/network)))
 
+(defn fw-newhome [_]
+  (let [sandbox nil]
+    (-> (fw-small nil)
+        (system/isolated-home sandbox)
+        (bind-nix-profile-bin-ro)))) ; need to rebind nix-profile again over home
+
+(defn fw-newhomenet [args]
+  (-> (fw-newhome args)
+      (system/network)))
+
 (defn fw-cwd [_]
   (-> (fw-small nil)
       (bind-cwd-rw)))
@@ -95,13 +111,24 @@
   (-> (fw-cwd nil)
       (system/network)))
 
+(defn fw-godmodedev [_]
+  (-> (fw-small-no-tmpfs nil) ; with tmpfs seems can't connect to X server
+      (system/isolated-home "godmode")
+      (bind-nix-profile-bin-ro) ; need to rebind nix-profile again over home
+      (bind-cwd-rw)
+      (system/network)))
+
 (def presets
   [["--small" fw-small "small profile with temporary home"]
    ["--cwd" fw-cwd "\tsmall including current working directory"]
    ["--home" fw-home "isolated home based on app name"]
    ["--net" fw-net "\tsmall with network"]
    ["--cwdnet" fw-cwdnet "small with network and current working directory"]
-   ["--homenet" fw-homenet "isolated home and network"]])
+   ["--homenet" fw-homenet "isolated home and network"]
+   ["--newhome" fw-newhome "newly created isolated home"]
+   ["--newhomenet" fw-newhomenet "newly created isolated home and network"]
+
+   ["--godmodedev" fw-godmodedev ""]])
 
 (def preset-map (into {}
                       (map (fn [[name f]]
@@ -114,10 +141,46 @@
        (run! (fn [[name _ desc]]
                (println (str "  " name "\t" desc))))))
 
+(defn vscode-nvim [ctx]
+  (-> ctx
+      ;; Applications because using nvim via app image
+      (system/bind-ro (str (System/getenv "HOME") "/Applications"))
+      (system/bind-ro (str (System/getenv "HOME") "/.config/nvim"))
+      ;; where plugins are stored
+      (system/bind-ro (str (System/getenv "HOME") "/.local/share/nvim"))
+      ;; local plugins
+      (system/bind-ro (str (System/getenv "HOME") "/code/parpar.nvim"))
+      (system/bind-ro (str (System/getenv "HOME") "/projects/keysensei/keysensei.nvim"))
+      ;; RW
+      (system/bind-rw (str (System/getenv "HOME") "/.local/share/nvim/lazy/nvim-treesitter/parser"))
+      (system/bind-rw (str (System/getenv "HOME") "/.config/nvim/lazy-lock.json"))
+      (system/bind-rw (str (System/getenv "HOME") "/.local/share/nvim/lazy/lazy.nvim/doc/tags"))))
+
 (defn cursor-profile [args appimage]
   (cond-> (fw-homenet ["cursor"])
     (= (first args) "--cwd") (bind-cwd-rw)
+    ;; bind nvim so that parinfer works using neovim plugin
+    :always (-> (vscode-nvim))
     :always (system/run-appimage appimage)))
+    ; :always (system/add-bwrap-args shell)))
+
+(defn windsurf-profile [args]
+  (let [windsurf-dir (system/glob-one (str (System/getenv "HOME") "/bin/vendor/")
+                                      "Windsurf-linux-x64-*/Windsurf")
+        windsurf-bin (str windsurf-dir "/windsurf")
+        cwd? (= (first args) "--cwd")
+        args (cond-> args
+               cwd? rest)]
+    (cond-> (fw-homenet ["windsurf"])
+      cwd? (bind-cwd-rw)
+      ;; bind nvim so that parinfer works using neovim plugin
+      :always (-> (vscode-nvim)
+                  (system/bind-rw windsurf-dir)
+                  (system/add-bwrap-args windsurf-bin
+                                         (cond->> args
+                                           ;; when restricting to cwd, opening a different folder will load it in existing instance so files will not be visible
+                                           ;; or specify different --user-data-dir ?
+                                           cwd? (cons "--new-window")))))))
 
 (defn -main [cmd & args]
   (let [appname (path->appname cmd)]
@@ -125,10 +188,12 @@
       "chatall" (run-bwrap-sh (chatall/profile
                                (system/glob-one (str (System/getenv "HOME") "/Applications/")
                                                 "ChatALL-*.AppImage")))
-      "godmode" (run-bwrap-sh (godmode/profile
-                               (system/glob-one (str (System/getenv "HOME") "/Applications/")
-                                                "GodMode-*.AppImage")))
-       ; "cheese" (run-bwrap (-> (cheese/profile {:executable "/usr/bin/cheese"})
+      "godmode" #_(run-bwrap-sh (godmode/profile
+                                 (system/glob-one (str (System/getenv "HOME") "/Applications/")
+                                                  "GodMode-*.AppImage")))
+      (run-bwrap-sh (godmode/profile "/home/me/dl/git/GodMode/release/build/GodMode-1.0.0-beta.9.AppImage"))
+
+; "cheese" (run-bwrap (-> (cheese/profile {:executable "/usr/bin/cheese"})
        ;                         (system/add-bwrap-args cmd)))
        ;                          ; (with-strace cmd)))
       "ferdium" (run-bwrap-sh (ferdium/profile
@@ -138,6 +203,7 @@
                               args
                               (system/glob-one (str (System/getenv "HOME") "/Applications/")
                                                "cursor-*.AppImage")))
+      "windsurf" (run-bwrap (windsurf-profile args))
         ; "gedit" (run-bwrap (-> (gedit/profile {:executable "/usr/bin/gedit"})
         ;                         ; (system/add-bwrap-args cmd)
         ;                        (with-strace cmd)))
