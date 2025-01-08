@@ -192,7 +192,7 @@
       "godmode" #_(run-bwrap-sh (godmode/profile
                                  (system/glob-one (str (System/getenv "HOME") "/Applications/")
                                                   "GodMode-*.AppImage")))
-      (run-bwrap-sh (godmode/profile "/home/me/dl/git/GodMode/release/build/GodMode-1.0.0-beta.9.AppImage"))
+      (run-bwrap-sh (godmode/profile "/home/me/bin/vendor/GodMode/release/build/GodMode-1.0.0-beta.9.AppImage"))
 
 ; "cheese" (run-bwrap (-> (cheese/profile {:executable "/usr/bin/cheese"})
        ;                         (system/add-bwrap-args cmd)))

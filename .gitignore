@@ -3,3 +3,4 @@
 .cpcache
 .clj-kondo
 !.clj-kondo/config.edn
+.calva
