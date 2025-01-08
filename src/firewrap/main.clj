@@ -93,14 +93,15 @@
   (-> (fw-home args)
       (system/network)))
 
-(defn fw-newhome [_]
-  (let [sandbox nil]
+(defn fw-tmphome [_]
+  (let [sandbox (str "tmp-" (-> (str (java.time.LocalDateTime/now))
+                                (str/replace #"[^\w-]" "-")))]
     (-> (fw-small nil)
         (system/isolated-home sandbox)
         (bind-nix-profile-bin-ro)))) ; need to rebind nix-profile again over home
 
-(defn fw-newhomenet [args]
-  (-> (fw-newhome args)
+(defn fw-tmphomenet [args]
+  (-> (fw-tmphome args)
       (system/network)))
 
 (defn fw-cwd [_]
@@ -125,8 +126,8 @@
    ["--net" fw-net "\tsmall with network"]
    ["--cwdnet" fw-cwdnet "small with network and current working directory"]
    ["--homenet" fw-homenet "isolated home and network"]
-   ["--newhome" fw-newhome "newly created isolated home"]
-   ["--newhomenet" fw-newhomenet "newly created isolated home and network"]
+   ["--tmphome" fw-tmphome "newly created isolated home"]
+   ["--tmphomenet" fw-tmphomenet "newly created isolated home and network"]
 
    ["--godmodedev" fw-godmodedev ""]])
 
