@@ -11,4 +11,4 @@
 
 (require '[firewrap.main :as main])
 
-(apply main/-main *file* *command-line-args*)
+(apply main/main *file* *command-line-args*)

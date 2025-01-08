@@ -120,16 +120,16 @@
       (system/network)))
 
 (def presets
-  [["--small" fw-small "small profile with temporary home"]
-   ["--cwd" fw-cwd "\tsmall including current working directory"]
-   ["--home" fw-home "isolated home based on app name"]
-   ["--net" fw-net "\tsmall with network"]
-   ["--cwdnet" fw-cwdnet "small with network and current working directory"]
-   ["--homenet" fw-homenet "isolated home and network"]
-   ["--tmphome" fw-tmphome "newly created isolated home"]
-   ["--tmphomenet" fw-tmphomenet "newly created isolated home and network"]
+  [["small" fw-small "small profile with temporary home"]
+   ["cwd" fw-cwd "\tsmall including current working directory"]
+   ["home" fw-home "isolated home based on app name"]
+   ["net" fw-net "\tsmall with network"]
+   ["cwdnet" fw-cwdnet "small with network and current working directory"]
+   ["homenet" fw-homenet "isolated home and network"]
+   ["tmphome" fw-tmphome "newly created isolated home"]
+   ["tmphomenet" fw-tmphomenet "newly created isolated home and network"]
 
-   ["--godmodedev" fw-godmodedev ""]])
+   ["godmodedev" fw-godmodedev ""]])
 
 (def preset-map (into {}
                       (map (fn [[name f]]
@@ -137,10 +137,14 @@
                       presets))
 
 (defn print-help []
+  (println "Run program in sanbox")
+  (println)
+  (println "Usage: firewrap [<preset>] <command> [<args>]")
+  (println)
   (println "Available presets:")
   (->> presets
        (run! (fn [[name _ desc]]
-               (println (str "  " name "\t" desc))))))
+               (println (str "  --" name "\t" desc))))))
 
 (defn vscode-nvim [ctx]
   (-> ctx
@@ -183,8 +187,32 @@
                                            ;; or specify different --user-data-dir ?
                                            cwd? (cons "--new-window")))))))
 
-(defn -main [cmd & args]
-  (let [appname (path->appname cmd)]
+(defn parse-opts [args]
+  (if-not (some-> (first args) (str/starts-with? "--"))
+    {:args args}
+    (let [preset (subs (first args) 2)]
+      (if-not (#{"home" "homenet"} preset)
+        {:preset preset
+         :args (rest args)}
+        (cond
+          (<= (count args) 2)
+          {:preset preset
+           :preset-args [(second args)]
+           :args (rest args)}
+
+          (= (second args) "--")
+          {:preset preset
+           :preset-args [(first (rest (rest args)))]
+           :args (rest (rest args))}
+
+          :else
+          {:preset preset
+           :preset-args [(second args)]
+           :args (rest (rest args))})))))
+
+(defn main [& args]
+  (let [[cmd & args] args
+        appname (path->appname cmd)]
     (case appname
       "chatall" (run-bwrap-sh (chatall/profile
                                (system/glob-one (str (System/getenv "HOME") "/Applications/")
@@ -217,11 +245,11 @@
                                 (system/add-bwrap-args cmd args)))
 
       ("firewrap" "frap" "fw")
-      (let [[cmd & args] args]
-        (if-some [preset-fn (get preset-map cmd)]
-          (let [params (-> (preset-fn args)
+      (let [{:keys [preset args preset-args]} (parse-opts args)]
+        (if-some [preset-fn (get preset-map preset)]
+          (let [params (-> (preset-fn preset-args)
                            (system/add-bwrap-args args))]
-            ; (println "Running preset" cmd params)
+            ; (println "Running preset" cmd params))
             (run-bwrap params))
           (print-help)))
 
