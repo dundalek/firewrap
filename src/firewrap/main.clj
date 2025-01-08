@@ -141,6 +141,16 @@
    ["tmphomenet" fw-tmphomenet "newly created isolated home and network"]
    ["tmphomecwdnet" fw-tmphomecwdnet "newly created isolated home with network and current working directory"]
 
+   ["c" fw-cwd "alias for cwd"]
+   ["h" fw-home "alias for home"]
+   ["n" fw-net "alias for net"]
+   ["t" fw-tmphome "alias for tmphome"]
+   ; ["ch"]
+   ["chn" fw-homecwdnet "cwd + home + net"]
+   ["cnt" fw-tmphomecwdnet "cwd + net + tmphome"]
+   ["hn" fw-homenet "home + net"]
+   ["nt" fw-tmphomenet "net + tmphome"]
+
    ["godmodedev" fw-godmodedev ""]])
 
 (def preset-map (into {}
@@ -203,7 +213,7 @@
   (if-not (some-> (first args) (str/starts-with? "--"))
     {:args args}
     (let [preset (subs (first args) 2)]
-      (if-not (#{"home" "homenet"} preset)
+      (if-not (#{"home" "homenet" "homecwdnet" "h" "hn" "chn"} preset)
         {:preset preset
          :args (rest args)}
         (cond
