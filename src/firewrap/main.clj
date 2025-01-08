@@ -93,6 +93,11 @@
   (-> (fw-home args)
       (system/network)))
 
+(defn fw-homecwdnet [args]
+  (-> (fw-home args)
+      (bind-cwd-rw)
+      (system/network)))
+
 (defn fw-tmphome [_]
   (let [sandbox (str "tmp-" (-> (str (java.time.LocalDateTime/now))
                                 (str/replace #"[^\w-]" "-")))]
@@ -102,6 +107,11 @@
 
 (defn fw-tmphomenet [args]
   (-> (fw-tmphome args)
+      (system/network)))
+
+(defn fw-tmphomecwdnet [args]
+  (-> (fw-tmphome args)
+      (bind-cwd-rw)
       (system/network)))
 
 (defn fw-cwd [_]
@@ -126,8 +136,10 @@
    ["net" fw-net "\tsmall with network"]
    ["cwdnet" fw-cwdnet "small with network and current working directory"]
    ["homenet" fw-homenet "isolated home and network"]
+   ["homecwdnet" fw-homecwdnet "isolated home with network and current working directory"]
    ["tmphome" fw-tmphome "newly created isolated home"]
    ["tmphomenet" fw-tmphomenet "newly created isolated home and network"]
+   ["tmphomecwdnet" fw-tmphomecwdnet "newly created isolated home with network and current working directory"]
 
    ["godmodedev" fw-godmodedev ""]])
 
