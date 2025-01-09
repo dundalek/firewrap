@@ -11,7 +11,7 @@
 
 ;; Workaround to write bwrap command as temporary script because process/exec
 ;; can't pass content via file descriptors.
-(defn run-bwrap-sh [{:keys [bwrap-args executable]}]
+(defn run-bwrap-sh-wrapper [{:keys [bwrap-args executable]}]
   (let [script (->> ["exec bwrap" bwrap-args executable]
                     (flatten)
                     (str/join " "))
@@ -20,12 +20,23 @@
     (println "Firewrap sandbox:" script)
     (process/exec "sh" f)))
 
-(defn run-bwrap [{:keys [bwrap-args executable]}]
+(defn run-bwrap-exec [{:keys [bwrap-args executable]}]
   (let [params (flatten (concat ["bwrap"]
                                 bwrap-args
                                 (when executable [executable])))]
     (println "Firewrap sandbox:" params)
     (apply process/exec params)))
+
+(defn needs-bwrap-sh-wrapper? [opts]
+  (->> opts :bwrap-args
+       flatten
+       (some (fn [s] (when (string? s)
+                       (str/includes? s "--ro-bind-data"))))))
+
+(defn run-bwrap [opts]
+  (if (needs-bwrap-sh-wrapper? opts)
+    (run-bwrap-sh-wrapper opts)
+    (run-bwrap-exec opts)))
 
 (defn with-strace [ctx cmd]
   (-> ctx
@@ -244,24 +255,21 @@
   (let [[cmd & args] args
         appname (path->appname cmd)]
     (case appname
-      "chatall" (run-bwrap-sh (chatall/profile
-                               (system/glob-one (str (System/getenv "HOME") "/Applications/")
-                                                "ChatALL-*.AppImage")))
-      "godmode" #_(run-bwrap-sh (godmode/profile
-                                 (system/glob-one (str (System/getenv "HOME") "/Applications/")
-                                                  "GodMode-*.AppImage")))
-      (run-bwrap-sh (godmode/profile "/home/me/bin/vendor/GodMode/release/build/GodMode-1.0.0-beta.9.AppImage"))
+      "chatall" (run-bwrap (chatall/profile
+                            (system/glob-one (str (System/getenv "HOME") "/Applications/")
+                                             "ChatALL-*.AppImage")))
+      "godmode" (run-bwrap (godmode/profile "/home/me/bin/vendor/GodMode/release/build/GodMode-1.0.0-beta.9.AppImage"))
 
 ; "cheese" (run-bwrap (-> (cheese/profile {:executable "/usr/bin/cheese"})
        ;                         (system/add-bwrap-args cmd)))
        ;                          ; (with-strace cmd)))
-      "ferdium" (run-bwrap-sh (ferdium/profile
-                               (system/glob-one (str (System/getenv "HOME") "/Applications/")
-                                                "Ferdium-*.AppImage")))
-      "cursor" (run-bwrap-sh (cursor-profile
-                              args
-                              (system/glob-one (str (System/getenv "HOME") "/Applications/")
-                                               "cursor-*.AppImage")))
+      "ferdium" (run-bwrap (ferdium/profile
+                            (system/glob-one (str (System/getenv "HOME") "/Applications/")
+                                             "Ferdium-*.AppImage")))
+      "cursor" (run-bwrap (cursor-profile
+                           args
+                           (system/glob-one (str (System/getenv "HOME") "/Applications/")
+                                            "cursor-*.AppImage")))
       "windsurf" (run-bwrap (windsurf-profile args))
         ; "gedit" (run-bwrap (-> (gedit/profile {:executable "/usr/bin/gedit"})
         ;                         ; (system/add-bwrap-args cmd)

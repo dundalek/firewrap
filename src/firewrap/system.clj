@@ -271,6 +271,7 @@
    ; (ro-bind "/usr/bin/strace")
 
    "/tmp/run.sh"
+   ;; TODO: should introduce some kind of ops for file descriptor inputs
    "9<" (escape-shell appimage)
    "8<<END
 #!/usr/bin/env sh
