@@ -4,4 +4,6 @@
 
           test
           {:doc  "runs tests in watch mode"
-           :task (clojure {:dir "."} "-M:test --watch")}}}
+           :task (clojure {:dir "."} "-M:test --watch")}
+
+          test:coverage (clojure "-M:test:coverage")}}

@@ -4,3 +4,4 @@
 .clj-kondo
 !.clj-kondo/config.edn
 .calva
+/target/coverage
