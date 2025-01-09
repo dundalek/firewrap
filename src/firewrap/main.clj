@@ -71,6 +71,11 @@
 (defn bind-user-programs [ctx]
   (system/bind-ro ctx (str (System/getenv "HOME") "/.nix-profile/bin")))
 
+(defn isolated-home-with-user-programs [ctx appname]
+  (-> ctx
+      (system/isolated-home appname)
+      (bind-user-programs))) ; need to rebind nix-profile again over home
+
 ;; presets
 
 (defn fw-small-no-tmpfs [_]
@@ -90,8 +95,7 @@
 (defn fw-home [[cmd]]
   (let [appname (path->appname cmd)]
     (-> (fw-small nil)
-        (system/isolated-home appname)
-        (bind-user-programs)))) ; need to rebind nix-profile again over home
+        (isolated-home-with-user-programs appname))))
 
 (defn fw-homenet [args]
   (-> (fw-home args)
@@ -106,8 +110,7 @@
   (let [sandbox (str "tmp-" (-> (str (java.time.LocalDateTime/now))
                                 (str/replace #"[^\w-]" "-")))]
     (-> (fw-small nil)
-        (system/isolated-home sandbox)
-        (bind-user-programs)))) ; need to rebind nix-profile again over home
+        (isolated-home-with-user-programs sandbox))))
 
 (defn fw-tmphomenet [args]
   (-> (fw-tmphome args)
@@ -127,11 +130,12 @@
       (system/network)))
 
 (defn fw-godmodedev [_]
-  (-> (fw-small-no-tmpfs nil) ; with tmpfs seems can't connect to X server
-      (system/isolated-home "godmode")
-      (bind-user-programs) ; need to rebind nix-profile again over home
-      (bind-cwd-rw)
-      (system/network)))
+  (->
+   ;; WARNING: overly broad
+   (fw-small-no-tmpfs nil) ; with tmpfs seems can't connect to X server
+   (isolated-home-with-user-programs "godmode")
+   (bind-cwd-rw)
+   (system/network)))
 
 (def presets
   [["small" fw-small "small profile with temporary home"]
