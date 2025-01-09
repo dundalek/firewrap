@@ -61,19 +61,23 @@
         ;; Make sure cwd is set to current dir when we bind cwd
         (system/add-bwrap-args "--chdir" cwd))))
 
-(defn bind-nix-profile-bin-ro [ctx]
+(defn bind-system-programs [ctx]
+  (-> ctx
+      ;; Make it tighter instead of dev binding /
+      ;; bins and libs
+      (system/bind-dev "/")
+      (system/bind-ro "/nix"))) ; by default user can write to nix (daemonless setup), maliciuos actor could rewrite some binary there? therefore rebind as ro
+
+(defn bind-user-programs [ctx]
   (system/bind-ro ctx (str (System/getenv "HOME") "/.nix-profile/bin")))
 
 ;; presets
 
 (defn fw-small-no-tmpfs [_]
   (-> (system/base)
-      ;; Make it tighter instead of dev binding /
-      ;; bins and libs
-      (system/bind-dev "/")
-      (system/bind-ro "/nix") ; by default user can write to nix (daemonless setup), maliciuos actor could rewrite some binary there? therefore rebind as ro
+      (bind-system-programs)
       (system/tmpfs (System/getenv "HOME"))
-      (bind-nix-profile-bin-ro)))
+      (bind-user-programs)))
 
 (defn fw-small [_]
   (-> (fw-small-no-tmpfs _)
@@ -87,7 +91,7 @@
   (let [appname (path->appname cmd)]
     (-> (fw-small nil)
         (system/isolated-home appname)
-        (bind-nix-profile-bin-ro)))) ; need to rebind nix-profile again over home
+        (bind-user-programs)))) ; need to rebind nix-profile again over home
 
 (defn fw-homenet [args]
   (-> (fw-home args)
@@ -103,7 +107,7 @@
                                 (str/replace #"[^\w-]" "-")))]
     (-> (fw-small nil)
         (system/isolated-home sandbox)
-        (bind-nix-profile-bin-ro)))) ; need to rebind nix-profile again over home
+        (bind-user-programs)))) ; need to rebind nix-profile again over home
 
 (defn fw-tmphomenet [args]
   (-> (fw-tmphome args)
@@ -125,7 +129,7 @@
 (defn fw-godmodedev [_]
   (-> (fw-small-no-tmpfs nil) ; with tmpfs seems can't connect to X server
       (system/isolated-home "godmode")
-      (bind-nix-profile-bin-ro) ; need to rebind nix-profile again over home
+      (bind-user-programs) ; need to rebind nix-profile again over home
       (bind-cwd-rw)
       (system/network)))
 
