@@ -3,6 +3,7 @@
    [babashka.fs :as fs]
    [babashka.process :as process]
    [clojure.string :as str]
+   [firewrap.presets :as presets]
    [firewrap.profiles.chatall :as chatall]
    [firewrap.profiles.ferdium :as ferdium]
    [firewrap.profiles.godmode :as godmode]
@@ -60,130 +61,13 @@
     (requiring-resolve (symbol (str "firewrap.profiles." appname) "profile"))
     (catch Exception _)))
 
-(defn path->appname [path]
-  (some-> (re-find #"([^/]+)$" path)
-          second
-          (str/lower-case)))
-
-(defn bind-cwd-rw [ctx]
-  (let [cwd (str (fs/absolutize (fs/cwd)))]
-    (-> ctx
-        (system/bind-rw cwd)
-        ;; Make sure cwd is set to current dir when we bind cwd
-        (system/add-bwrap-args "--chdir" cwd))))
-
-(defn bind-system-programs [ctx]
-  (-> ctx
-      ;; Make it tighter instead of dev binding /
-      ;; bins and libs
-      (system/bind-dev "/")
-      (system/bind-ro "/nix"))) ; by default user can write to nix (daemonless setup), maliciuos actor could rewrite some binary there? therefore rebind as ro
-
-(defn bind-user-programs [ctx]
-  (system/bind-ro ctx (str (System/getenv "HOME") "/.nix-profile/bin")))
-
-(defn isolated-home-with-user-programs [ctx appname]
-  (-> ctx
-      (system/isolated-home appname)
-      (bind-user-programs))) ; need to rebind nix-profile again over home
-
-;; presets
-
-(defn fw-small-no-tmpfs [_]
-  (-> (system/base)
-      (bind-system-programs)
-      (system/tmpfs (System/getenv "HOME"))
-      (bind-user-programs)))
-
-(defn fw-small [_]
-  (-> (fw-small-no-tmpfs _)
-      (system/tmp)))
-
-(defn fw-net [_]
-  (-> (fw-small nil)
-      (system/network)))
-
-(defn fw-home [[cmd]]
-  (let [appname (path->appname cmd)]
-    (-> (fw-small nil)
-        (isolated-home-with-user-programs appname))))
-
-(defn fw-homenet [args]
-  (-> (fw-home args)
-      (system/network)))
-
-(defn fw-homecwdnet [args]
-  (-> (fw-home args)
-      (bind-cwd-rw)
-      (system/network)))
-
-(defn fw-tmphome [_]
-  (let [sandbox (str "tmp-" (-> (str (java.time.LocalDateTime/now))
-                                (str/replace #"[^\w-]" "-")))]
-    (-> (fw-small nil)
-        (isolated-home-with-user-programs sandbox))))
-
-(defn fw-tmphomenet [args]
-  (-> (fw-tmphome args)
-      (system/network)))
-
-(defn fw-tmphomecwdnet [args]
-  (-> (fw-tmphome args)
-      (bind-cwd-rw)
-      (system/network)))
-
-(defn fw-cwd [_]
-  (-> (fw-small nil)
-      (bind-cwd-rw)))
-
-(defn fw-cwdnet [_]
-  (-> (fw-cwd nil)
-      (system/network)))
-
-(defn fw-godmodedev [_]
-  (->
-   ;; WARNING: overly broad
-   (fw-small-no-tmpfs nil) ; with tmpfs seems can't connect to X server
-   (isolated-home-with-user-programs "godmode")
-   (bind-cwd-rw)
-   (system/network)))
-
-(def presets
-  [["small" fw-small "small profile with temporary home"]
-   ["cwd" fw-cwd "\tsmall including current working directory"]
-   ["home" fw-home "isolated home based on app name"]
-   ["net" fw-net "\tsmall with network"]
-   ["cwdnet" fw-cwdnet "small with network and current working directory"]
-   ["homenet" fw-homenet "isolated home and network"]
-   ["homecwdnet" fw-homecwdnet "isolated home with network and current working directory"]
-   ["tmphome" fw-tmphome "newly created isolated home"]
-   ["tmphomenet" fw-tmphomenet "newly created isolated home and network"]
-   ["tmphomecwdnet" fw-tmphomecwdnet "newly created isolated home with network and current working directory"]
-
-   ["c" fw-cwd "alias for cwd"]
-   ["h" fw-home "alias for home"]
-   ["n" fw-net "alias for net"]
-   ["t" fw-tmphome "alias for tmphome"]
-   ; ["ch"]
-   ["chn" fw-homecwdnet "cwd + home + net"]
-   ["cnt" fw-tmphomecwdnet "cwd + net + tmphome"]
-   ["hn" fw-homenet "home + net"]
-   ["nt" fw-tmphomenet "net + tmphome"]
-
-   ["godmodedev" fw-godmodedev ""]])
-
-(def preset-map (into {}
-                      (map (fn [[name f]]
-                             [name f]))
-                      presets))
-
 (defn print-help []
   (println "Run program in sanbox")
   (println)
   (println "Usage: firewrap [<preset>] <command> [<args>]")
   (println)
   (println "Available presets:")
-  (->> presets
+  (->> presets/presets
        (run! (fn [[name _ desc]]
                (println (str "  --" name "\t" desc))))))
 
@@ -203,8 +87,8 @@
       (system/bind-rw (str (System/getenv "HOME") "/.local/share/nvim/lazy/lazy.nvim/doc/tags"))))
 
 (defn cursor-profile [args appimage]
-  (cond-> (fw-homenet ["cursor"])
-    (= (first args) "--cwd") (bind-cwd-rw)
+  (cond-> (presets/fw-homenet ["cursor"])
+    (= (first args) "--cwd") (presets/bind-cwd-rw)
     ;; bind nvim so that parinfer works using neovim plugin
     :always (-> (vscode-nvim))
     :always (system/run-appimage appimage)))
@@ -217,8 +101,8 @@
         cwd? (= (first args) "--cwd")
         args (cond-> args
                cwd? rest)]
-    (cond-> (fw-homenet ["windsurf"])
-      cwd? (bind-cwd-rw)
+    (cond-> (presets/fw-homenet ["windsurf"])
+      cwd? (presets/bind-cwd-rw)
       ;; bind nvim so that parinfer works using neovim plugin
       :always (-> (vscode-nvim)
                   (system/bind-rw windsurf-dir)
@@ -252,8 +136,8 @@
            :args (rest (rest args))})))))
 
 (defn main [& args]
-  (let [[cmd & args] args
-        appname (path->appname cmd)]
+  (let [[cmd & root-args] args
+        appname (presets/path->appname cmd)]
     (case appname
       "chatall" (run-bwrap (chatall/profile
                             (system/glob-one (str (System/getenv "HOME") "/Applications/")
@@ -267,10 +151,10 @@
                             (system/glob-one (str (System/getenv "HOME") "/Applications/")
                                              "Ferdium-*.AppImage")))
       "cursor" (run-bwrap (cursor-profile
-                           args
+                           root-args
                            (system/glob-one (str (System/getenv "HOME") "/Applications/")
                                             "cursor-*.AppImage")))
-      "windsurf" (run-bwrap (windsurf-profile args))
+      "windsurf" (run-bwrap (windsurf-profile root-args))
         ; "gedit" (run-bwrap (-> (gedit/profile {:executable "/usr/bin/gedit"})
         ;                         ; (system/add-bwrap-args cmd)
         ;                        (with-strace cmd)))
@@ -280,16 +164,24 @@
        ;                                ; (with-strace cmd)
        ;                              (system/add-bwrap-args args)))
       "xdg-open" (run-bwrap (-> (xdg-open/profile)
-                                (system/add-bwrap-args cmd args)))
+                                (system/add-bwrap-args cmd root-args)))
 
       ("firewrap" "frap" "fw")
-      (let [{:keys [preset args preset-args]} (parse-opts args)]
-        (if-some [preset-fn (get preset-map preset)]
+      (let [{:keys [preset args preset-args]} (parse-opts root-args)]
+        (if-some [preset-fn (get presets/preset-map preset)]
           (let [params (-> (preset-fn preset-args)
                            (system/add-bwrap-args args))]
             ; (println "Running preset" cmd params))
             (run-bwrap params))
-          (print-help)))
+          (print-help)
+          #_(let [[cmd & args] root-args
+                  appname (presets/path->appname cmd)]
+              (if-let [profile (resolve-profile appname)]
+                (run-bwrap
+                 (-> (profile {:executable cmd})
+                     (system/add-bwrap-args cmd args)))
+                 ;; maybe just print it to stderr?
+                (println "echo Cannot resolve profile" (system/escape-shell appname))))))
 
       (if-let [profile (resolve-profile appname)]
         (run-bwrap
