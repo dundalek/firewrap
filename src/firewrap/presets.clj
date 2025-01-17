@@ -2,6 +2,7 @@
   (:require
    [babashka.fs :as fs]
    [clojure.string :as str]
+   [firewrap.env :as env]
    [firewrap.system :as system]))
 
 (defn bind-cwd-rw [ctx]
@@ -35,6 +36,7 @@
 
 (defn fw-small-no-tmpfs [_]
   (-> (system/base)
+      (env/set-allowed-vars env/allowed)
       (bind-system-programs)
       (system/tmpfs (System/getenv "HOME"))
       (bind-user-programs)))

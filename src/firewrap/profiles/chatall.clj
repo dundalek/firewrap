@@ -1,10 +1,12 @@
 (ns firewrap.profiles.chatall
   (:require
+   [firewrap.env :as env]
    [firewrap.system :as system]))
 
 (defn profile [appimage]
   (->
    (system/base)
+   (env/set-allowed-vars env/allowed)
    (system/isolated-home "chatall")
    ;; Figure out which specific binaries are needed
    (system/bind-ro "/usr/bin")

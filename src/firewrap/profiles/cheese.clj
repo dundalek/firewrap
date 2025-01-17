@@ -1,10 +1,12 @@
 (ns firewrap.profiles.cheese
   (:require
+   [firewrap.env :as env]
    [firewrap.system :as system]))
 
 (defn profile [{:keys [executable]}]
   (->
    (system/base)
+   (env/set-allowed-vars env/allowed)
    ;; Why does cheese need network? - perhaps tries wifi connected webcams?
    (system/network)
    (system/isolated-home "cheese")

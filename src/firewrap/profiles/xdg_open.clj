@@ -1,5 +1,6 @@
 (ns firewrap.profiles.xdg-open
   (:require
+   [firewrap.env :as env]
    [firewrap.system :as system]))
 
 ;; Minimal sandbox, not really that useful in practice, but useful for debugging
@@ -8,5 +9,6 @@
 (defn profile []
   (->
    (system/base)
+   (env/set-allowed-vars env/allowed)
    (system/libs)
    (system/xdg-open)))

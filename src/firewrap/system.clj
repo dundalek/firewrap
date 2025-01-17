@@ -132,7 +132,8 @@
 
 (defn base  []
   (add-bwrap-args
-   {:getenv (fn [k] (System/getenv k))}
+   {:getenvs (fn [] (System/getenv))
+    :getenv (fn [k] (System/getenv k))}
    "--die-with-parent"
    "--unshare-all"
    ;; Create a new session to prevent using the TIOCSTI ioctl to push

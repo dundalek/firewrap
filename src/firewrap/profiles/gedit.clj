@@ -1,10 +1,12 @@
 (ns firewrap.profiles.gedit
   (:require
+   [firewrap.env :as env]
    [firewrap.system :as system]))
 
 (defn profile [{:keys [executable]}]
   (->
    (system/base)
+   (env/set-allowed-vars env/allowed)
    (system/libs)
    ; (system/rw-bind "/home")
    ; (system/isolated-home "gedit")

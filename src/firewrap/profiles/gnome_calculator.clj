@@ -1,10 +1,12 @@
 (ns firewrap.profiles.gnome-calculator
   (:require
+   [firewrap.env :as env]
    [firewrap.system :as system]))
 
 (defn profile [{:keys [executable]}]
   (->
    (system/base)
+   (env/set-allowed-vars env/allowed)
    ;; network for currency exchange rate downloads
    (system/network)
    (system/at-spi)
