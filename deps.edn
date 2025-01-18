@@ -1,9 +1,12 @@
 {:deps {cheshire/cheshire {:mvn/version "5.11.0"}
-        babashka/process {:mvn/version "0.5.21"}}
+        babashka/process {:mvn/version "0.5.21"}
+        org.babashka/cli {:mvn/version "0.8.62"}}
 
  :aliases
  {:test
-  {:extra-deps {lambdaisland/kaocha {:mvn/version "1.85.1342"}}
+  {:extra-deps {lambdaisland/kaocha {:mvn/version "1.85.1342"}
+                io.github.juxt/snap {:git/sha "588755d360d02d91287e6b2d3c6a9e1ccadb4af5"
+                                     :exclusions [org.clojure/clojurescript cljs-node-io/cljs-node-io]}}
    :main-opts ["-m" "kaocha.runner"]}
 
   :coverage
