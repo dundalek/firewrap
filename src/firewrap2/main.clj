@@ -44,11 +44,27 @@
         {:args (rest args) :opts {}}
         {:args args :opts {:profile appname}}))))
 
+(defn escape-shell [s]
+  (if (re-matches #"^[-_a-zA-Z0-9]+$" s)
+    s
+    (str "'" (str/replace s "'" "'\\''") "'")))
+
+(defn unwrap-escaping [args]
+  (for [arg args]
+    (if (map? arg)
+      (::bwrap/escaped arg)
+      (escape-shell (str arg)))))
+
+(defn unwrap-raw [args]
+  (for [arg args]
+    (if (map? arg)
+      (::bwrap/escaped arg)
+      arg)))
+
 ;; Workaround to write bwrap command as temporary script because process/exec
 ;; can't pass content via file descriptors.
 (defn run-bwrap-sh-wrapper [args]
-  (println "WARNING: TODO: sanitize args")
-  (let [script (->> (cons "exec bwrap" args)
+  (let [script (->> (cons "exec bwrap" (unwrap-escaping args))
                     (str/join " "))
         f (fs/file (fs/create-temp-file {:prefix "firewrap"}))]
     (spit f script)
@@ -56,7 +72,7 @@
     (process/exec "sh" f)))
 
 (defn run-bwrap-exec [args]
-  (let [params (cons "bwrap" args)]
+  (let [params (cons "bwrap" (unwrap-raw args))]
     (println "Firewrap sandbox:" params)
     (apply process/exec params)))
 

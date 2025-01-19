@@ -1,5 +1,8 @@
 (ns firewrap2.bwrap)
 
+(defn unsafe-escaped-arg [s]
+  {::escaped s})
+
 (defn add-raw-args [ctx & args]
   (update ctx ::args (fnil into []) args))
 
@@ -62,10 +65,10 @@
   (cond-> ctx
     perms (add-raw-args ["--perms" perms])
     :always (add-raw-args ["--ro-bind-data" fd path])
-    file (add-raw-args (str fd "<") file)
+    file (add-raw-args (unsafe-escaped-arg (str fd "<")) file)
     ;; quote initial terminator to prevent shell expansion in the content
-    content (add-heredoc-args (str fd "<<")
-                              (str "\"" heredoc-terminator "\"\n" content "\n" heredoc-terminator))))
+    content (add-heredoc-args (unsafe-escaped-arg (str fd "<<"))
+                              (unsafe-escaped-arg (str "\"" heredoc-terminator "\"\n" content "\n" heredoc-terminator)))))
 
 (defn tmpfs [ctx path]
   (add-raw-args ctx ["--tmpfs" path]))
@@ -101,11 +104,6 @@
 
 (defn populate-envs! [ctx]
   (assoc ctx ::envs-system (into {} (System/getenv))))
-
-(defn escaped [s]
-  (println "WARNING: TODO: use escaped sentinel")
-  ; {::escaped s}
-  s)
 
 (defn ctx->args [ctx]
   (flatten (concat
