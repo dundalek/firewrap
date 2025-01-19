@@ -3,8 +3,8 @@
 (defn add-raw-args [ctx & args]
   (update ctx ::args (fnil into []) args))
 
-(defn add-bind-args [ctx & args]
-  (update ctx ::bind-args (fnil into []) args))
+(defn add-heredoc-args [ctx & args]
+  (update ctx ::heredoc-args (fnil into []) args))
 
 (defn bind [ctx src dest {:keys [perms try access]}]
   (let [option (cond-> (case access
@@ -52,6 +52,21 @@
   ([ctx src dest {:keys [perms try]}]
    (bind ctx src dest {:perms perms :try try :access :dev})))
 
+(def heredoc-terminator "FIREWRAP_HEREDOC_TERMINATOR")
+
+;; maybe have separate functions like bind-file-ro bind-content-ro
+(defn bind-data-ro [ctx {:keys [perms fd path file content]}]
+  (assert (nat-int? fd))
+  (assert (or (and file (not content))
+              (and (not file) content)))
+  (cond-> ctx
+    perms (add-raw-args ["--perms" perms])
+    :always (add-raw-args ["--ro-bind-data" fd path])
+    file (add-raw-args (str fd "<") file)
+    ;; quote initial terminator to prevent shell expansion in the content
+    content (add-heredoc-args (str fd "<<")
+                              (str "\"" heredoc-terminator "\"\n" content "\n" heredoc-terminator))))
+
 (defn tmpfs [ctx path]
   (add-raw-args ctx ["--tmpfs" path]))
 
@@ -87,5 +102,12 @@
 (defn populate-envs! [ctx]
   (assoc ctx ::envs-system (into {} (System/getenv))))
 
+(defn escaped [s]
+  (println "WARNING: TODO: use escaped sentinel")
+  ; {::escaped s}
+  s)
+
 (defn ctx->args [ctx]
-  (flatten (::args ctx)))
+  (flatten (concat
+            (::args ctx)
+            (::heredoc-args ctx))))
