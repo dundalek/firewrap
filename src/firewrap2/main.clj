@@ -28,7 +28,8 @@
 
 (def cli-spec
   {:profile {:desc ""
-             :ref "<profile>"}})
+             :ref "<profile>"}
+   :dry-run {:desc "Only print bubblewrap arguments but don't execute"}})
 
 (defn parse-args [args]
   (let [appname (path->appname (first args))
@@ -63,35 +64,37 @@
 
 ;; Workaround to write bwrap command as temporary script because process/exec
 ;; can't pass content via file descriptors.
-(defn run-bwrap-sh-wrapper [args]
+(defn run-bwrap-sh-wrapper [args {:keys [dry-run]}]
   (let [script (->> (cons "exec bwrap" (unwrap-escaping args))
-                    (str/join " "))
-        f (fs/file (fs/create-temp-file {:prefix "firewrap"}))]
-    (spit f script)
+                    (str/join " "))]
     (println "Firewrap sandbox:" script)
-    (process/exec "sh" f)))
+    (when-not dry-run
+      (let [f (fs/file (fs/create-temp-file {:prefix "firewrap"}))]
+        (spit f script)
+        (process/exec "sh" f)))))
 
-(defn run-bwrap-exec [args]
+(defn run-bwrap-exec [args {:keys [dry-run]}]
   (let [params (cons "bwrap" (unwrap-raw args))]
     (println "Firewrap sandbox:" params)
-    (apply process/exec params)))
+    (when-not dry-run
+      (apply process/exec params))))
 
 (defn needs-bwrap-sh-wrapper? [args]
   (->> args
        (some (fn [s] (when (string? s)
                        (str/includes? s "--ro-bind-data"))))))
 
-(defn run-bwrap [ctx]
+(defn run-bwrap [ctx opts]
   (let [args (bwrap/ctx->args ctx)]
     (if (needs-bwrap-sh-wrapper? args)
-      (run-bwrap-sh-wrapper args)
-      (run-bwrap-exec args))))
+      (run-bwrap-sh-wrapper args opts)
+      (run-bwrap-exec args opts))))
 
 (defn main [& root-args]
   (let [{:keys [opts args]} (parse-args root-args)
-        {:keys [profile]} opts]
+        {:keys [profile dry-run]} opts]
     (if-some [profile-fn (profile-resolve profile)]
-      (run-bwrap (profile-fn))
+      (run-bwrap (profile-fn) {:dry-run dry-run})
       :help)))
 
 (profile-register! "chrome" (fn [& args] :chrome))
