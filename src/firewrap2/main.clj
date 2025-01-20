@@ -47,16 +47,15 @@
 
 (defn parse-args [args]
   (let [appname (dumpster/path->appname (first args))
-        firewrap? (#{"firewrap" "frap" "fw"} appname)]
-    (if (some #{"--"} args)
-      (if firewrap?
-        (cli/parse-args (rest args) {:spec cli-spec})
-        (-> (cli/parse-args (rest args) {:spec cli-spec})
-            (update :opts #(merge {:profile appname} %))
-            (update :args #(into [(first args)] %))))
-      (if firewrap?
-        {:args (rest args) :opts {}}
-        {:args args :opts {:profile appname}}))))
+        firewrap? (#{"firewrap" "frap" "fw"} appname)
+        parse (if (some #{"--"} args)
+                #(cli/parse-args % {:spec cli-spec})
+                (fn [args] {:args args :opts {}}))]
+    (if firewrap?
+      (parse (rest args))
+      (-> (parse (rest args))
+          (update :opts #(merge {:profile appname} %))
+          (update :args #(into [(first args)] %))))))
 
 (defn print-help []
   (println "Run program in sanbox")
