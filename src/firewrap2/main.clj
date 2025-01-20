@@ -7,24 +7,11 @@
    [firewrap2.bwrap :as bwrap]
    [firewrap2.preset.base :as base]
    [firewrap2.preset.dumpster :as dumpster]
+   [firewrap2.profile :as profile]
    [firewrap2.profile.godmode :as godmode]
    [firewrap2.profile.windsurf :as windsurf]))
 
 (def ^:dynamic *exec-fn* process/exec)
-
-(defonce !registry (atom {}))
-
-(defn resolve-builtin-profile [appname]
-  (try
-    (requiring-resolve (symbol (str "firewrap2.profile." appname) "profile"))
-    (catch Exception _)))
-
-(defn profile-resolve [name]
-  (or (get @!registry name)
-      (resolve-builtin-profile name)))
-
-(defn profile-register! [name profile]
-  (swap! !registry assoc name profile))
 
 (def cli-options
   {:profile {:desc ""
@@ -121,7 +108,7 @@
         {:keys [profile base dry-run help]} opts]
     (if help
       (print-help)
-      (if-some [profile-fn (or (profile-resolve profile)
+      (if-some [profile-fn (or (profile/resolve profile)
                                (when base (fn [_] (base/base5))))]
         (let [ctx (base/configurable (profile-fn parsed) parsed)
               ctx (cond-> ctx
@@ -139,12 +126,12 @@
 
 (alter-var-root #'base/bind-user-programs (constantly bind-user-programs))
 
-(profile-register!
+(profile/register!
  "godmode"
  (fn [_]
    (godmode/profile "/home/me/bin/vendor/GodMode/release/build/GodMode-1.0.0-beta.9.AppImage")))
 
-(profile-register!
+(profile/register!
  "windsurf"
  (fn [{:keys [args opts]}]
    (let [windsurf-dir (dumpster/glob-one (str (System/getenv "HOME") "/bin/vendor") "Windsurf-linux-x64-*/Windsurf")
