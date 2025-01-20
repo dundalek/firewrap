@@ -17,8 +17,13 @@
       (bwrap/bind-ro "/nix")))
 
 (defn bind-user-programs [ctx]
+  ;; no-op as a placeholder for extenion point
+  ctx)
+
+(defn bind-isolated-home-with-user-programs [ctx appname]
   (-> ctx
-      (bwrap/bind-ro (str (dumpster/home ctx) "/.nix-profile/bin"))))
+      (dumpster/bind-isolated-home appname)
+      (bind-user-programs)))
 
 (defn base []
   (-> {}

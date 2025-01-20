@@ -39,15 +39,6 @@
         ;; Make sure cwd is set to current dir when we bind cwd
         (bwrap/chdir cwd))))
 
-(defn bind-user-programs [ctx]
-  (-> ctx
-      (bwrap/bind-ro (str (home ctx) "/.nix-profile/bin"))))
-
-(defn bind-isolated-home-with-user-programs [ctx appname]
-  (-> ctx
-      (bind-isolated-home appname)
-      (bind-user-programs))) ; need to rebind nix-profile again over home
-
 (defn network [ctx]
   (-> ctx
       (bwrap/share-net)

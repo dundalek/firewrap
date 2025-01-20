@@ -5,5 +5,5 @@
 
 (defn profile [_]
   (-> (base/base5)
-      (dumpster/bind-isolated-home-with-user-programs "ferdium")
+      (base/bind-isolated-home-with-user-programs "ferdium")
       (dumpster/network)))

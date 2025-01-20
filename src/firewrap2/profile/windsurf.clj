@@ -6,6 +6,6 @@
 
 (defn profile []
   (-> (base/base5)
-      (dumpster/bind-isolated-home-with-user-programs "windsurf")
+      (base/bind-isolated-home-with-user-programs "windsurf")
       (dumpster/network)
       (vscode/vscode-nvim)))

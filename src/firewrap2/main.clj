@@ -130,6 +130,15 @@
                      {:dry-run dry-run}))
         (print-help)))))
 
+;; == "user" config
+
+(defn bind-user-programs [ctx]
+  (-> ctx
+      ;; need to rebind nix-profile again over home
+      (bwrap/bind-ro (str (dumpster/home ctx) "/.nix-profile/bin"))))
+
+(alter-var-root #'base/bind-user-programs (constantly bind-user-programs))
+
 (profile-register!
  "godmode"
  (fn [_]
