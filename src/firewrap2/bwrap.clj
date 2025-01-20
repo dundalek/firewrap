@@ -1,4 +1,8 @@
-(ns firewrap2.bwrap)
+(ns firewrap2.bwrap
+  (:require
+   [clojure.set :as set]))
+
+(def ^:dynamic *system-getenv* System/getenv)
 
 (defn unsafe-escaped-arg [s]
   {::escaped s})
@@ -61,7 +65,7 @@
   ([ctx src dest {:keys [perms try]}]
    (bind ctx src dest {:perms perms :try try :access :dev})))
 
-(def heredoc-terminator "FIREWRAP_HEREDOC_TERMINATOR")
+(def ^:private heredoc-terminator "FIREWRAP_HEREDOC_TERMINATOR")
 
 ;; maybe have separate functions like bind-file-ro bind-content-ro
 (defn bind-data-ro [ctx {:keys [perms fd path file content]}]
@@ -104,6 +108,9 @@
 (defn env-pass [ctx k]
   (assoc-in ctx [::envs-sandbox k] ::pass))
 
+(defn env-pass-many [ctx ks]
+  (reduce env-pass ctx ks))
+
 (defn getenvs [ctx]
   (::envs-system ctx))
 
@@ -112,10 +119,29 @@
   (get (getenvs ctx) x))
 
 (defn populate-envs! [ctx]
-  (assoc ctx ::envs-system (into {} (System/getenv))))
+  (assoc ctx ::envs-system (into {} (*system-getenv*))))
+
+(defn- env-args [ctx]
+  ;; We want to follow Default Deny principle and only pass through allowed vars.
+  ;; Although we use --unsetenv, we are still effectivelly Default Deny, because we compare to currently set vars and unset not allowed vars.
+  ;; Alternative would be to --clearenv first and then --setenv, but that can leak variables to process list.
+  (let [{::keys [envs-sandbox envs-system]} ctx
+        unallowed (-> (set/difference
+                       (set (keys envs-system))
+                       (set (keys envs-sandbox)))
+                      sort)
+        setting (->> envs-sandbox
+                     (filter (comp string? val))
+                     (sort-by key))]
+    (concat
+     (for [v unallowed]
+       ["--unsetenv" v])
+     (for [[k v] setting]
+       ["--setenv" k v]))))
 
 (defn ctx->args [ctx]
   (flatten (concat
             (::args ctx)
+            (env-args ctx)
             (::cmd-args ctx)
             (::heredoc-args ctx))))

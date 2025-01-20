@@ -1,5 +1,6 @@
 (ns firewrap2.preset.base
   (:require
+   [firewrap.env :as env]
    [firewrap2.bwrap :as bwrap]
    [firewrap2.preset.dumpster :as dumpster]))
 
@@ -37,7 +38,7 @@
 (defn base5 []
   (let [ctx (base)]
     (-> ctx
-      ; (env/set-allowed-vars env/allowed)
+        (bwrap/env-pass-many env/allowed)
         (bwrap/bind-dev "/")
         (bwrap/tmpfs (dumpster/home ctx))
         (bwrap/tmpfs "/tmp"))))

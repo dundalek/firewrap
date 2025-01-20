@@ -1,6 +1,7 @@
 (ns firewrap2.preset-test
   (:require
    [clojure.test :refer [deftest]]
+   [firewrap.env :as env]
    [firewrap2.bwrap :as bwrap]
    [firewrap2.main :as main]
    [firewrap2.profile.godmode :as godmode]
@@ -8,13 +9,15 @@
    [snap.core :as snap]))
 
 (defn test-main [& args]
-  (binding [main/*exec-fn* (fn [& args] args)]
+  (binding [main/*exec-fn* (fn [& args] args)
+            bwrap/*system-getenv* (constantly (select-keys (System/getenv) env/allowed))]
     (apply main/main args)))
 
 (deftest presets
-  (snap/match-snapshot ::godmode (main/unwrap-raw (bwrap/ctx->args (godmode/profile "/path/to/GodMode.AppImage"))))
-  (snap/match-snapshot ::windsurf (main/unwrap-raw (bwrap/ctx->args (windsurf/profile))))
-  (snap/match-snapshot ::windsurf-cwd (test-main "windsurf" "--cwd" "--" ".")))
+  (binding [bwrap/*system-getenv* (constantly (select-keys (System/getenv) env/allowed))]
+    (snap/match-snapshot ::godmode (main/unwrap-raw (bwrap/ctx->args (godmode/profile "/path/to/GodMode.AppImage"))))
+    (snap/match-snapshot ::windsurf (main/unwrap-raw (bwrap/ctx->args (windsurf/profile))))
+    (snap/match-snapshot ::windsurf-cwd (test-main "windsurf" "--cwd" "--" "."))))
 
 (deftest base
   (snap/match-snapshot ::base-bc (test-main "firewrap" "-bc" "--" "date"))
