@@ -26,11 +26,13 @@
 (defn profile-register! [name profile]
   (swap! !registry assoc name profile))
 
-(def cli-spec
+(def cli-options
   {:profile {:desc ""
              :ref "<profile>"}
-   :dry-run {:desc "Only print bubblewrap arguments but don't execute"}
-   :base {:desc ""
+   :dry-run {:desc "Only print bubblewrap arguments but don't execute"}})
+
+(def base-options
+  {:base {:desc ""
           :alias :b}
    :home {:desc ""
           :alias :h}
@@ -40,6 +42,8 @@
          :alias :c}
    :net {:desc ""
          :alias :n}})
+
+(def cli-spec (merge cli-options base-options))
 
 (defn parse-args [args]
   (let [appname (dumpster/path->appname (first args))
@@ -55,9 +59,16 @@
         {:args (rest args) :opts {}}
         {:args args :opts {:profile appname}}))))
 
-(comment
-  (parse-args ["fw" "-chn" "--" "cmd"])
-  (parse-args ["fw" "-hnc" "--" "cmd"]))
+(defn print-help []
+  (println "Run program in sanbox")
+  (println)
+  (println "Usage: firewrap [<options> --] <command> [<args>]")
+  (println)
+  (println "Options:")
+  (println (cli/format-opts {:spec cli-options}))
+  (println)
+  (println "Ad-hoc profile options:")
+  (println (cli/format-opts {:spec base-options})))
 
 (defn escape-shell [s]
   (if (re-matches #"^[-_a-zA-Z0-9]+$" s)
@@ -109,15 +120,17 @@
 
 (defn main [& root-args]
   (let [{:keys [opts args] :as parsed} (parse-args root-args)
-        {:keys [profile base dry-run]} opts]
-    (if-some [profile-fn (or (profile-resolve profile)
-                             (when base (fn [_] (base/base5))))]
-      (let [ctx (base/configurable (profile-fn parsed) parsed)
-            ctx (cond-> ctx
-                  (nil? (bwrap/cmd-args ctx)) (bwrap/set-cmd-args args))]
-        (run-bwrap ctx
-                   {:dry-run dry-run}))
-      (println "help"))))
+        {:keys [profile base dry-run help]} opts]
+    (if help
+      (print-help)
+      (if-some [profile-fn (or (profile-resolve profile)
+                               (when base (fn [_] (base/base5))))]
+        (let [ctx (base/configurable (profile-fn parsed) parsed)
+              ctx (cond-> ctx
+                    (nil? (bwrap/cmd-args ctx)) (bwrap/set-cmd-args args))]
+          (run-bwrap ctx
+                     {:dry-run dry-run}))
+        (print-help)))))
 
 (profile-register!
  "godmode"
