@@ -51,8 +51,7 @@
     (if (some #{"--"} args)
       (if firewrap?
         (cli/parse-args (rest args) {:spec cli-spec})
-        (-> (merge
-             (cli/parse-args (rest args) {:spec cli-spec}))
+        (-> (cli/parse-args (rest args) {:spec cli-spec})
             (update :opts #(merge {:profile appname} %))
             (update :args #(into [(first args)] %))))
       (if firewrap?

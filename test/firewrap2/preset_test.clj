@@ -17,7 +17,8 @@
   (binding [bwrap/*system-getenv* (constantly (select-keys (System/getenv) env/allowed))]
     (snap/match-snapshot ::godmode (main/unwrap-raw (bwrap/ctx->args (godmode/profile "/path/to/GodMode.AppImage"))))
     (snap/match-snapshot ::windsurf (main/unwrap-raw (bwrap/ctx->args (windsurf/profile))))
-    (snap/match-snapshot ::windsurf-cwd (test-main "windsurf" "--cwd" "--" "."))))
+    (snap/match-snapshot ::windsurf-cwd (test-main "windsurf" "--cwd" "--" "."))
+    (snap/match-snapshot ::ferdium (test-main "ferdium"))))
 
 (deftest base
   (snap/match-snapshot ::base-bc (test-main "firewrap" "-bc" "--" "date"))

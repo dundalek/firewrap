@@ -1,5 +1,6 @@
 (ns firewrap2.bwrap
   (:require
+   [babashka.fs :as fs]
    [clojure.set :as set]))
 
 (def ^:dynamic *system-getenv* System/getenv)
@@ -139,9 +140,19 @@
      (for [[k v] setting]
        ["--setenv" k v]))))
 
+(defn skip-own-symlink [[cmd & args]]
+  (when cmd
+    ;; maybe will also need to take into account PATH inside sandbox
+    (let [[target other] (fs/which-all cmd)
+          cmd-links-to-firewrap? (and target
+                                      (fs/sym-link? target)
+                                      (= "firewrap" (fs/file-name (fs/read-link target))))
+          resolved-cmd (if cmd-links-to-firewrap? (str other) cmd)]
+      (cons resolved-cmd args))))
+
 (defn ctx->args [ctx]
   (flatten (concat
             (::args ctx)
             (env-args ctx)
-            (::cmd-args ctx)
+            (skip-own-symlink (::cmd-args ctx))
             (::heredoc-args ctx))))
