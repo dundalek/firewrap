@@ -1,8 +1,8 @@
 (ns firewrap2.preset.base
   (:require
-   [firewrap.env :as env]
    [firewrap2.bwrap :as bwrap]
-   [firewrap2.preset.dumpster :as dumpster]))
+   [firewrap2.preset.dumpster :as dumpster]
+   [firewrap2.preset.env :as env]))
 
 (defn bind-system-programs [ctx]
   (-> ctx
