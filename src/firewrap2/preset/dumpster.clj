@@ -6,17 +6,13 @@
 (defn home [ctx]
   (bwrap/getenv ctx "HOME"))
 
-(defn escape-shell [s]
-  (println "WARNING: TODO: escape-shell not implemented")
-  s)
-
 (defn bind-isolated-home [ctx appname]
   (let [HOME (home ctx)
         source-path (str HOME "/sandboxes/" appname)]
-    (println  "WARNING: TODO: Side-effect! Ideally make it pure and interpret side effects separately")
+    (println  "WARNING: TODO: create-dirs side-effect! Ideally make it pure and interpret side effects separately")
     (fs/create-dirs source-path)
     (-> ctx
-        (bwrap/bind-rw (escape-shell source-path) (escape-shell HOME)))))
+        (bwrap/bind-rw source-path HOME))))
 
 (defn bind-user-programs [ctx]
   (-> ctx
