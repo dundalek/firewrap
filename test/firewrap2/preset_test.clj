@@ -18,4 +18,5 @@
 
 (deftest base
   (snap/match-snapshot ::base-bc (test-main "firewrap" "-bc" "--" "date"))
-  (snap/match-snapshot ::base-bhn (test-main "firewrap" "-bhn" "--" "date")))
+  (snap/match-snapshot ::base-bhn (test-main "firewrap" "-bhn" "--" "date"))
+  (snap/match-snapshot ::base-home-arg (test-main "firewrap" "-b" "--home" "customhome" "--" "date")))

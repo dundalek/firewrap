@@ -50,7 +50,10 @@
 (defn configurable [ctx params]
   (let [{:keys [opts args]} params
         {:keys [profile home tmphome cwd net]} opts
-        appname (or profile (dumpster/path->appname (first args)))]
+        appname (or
+                 (when (string? home) home)
+                 profile
+                 (dumpster/path->appname (first args)))]
     (cond-> ctx
       home (dumpster/bind-isolated-home appname)
       tmphome (dumpster/bind-isolated-tmphome)
