@@ -137,12 +137,17 @@
 
 (profile-register!
  "windsurf"
- (fn [{:keys [args]}]
+ (fn [{:keys [args opts]}]
    (let [windsurf-dir (dumpster/glob-one (str (System/getenv "HOME") "/bin/vendor") "Windsurf-linux-x64-*/Windsurf")
-         windsurf-bin (str windsurf-dir "/windsurf")]
+         windsurf-bin (str windsurf-dir "/windsurf")
+         windsurf-args (concat [windsurf-bin]
+                               ;; when restricting to cwd, opening a different folder will load it in existing instance so files will not be visible
+                               ;; or specify different --user-data-dir ?
+                               (when (:cwd opts) ["--new-window"])
+                               (rest args))]
      (-> (windsurf/profile)
          (bwrap/bind-ro windsurf-dir)
-         (bwrap/set-cmd-args (cons windsurf-bin (rest args)))))))
+         (bwrap/set-cmd-args windsurf-args)))))
 
 (comment
   (main "chrome")

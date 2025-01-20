@@ -55,4 +55,5 @@
  "--chdir"
  "/home/me/projects/firewrap"
  "/home/me/bin/vendor/Windsurf-linux-x64-1.2.1/Windsurf/windsurf"
+ "--new-window"
  ".")
