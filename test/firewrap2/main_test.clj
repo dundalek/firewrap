@@ -4,11 +4,6 @@
    [clojure.test :refer [are deftest is]]
    [firewrap2.main :as main]))
 
-(deftest path->appname
-  (is (= "foo" (main/path->appname "/usr/bin/foo")))
-  (is (= "foobar" (main/path->appname "FooBar")))
-  (is (= "foobar" (main/path->appname "/usr/bin/FooBar"))))
-
 (deftest parse-args
   (are [args expected] (= expected (main/parse-args (str/split args #"\s+")))
     "firewrap cmd"

@@ -3,11 +3,17 @@
 (defn unsafe-escaped-arg [s]
   {::escaped s})
 
-(defn add-raw-args [ctx & args]
+(defn- add-raw-args [ctx & args]
   (update ctx ::args (fnil into []) args))
 
 (defn add-heredoc-args [ctx & args]
   (update ctx ::heredoc-args (fnil into []) args))
+
+(defn cmd-args [ctx]
+  (::cmd-args ctx))
+
+(defn set-cmd-args [ctx args]
+  (assoc ctx ::cmd-args args))
 
 (defn bind [ctx src dest {:keys [perms try access]}]
   (let [option (cond-> (case access
@@ -75,6 +81,9 @@
 
 (defn symlink [ctx target link])
 
+(defn chdir [ctx path]
+  (add-raw-args ctx ["--chdir" path]))
+
 (defn die-with-parent [ctx]
   (add-raw-args ctx ["--die-with-parent"]))
 
@@ -108,4 +117,5 @@
 (defn ctx->args [ctx]
   (flatten (concat
             (::args ctx)
+            (::cmd-args ctx)
             (::heredoc-args ctx))))

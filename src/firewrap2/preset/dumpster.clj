@@ -1,7 +1,13 @@
 (ns firewrap2.preset.dumpster
   (:require
    [babashka.fs :as fs]
+   [clojure.string :as str]
    [firewrap2.bwrap :as bwrap]))
+
+(defn path->appname [path]
+  (some-> (re-find #"([^/]+)$" path)
+          second
+          (str/lower-case)))
 
 (defn home [ctx]
   (bwrap/getenv ctx "HOME"))
@@ -13,6 +19,20 @@
     (fs/create-dirs source-path)
     (-> ctx
         (bwrap/bind-rw source-path HOME))))
+
+(defn bind-isolated-tmphome [ctx]
+  (let [sandbox (str "tmp-" (-> (str (java.time.LocalDateTime/now))
+                                (str/replace #"[^\w-]" "-")))]
+    (-> ctx
+        (bind-isolated-home sandbox))))
+
+(defn bind-cwd-rw [ctx]
+  (println "WARNING: side-effect getting cwd")
+  (let [cwd (str (fs/absolutize (fs/cwd)))]
+    (-> ctx
+        (bwrap/bind-rw cwd)
+        ;; Make sure cwd is set to current dir when we bind cwd
+        (bwrap/chdir cwd))))
 
 (defn bind-user-programs [ctx]
   (-> ctx

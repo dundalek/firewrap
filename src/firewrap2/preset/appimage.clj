@@ -19,5 +19,5 @@
                                      ;; run with bash in case script hardcodes #!/bin/bash
                                      ; "bash\n"
                                      "bash squashfs-root/AppRun\n")})
-      #_(bwrap/add-raw-args "bash")
-      (bwrap/add-raw-args "/tmp/run.sh")))
+      #_(bwrap/set-cmd-args ["bash"])
+      (bwrap/set-cmd-args ["/tmp/run.sh"])))
