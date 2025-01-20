@@ -9,6 +9,11 @@
           second
           (str/lower-case)))
 
+(defn glob-one [root pattern]
+  (-> (fs/glob root pattern)
+      (first)
+      (str)))
+
 (defn home [ctx]
   (bwrap/getenv ctx "HOME"))
 

@@ -127,8 +127,11 @@
 (profile-register!
  "windsurf"
  (fn [{:keys [args]}]
-   (-> (windsurf/profile)
-       (bwrap/set-cmd-args (cons "/home/me/bin/vendor/Windsurf-linux-x64-1.1.2/Windsurf/windsurf" (rest args))))))
+   (let [windsurf-dir (dumpster/glob-one (str (System/getenv "HOME") "/bin/vendor") "Windsurf-linux-x64-*/Windsurf")
+         windsurf-bin (str windsurf-dir "/windsurf")]
+     (-> (windsurf/profile)
+         (bwrap/bind-ro windsurf-dir)
+         (bwrap/set-cmd-args (cons windsurf-bin (rest args)))))))
 
 (comment
   (main "chrome")
