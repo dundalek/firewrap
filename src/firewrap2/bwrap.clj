@@ -120,7 +120,12 @@
   (get (getenvs ctx) x))
 
 (defn populate-envs! [ctx]
-  (assoc ctx ::envs-system (into {} (*system-getenv*))))
+  (-> ctx
+      (assoc ::envs-system (into {} (*system-getenv*)))
+      (assoc ::system-cwd (str (fs/absolutize (fs/cwd))))))
+
+(defn cwd [ctx]
+  (::system-cwd ctx))
 
 (defn- env-args [ctx]
   ;; We want to follow Default Deny principle and only pass through allowed vars.

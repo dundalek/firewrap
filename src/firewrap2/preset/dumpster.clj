@@ -32,8 +32,7 @@
         (bind-isolated-home sandbox))))
 
 (defn bind-cwd-rw [ctx]
-  (println "WARNING: side-effect getting cwd")
-  (let [cwd (str (fs/absolutize (fs/cwd)))]
+  (let [cwd (bwrap/cwd ctx)]
     (-> ctx
         (bwrap/bind-rw cwd)
         ;; Make sure cwd is set to current dir when we bind cwd
