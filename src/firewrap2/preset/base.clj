@@ -27,7 +27,7 @@
 
 (defn base []
   (-> {}
-      (bwrap/populate-envs!)
+      (bwrap/*populate-env!*)
       (bwrap/die-with-parent)
       (bwrap/unshare-all)
       ;; Create a new session to prevent using the TIOCSTI ioctl to push

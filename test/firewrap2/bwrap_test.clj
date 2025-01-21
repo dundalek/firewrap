@@ -3,18 +3,18 @@
    [clojure.test :refer [deftest is]]
    [firewrap2.bwrap :as bwrap]))
 
-(deftest foo
-  (binding [bwrap/*system-getenv* (constantly {"FOO" "123"})]
+(deftest env
+  (let [ctx {::bwrap/envs-system {"FOO" "123"}}]
     (is (= ["--unsetenv" "FOO"]
-           (-> (bwrap/populate-envs! {})
+           (-> ctx
                (bwrap/ctx->args))))
 
     (is (= []
-           (-> (bwrap/populate-envs! {})
+           (-> ctx
                (bwrap/env-pass-many ["FOO" "BAR"])
                (bwrap/ctx->args))))
 
     (is (= ["--setenv" "FOO" "456"]
-           (-> (bwrap/populate-envs! {})
+           (-> ctx
                (bwrap/env-set "FOO" "456")
                (bwrap/ctx->args))))))

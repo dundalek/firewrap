@@ -3,8 +3,6 @@
    [babashka.fs :as fs]
    [clojure.set :as set]))
 
-(def ^:dynamic *system-getenv* System/getenv)
-
 (defn unsafe-escaped-arg [s]
   {::escaped s})
 
@@ -119,9 +117,9 @@
   ;; maybe lookup also in ::envs-sandbox
   (get (getenvs ctx) x))
 
-(defn populate-envs! [ctx]
+(defn ^:dynamic *populate-env!* [ctx]
   (-> ctx
-      (assoc ::envs-system (into {} (*system-getenv*)))
+      (assoc ::envs-system (into {} (System/getenv)))
       (assoc ::system-cwd (str (fs/absolutize (fs/cwd))))))
 
 (defn cwd [ctx]

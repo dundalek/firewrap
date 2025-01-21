@@ -12,14 +12,17 @@
   (-> (select-keys (System/getenv) env/allowed)
       (assoc "HOME" "/home/user")))
 
+(def env-ctx {::bwrap/envs-system test-env
+              ::bwrap/system-cwd "/home/me/projects/firewrap"})
+
 (defn test-main [& args]
   (binding [main/*exec-fn* (fn [& args] args)
-            bwrap/*system-getenv* (constantly test-env)
+            bwrap/*populate-env!* (constantly env-ctx)
             bwrap/*run-effects!* (fn [_])]
     (apply main/main args)))
 
 (deftest presets
-  (binding [bwrap/*system-getenv* (constantly test-env)]
+  (binding [bwrap/*populate-env!* (constantly env-ctx)]
     (snap/match-snapshot ::godmode (main/unwrap-raw (bwrap/ctx->args (godmode/profile "/path/to/GodMode.AppImage"))))
     (snap/match-snapshot ::windsurf (main/unwrap-raw (bwrap/ctx->args (windsurf/profile))))
     (snap/match-snapshot ::windsurf-cwd (test-main "windsurf" "--cwd" "--" "."))
