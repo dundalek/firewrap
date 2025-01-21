@@ -13,7 +13,7 @@
       (assoc "HOME" "/home/user")))
 
 (def env-ctx {::bwrap/envs-system test-env
-              ::bwrap/system-cwd "/home/me/projects/firewrap"})
+              ::bwrap/system-cwd "/home/user/somedir"})
 
 (defn test-main [& args]
   (binding [main/*exec-fn* (fn [& args] args)
