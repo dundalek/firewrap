@@ -25,6 +25,11 @@
       (dumpster/bind-isolated-home appname)
       (bind-user-programs)))
 
+(defn bind-isolated-tmphome-with-user-programs [ctx]
+  (-> ctx
+      (dumpster/bind-isolated-tmphome)
+      (bind-user-programs)))
+
 (defn base []
   (-> {}
       (bwrap/*populate-env!*)
@@ -46,7 +51,8 @@
         (bwrap/env-pass-many env/allowed)
         (bwrap/bind-dev "/")
         (bwrap/tmpfs (dumpster/home ctx))
-        (bwrap/tmpfs "/tmp"))))
+        (bwrap/tmpfs "/tmp")
+        (bind-user-programs))))
 
 (defn base9 [ctx]
   (-> ctx
@@ -61,7 +67,7 @@
                  profile
                  (dumpster/path->appname (first args)))]
     (cond-> ctx
-      home (dumpster/bind-isolated-home appname)
-      tmphome (dumpster/bind-isolated-tmphome)
+      home (bind-isolated-home-with-user-programs appname)
+      tmphome (bind-isolated-tmphome-with-user-programs)
       cwd (dumpster/bind-cwd-rw)
       net (dumpster/network))))

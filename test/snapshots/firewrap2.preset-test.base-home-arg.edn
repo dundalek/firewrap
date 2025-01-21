@@ -9,7 +9,13 @@
  "/home/user"
  "--tmpfs"
  "/tmp"
+ "--ro-bind"
+ "/home/user/.nix-profile/bin"
+ "/home/user/.nix-profile/bin"
  "--bind"
  "/home/user/sandboxes/customhome"
  "/home/user"
+ "--ro-bind"
+ "/home/user/.nix-profile/bin"
+ "/home/user/.nix-profile/bin"
  "date")
