@@ -20,9 +20,8 @@
 (defn bind-isolated-home [ctx appname]
   (let [HOME (home ctx)
         source-path (str HOME "/sandboxes/" appname)]
-    (println  "WARNING: TODO: create-dirs side-effect! Ideally make it pure and interpret side effects separately")
-    (fs/create-dirs source-path)
     (-> ctx
+        (bwrap/fx-create-dirs source-path)
         (bwrap/bind-rw source-path HOME))))
 
 (defn bind-isolated-tmphome [ctx]

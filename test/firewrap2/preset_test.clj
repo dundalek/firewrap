@@ -8,13 +8,18 @@
    [firewrap2.profile.windsurf :as windsurf]
    [snap.core :as snap]))
 
+(def test-env
+  (-> (select-keys (System/getenv) env/allowed)
+      (assoc "HOME" "/home/user")))
+
 (defn test-main [& args]
   (binding [main/*exec-fn* (fn [& args] args)
-            bwrap/*system-getenv* (constantly (select-keys (System/getenv) env/allowed))]
+            bwrap/*system-getenv* (constantly test-env)
+            bwrap/*run-effects!* (fn [_])]
     (apply main/main args)))
 
 (deftest presets
-  (binding [bwrap/*system-getenv* (constantly (select-keys (System/getenv) env/allowed))]
+  (binding [bwrap/*system-getenv* (constantly test-env)]
     (snap/match-snapshot ::godmode (main/unwrap-raw (bwrap/ctx->args (godmode/profile "/path/to/GodMode.AppImage"))))
     (snap/match-snapshot ::windsurf (main/unwrap-raw (bwrap/ctx->args (windsurf/profile))))
     (snap/match-snapshot ::windsurf-cwd (test-main "windsurf" "--cwd" "--" "."))

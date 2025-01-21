@@ -155,9 +155,17 @@
           resolved-cmd (if cmd-links-to-firewrap? (str other) cmd)]
       (cons resolved-cmd args))))
 
+(defn fx-create-dirs [ctx path]
+  (update ctx ::fx (fnil conj []) [::fx-create-dirs path]))
+
 (defn ctx->args [ctx]
   (flatten (concat
             (::args ctx)
             (env-args ctx)
             (skip-own-symlink (::cmd-args ctx))
             (::heredoc-args ctx))))
+
+(defn ^:dynamic *run-effects!* [ctx]
+  (doseq [[fx arg] (::fx ctx)]
+    (case fx
+      ::fx-create-dirs (fs/create-dirs arg))))

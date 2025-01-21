@@ -99,6 +99,7 @@
 
 (defn run-bwrap [ctx opts]
   (let [args (bwrap/ctx->args ctx)]
+    (bwrap/*run-effects!* ctx)
     (if (needs-bwrap-sh-wrapper? args)
       (run-bwrap-sh-wrapper args opts)
       (run-bwrap-exec args opts))))

@@ -6,10 +6,10 @@
  "/"
  "/"
  "--tmpfs"
- "/home/me"
+ "/home/user"
  "--tmpfs"
  "/tmp"
  "--bind"
- "/home/me/sandboxes/customhome"
- "/home/me"
+ "/home/user/sandboxes/customhome"
+ "/home/user"
  "date")
