@@ -35,7 +35,9 @@
   (snap/match-snapshot ::base-home-arg (test-main "firewrap" "-b" "--home" "customhome" "--" "date")))
 
 (deftest help
-  (is (str/includes? (with-out-str (test-main "firewrap")) "Usage: firewrap"))
-  (is (str/includes? (with-out-str (test-main "firewrap" "--help")) "Usage: firewrap"))
-  (is (str/includes? (with-out-str (test-main "firewrap" "--help" "--")) "Usage: firewrap"))
-  (is (str/includes? (with-out-str (test-main "firewrap" "--help" "--" "date")) "Usage: firewrap")))
+  (let [help-text (with-out-str (main/print-help))]
+    (is (str/includes? help-text "Usage: firewrap"))
+    (is (= help-text (with-out-str (test-main "firewrap"))))
+    (is (= help-text (with-out-str (test-main "firewrap" "--help"))))
+    (is (= help-text (with-out-str (test-main "firewrap" "--help" "--"))))
+    (is (= help-text (with-out-str (test-main "firewrap" "--help" "--" "date"))))))

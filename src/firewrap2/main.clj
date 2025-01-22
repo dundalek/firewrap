@@ -38,12 +38,15 @@
         firewrap? (#{"firewrap" "frap" "fw"} appname)
         parse (if (some #{"--"} args)
                 #(cli/parse-args % {:spec cli-spec})
-                (fn [args] {:args args :opts {}}))]
-    (if firewrap?
-      (parse (rest args))
-      (-> (parse (rest args))
-          (update :opts #(merge {:profile appname} %))
-          (update :args #(into [(first args)] %))))))
+                (fn [args] {:args args :opts {}}))
+        result (if firewrap?
+                 (parse (rest args))
+                 (-> (parse (rest args))
+                     (update :opts #(merge {:profile appname} %))
+                     (update :args #(into [(first args)] %))))]
+    (if (= result {:opts {} :args ["--help"]})
+      {:opts {:help true}}
+      result)))
 
 (defn print-help []
   (println "Run program in sanbox")
@@ -108,9 +111,7 @@
 (defn main [& root-args]
   (let [{:keys [opts args] :as parsed} (parse-args root-args)
         {:keys [profile base dry-run help]} opts]
-    (if (or help
-            (empty? args)
-            (= args ["--help"]))
+    (if (or help (empty? args))
       (print-help)
       (let [profile-fn (or (profile/resolve profile)
                            (constantly (if base (base/base5) (base/base))))
