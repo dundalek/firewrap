@@ -16,7 +16,8 @@
 (def cli-options
   {:profile {:desc ""
              :ref "<profile>"}
-   :dry-run {:desc "Only print bubblewrap arguments but don't execute"}})
+   :dry-run {:desc "Only print bubblewrap arguments but don't execute"}
+   :help {:desc "Show help"}})
 
 (def base-options
   {:base {:desc ""
@@ -107,16 +108,17 @@
 (defn main [& root-args]
   (let [{:keys [opts args] :as parsed} (parse-args root-args)
         {:keys [profile base dry-run help]} opts]
-    (if help
+    (if (or help
+            (empty? args)
+            (= args ["--help"]))
       (print-help)
-      (if-some [profile-fn (or (profile/resolve profile)
-                               (when base (fn [_] (base/base5))))]
-        (let [ctx (base/configurable (profile-fn parsed) parsed)
-              ctx (cond-> ctx
-                    (nil? (bwrap/cmd-args ctx)) (bwrap/set-cmd-args args))]
-          (run-bwrap ctx
-                     {:dry-run dry-run}))
-        (print-help)))))
+      (let [profile-fn (or (profile/resolve profile)
+                           (constantly (if base (base/base5) (base/base))))
+            ctx (base/configurable (profile-fn parsed) parsed)
+            ctx (cond-> ctx
+                  (nil? (bwrap/cmd-args ctx)) (bwrap/set-cmd-args args))]
+        (run-bwrap ctx
+                   {:dry-run dry-run})))))
 
 ;; == "user" config
 

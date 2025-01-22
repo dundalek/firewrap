@@ -1,0 +1,7 @@
+("bwrap"
+ "--die-with-parent"
+ "--unshare-all"
+ "--new-session"
+ "--unsetenv"
+ "HOME"
+ "date")
