@@ -22,6 +22,8 @@
 (def base-options
   {:base {:desc ""
           :alias :b}
+   :gui {:desc ""
+         :alias :g}
    :home {:desc ""
           :alias :h}
    :tmphome {:desc ""
@@ -110,11 +112,14 @@
 
 (defn main [& root-args]
   (let [{:keys [opts args] :as parsed} (parse-args root-args)
-        {:keys [profile base dry-run help]} opts]
+        {:keys [profile base gui dry-run help]} opts]
     (if (or help (empty? args))
       (print-help)
       (let [profile-fn (or (profile/resolve profile)
-                           (constantly (if base (base/base5) (base/base))))
+                           (constantly (cond
+                                         base (base/base5)
+                                         gui (base/base-gui)
+                                         :else (base/base))))
             ctx (base/configurable (profile-fn parsed) parsed)
             ctx (cond-> ctx
                   (nil? (bwrap/cmd-args ctx)) (bwrap/set-cmd-args args))]

@@ -54,6 +54,11 @@
         (bwrap/tmpfs "/tmp")
         (bind-user-programs))))
 
+(defn base-gui []
+  (-> (base5)
+      ;; would need x11 proxying for better security
+      (bwrap/bind-ro-try "/tmp/.X11-unix/X1")))
+
 (defn base9 [ctx]
   (-> ctx
       (bwrap/bind-dev "/")
