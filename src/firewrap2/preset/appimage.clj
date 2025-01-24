@@ -2,7 +2,10 @@
   (:require
    [firewrap2.bwrap :as bwrap]))
 
-(defn run [ctx appimage]
+(defn appimage-command? [s]
+  (some? (re-find #"(?i)\.appimage$" s)))
+
+(defn run [ctx appimage & args]
   ;; We want to avoid execuring the appimage binary outside of sandbox.
   ;; The issue is that mounting on which the appimage relies is not allowed inside the sandbox.
   ;; As a workaround we extract it inside the sandbox to tmpfs with --appimage-extract.
@@ -20,4 +23,4 @@
                                      ; "bash\n"
                                      "bash squashfs-root/AppRun\n")})
       #_(bwrap/set-cmd-args ["bash"])
-      (bwrap/set-cmd-args ["/tmp/run.sh"])))
+      (bwrap/set-cmd-args (into ["/tmp/run.sh"] args))))

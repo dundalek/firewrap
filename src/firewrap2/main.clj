@@ -5,6 +5,7 @@
    [babashka.process :as process]
    [clojure.string :as str]
    [firewrap2.bwrap :as bwrap]
+   [firewrap2.preset.appimage :as appimage]
    [firewrap2.preset.base :as base]
    [firewrap2.preset.dumpster :as dumpster]
    [firewrap2.profile :as profile]
@@ -121,8 +122,11 @@
                                          gui (base/base-gui)
                                          :else (base/base))))
             ctx (base/configurable (profile-fn parsed) parsed)
-            ctx (cond-> ctx
-                  (nil? (bwrap/cmd-args ctx)) (bwrap/set-cmd-args args))]
+            ctx (if (bwrap/cmd-args ctx)
+                  ctx
+                  (if (appimage/appimage-command? (first args))
+                    (apply appimage/run ctx args)
+                    (bwrap/set-cmd-args ctx args)))]
         (run-bwrap ctx
                    {:dry-run dry-run})))))
 
