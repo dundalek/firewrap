@@ -146,11 +146,12 @@
 (defn skip-own-symlink [[cmd & args]]
   (when cmd
     ;; maybe will also need to take into account PATH inside sandbox
-    (let [[target other] (fs/which-all cmd)
+    (let [cmd-name (fs/file-name cmd)
+          [target other] (fs/which-all cmd-name)
           cmd-links-to-firewrap? (and target
                                       (fs/sym-link? target)
                                       (= "firewrap" (fs/file-name (fs/read-link target))))
-          resolved-cmd (if cmd-links-to-firewrap? (str other) cmd)]
+          resolved-cmd (if (and cmd-links-to-firewrap? other) (str other) cmd)]
       (cons resolved-cmd args))))
 
 (defn fx-create-dirs [ctx path]

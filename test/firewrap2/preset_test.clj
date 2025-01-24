@@ -25,7 +25,8 @@
     (snap/match-snapshot ::godmode (main/unwrap-raw (bwrap/ctx->args (godmode/profile "/path/to/GodMode.AppImage"))))
     (snap/match-snapshot ::windsurf (main/unwrap-raw (bwrap/ctx->args (windsurf/profile))))
     (snap/match-snapshot ::windsurf-cwd (test-main "windsurf" "--cwd" "--" "."))
-    (snap/match-snapshot ::ferdium (test-main "ferdium"))))
+    (snap/match-snapshot ::ferdium (test-main "ferdium"))
+    (snap/match-snapshot ::ferdium-absolute (test-main "/some/path/ferdium"))))
 
 (deftest base
   (snap/match-snapshot ::no-base (test-main "firewrap" "date"))
