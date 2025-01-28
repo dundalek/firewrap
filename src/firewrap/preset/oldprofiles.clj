@@ -1,6 +1,6 @@
 (ns firewrap.preset.oldprofiles
   (:require
-   [firewrap.bwrap :as bwrap]
+   [firewrap.sandbox :as bwrap]
    [firewrap.preset.base :as base]
    [firewrap.preset.dumpster :as dumpster]
    [firewrap.preset.oldsystem :as system]))

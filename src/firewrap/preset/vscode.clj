@@ -1,6 +1,6 @@
 (ns firewrap.preset.vscode
   (:require
-   [firewrap.bwrap :as bwrap]
+   [firewrap.sandbox :as bwrap]
    [firewrap.preset.dumpster :as dumpster]))
 
 (defn vscode-nvim [ctx]

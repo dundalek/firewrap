@@ -1,6 +1,6 @@
 (ns firewrap.preset.base
   (:require
-   [firewrap.bwrap :as bwrap]
+   [firewrap.sandbox :as bwrap]
    [firewrap.preset.dumpster :as dumpster]
    [firewrap.preset.env :as env]))
 

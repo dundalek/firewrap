@@ -2,7 +2,7 @@
   (:require
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]
-   [firewrap.bwrap :as bwrap]
+   [firewrap.sandbox :as bwrap]
    [firewrap.main :as main]
    [firewrap.profile.godmode :as godmode]
    [firewrap.profile.windsurf :as windsurf]

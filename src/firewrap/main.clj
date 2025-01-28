@@ -4,7 +4,7 @@
    [babashka.fs :as fs]
    [babashka.process :as process]
    [clojure.string :as str]
-   [firewrap.bwrap :as bwrap]
+   [firewrap.sandbox :as bwrap]
    [firewrap.preset.appimage :as appimage]
    [firewrap.preset.base :as base]
    [firewrap.preset.dumpster :as dumpster]

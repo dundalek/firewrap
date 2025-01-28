@@ -2,7 +2,7 @@
   (:require
    [babashka.fs :as fs]
    [clojure.string :as str]
-   [firewrap.bwrap :as bwrap]))
+   [firewrap.sandbox :as bwrap]))
 
 (defn path->appname [path]
   (some-> (re-find #"([^/]+)$" path)

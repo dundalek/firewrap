@@ -2,7 +2,7 @@
   (:require
    [clojure.test :refer [deftest is]]
    [firewrap.tool.strace :as strace]
-   [firewrap.bwrap :as bwrap]
+   [firewrap.sandbox :as bwrap]
    [firewrap.preset.oldsystem :as oldsystem]
    [snap.core :as snap]))
 

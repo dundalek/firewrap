@@ -6,7 +6,7 @@
    [clojure.pprint :refer [pprint]]
    [clojure.string :as str]
    [clojure.walk :as walk]
-   [firewrap.bwrap :as bwrap]
+   [firewrap.sandbox :as bwrap]
    [firewrap.preset.oldsystem :as system]
    [firewrap.preset.dumpster :as dumpster]))
 
