@@ -20,7 +20,7 @@
   (is (= '[[[system/dev-null] "/dev/null"]]
          (strace/match-path "/dev/null"))))
 
-(deftest read-trace
+(deftest tracing
   (let [trace (strace/read-trace "test/fixtures/echo-strace")]
     (is (= 40 (count trace)))
 
@@ -48,10 +48,9 @@
              :type "SYSCALL"}]
            (->> trace (filter (comp #{"openat"} :syscall)))))
 
-    (is (= ["/usr/bin/echo"
-            "/etc/ld.so.preload"
-            "/etc/ld.so.cache"
-            "/lib/x86_64-linux-gnu/libc.so.6"
-            "/usr/lib/locale/locale-archive"]
-           (->> trace (map strace/syscall->file-paths) (apply concat))))))
-
+    (is (= [["/usr/bin/echo" "execve" "0"]
+            ["/etc/ld.so.preload" "access" "-1 ENOENT (No such file or directory)"]
+            ["/etc/ld.so.cache" "openat"]
+            ["/lib/x86_64-linux-gnu/libc.so.6" "openat"]
+            ["/usr/lib/locale/locale-archive" "openat"]]
+           (strace/trace->file-syscalls trace)))))

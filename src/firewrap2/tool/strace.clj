@@ -79,28 +79,21 @@
 
 ;; in case of symlinks - we can bind path, but still will get not exists error if we also don't bind target location
 ;; this is harder to understand from deduplicated calls
-(defn extract-filepaths [strace-filepath]
-  (let [out-path (str strace-filepath "-paths")
-        lines (read-trace strace-filepath)]
-    (->> lines
-         (keep (fn [{:keys [syscall result] :as item}]
-                 (let [paths (syscall->file-paths item)
-                       ;; regular result code for `openat` is FD, which can differ and is not relevant
-                       ;; therefore only include errors starting with `-` negative return codes
-                       include-result? (or
-                                        (not= syscall "openat")
-                                        (and
-                                         (string? result)
-                                         (str/starts-with? result "-")))]
-                   (when (seq paths)
-                     (cond-> paths
-                       :always (conj (:syscall item))
-                       include-result? (conj (str (:result item))))))))
-         (map pr-str)
-         ; (distinct)
-         ; (sort)
-         (str/join "\n")
-         (spit out-path))))
+(defn trace->file-syscalls [trace]
+  (->> trace
+       (keep (fn [{:keys [syscall result] :as item}]
+               (let [paths (syscall->file-paths item)
+                     ;; regular result code for `openat` is FD, which can differ and is not relevant
+                     ;; therefore only include errors starting with `-` negative return codes
+                     include-result? (or
+                                      (not= syscall "openat")
+                                      (and
+                                       (string? result)
+                                       (str/starts-with? result "-")))]
+                 (when (seq paths)
+                   (cond-> paths
+                     :always (conj (:syscall item))
+                     include-result? (conj (str (:result item))))))))))
 
 (defn bind-autogen
   ([tree parent-path]
@@ -247,33 +240,18 @@
     matches))
 
 (comment
-  (extract-filepaths "tmp/gedit-strace")
-  (extract-filepaths "tmp/gedit-strace-sandbox")
-
-  (extract-filepaths "tmp/notify-send-trace")
-  (extract-filepaths "tmp/notify-send-trace-sandbox")
-
-  (extract-filepaths "tmp/cheese-trace-save3")
-  (extract-filepaths "tmp/cheese-strace-sandbox3")
-
-  (def lines (read-trace "tmp/cheese-trace-savex"))
-  (def lines (read-trace "tmp/notify-send-trace"))
-  (def lines (read-trace "tmp/gedit-strace"))
-  (def lines (read-trace "tmp/xdg-open-strace"))
-
-  (def lines (read-trace  "tmp/gedit-strace"))
-  (def lines (read-trace  "tmp/peek-strace"))
-
-  (def lines (read-trace  "tmp/_usr_bin_gnome-calculator-strace")))
+  (def trace (read-trace "test/fixtures/echo-strace")))
 
 (comment
-
-  (->> lines
-       (mapcat syscall->file-paths)
+  (->> trace
+       (trace->file-syscalls)
        (count))
 
+  (->> trace
+       (trace->file-syscalls))
+
   (def matches
-    (->> lines
+    (->> trace
          (mapcat syscall->file-paths)
          (reduce
           (fn [m path]
@@ -336,7 +314,7 @@
         {}))
        ; (sort-by first)))
 
-  (->> lines
+  (->> trace
        (mapcat (fn [item]
                  (->> (syscall->file-paths item)
                       (map (fn [path]
@@ -350,19 +328,30 @@
        ; (take 200))
 
 (comment
-  (count lines)
-  (first lines)
+  (count trace)
+  (first trace)
 
-  (->> lines
+  (->> trace
        (map :syscall)
        (frequencies))
 
-  (->> lines
+  (->> trace
        (filter #(seq (syscall->file-paths %)))
        (take 10))
 
+  (defn extract-filepaths! [strace-filepath]
+    (let [out-path (str strace-filepath "-paths")
+          lines (read-trace strace-filepath)]
+      (->> lines
+           (trace->file-syscalls)
+           (map pr-str)
+           ; (distinct)
+           ; (sort)
+           (str/join "\n")
+           (spit out-path))))
+
   (def tree
-    (-> (->> lines
+    (-> (->> trace
              (mapcat (fn [item]
                        (->> (syscall->file-paths item)
                             (map (fn [path]
@@ -383,7 +372,7 @@
     (.write writer "\n")
     (pprint (bind-autogen tree "") writer))
 
-  (->> lines
+  (->> trace
        (mapcat (fn [item]
                  (->> (syscall->file-paths item)
                       (map (fn [path]
@@ -395,7 +384,7 @@
                {})
        (tap>))
 
-  (->> lines
+  (->> trace
        (filter #(some? (:syscall %)))
        (filter #(args-with-path? (:args %)))
        (filter (comp #{"openat"} :syscall))
