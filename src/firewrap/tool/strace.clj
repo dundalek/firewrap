@@ -40,16 +40,16 @@
     "pwrite64"})
 
 ;; todo do it properly
-(defn normalize-path [path]
+(defn- normalize-path [path]
   (str/replace path #"//" "/"))
 
-(defn arg->path [arg]
+(defn- arg->path [arg]
   (some-> (cond
             (and (string? arg) (str/includes? arg "/")) arg
             (map? arg) (:sun_path arg)) ; connect syscall
           (normalize-path)))
 
-(defn syscall->file-paths [{:keys [syscall args]}]
+(defn- syscall->file-paths [{:keys [syscall args]}]
   (when-not (data-call? syscall)
     ;; there are syscalls that take two file paths like `mount`, `rename`, `symlink` so keep vector of paths
     (let [paths (->> args
@@ -59,19 +59,6 @@
                   (take 1 paths)
                   paths)]
       (vec paths))))
-
-(do
-  (defn args-with-path? [args]
-    (boolean (some arg->path args)))
-
-  [(args-with-path? ["a" 1])
-   (args-with-path? ["/etc/fstab" 1])])
-
-(defn open-flags [trace]
-  (->> (:args trace)
-       (some #(and (map? %)
-                   (= (:name %) "O_")
-                   (:value %)))))
 
 (defn read-trace [file-path]
   (with-open [rdr (-> (process {:in (io/reader file-path)} "npm exec -y b3-strace-parser")
@@ -97,7 +84,7 @@
                      :always (conj (:syscall item))
                      include-result? (conj (str (:result item))))))))))
 
-(defn bind-autogen
+(defn- bind-autogen
   ([tree parent-path]
    (bind-autogen tree parent-path 'system/bind-ro-try))
   ([tree parent-path symb]
@@ -124,17 +111,7 @@
     "--dev-bind"
     "--dev-bind-try"})
 
-(defn bwrap->paths [ctx]
-  (->> (:bwrap-args ctx)
-       (keep (fn [argv]
-               ;; does not handle nesting which works with flatten
-               (when (and (vector? argv)
-                          (bind-params (first argv)))
-                 (let [[_type _source destination] argv]
-                   destination))))
-       (into #{})))
-
-(defn bwrap2->paths [bwrap-args]
+(defn bwrap->paths [bwrap-args]
   (loop [ret #{}
          [arg & args] bwrap-args]
     (if (nil? arg)
@@ -145,7 +122,7 @@
         (recur ret args)))))
 
 ;; abstractions are static matches, taking no arguments besides context
-(def abstractions
+(def static-matchers
   (let [ctx (sb/*populate-env!* {})]
     (->> ['dumpster/network
           'system/fontconfig
@@ -166,7 +143,7 @@
           'system/at-spi
           'system/mime-cache]
          (map (fn [sym]
-                [(vector sym) (bwrap2->paths (sb/ctx->args ((resolve sym) ctx)))]))
+                [(vector sym) (bwrap->paths (sb/ctx->args ((resolve sym) ctx)))]))
          (into {}))))
 
 (defn match-xdg-runtime-dir [path]
@@ -230,7 +207,7 @@
    match-xdg-state-home])
 
 (defn match-path [path]
-  (let [matches (->> abstractions
+  (let [matches (->> static-matchers
                      (keep (fn [[k prefixes]]
                              (when-some [match (->> prefixes
                                                     (filter #(str/starts-with? path %))
@@ -313,7 +290,7 @@
   (->> matches
        (reduce-kv
         (fn [m k v]
-          (let [total (count (get abstractions k))]
+          (let [total (count (get static-matchers k))]
             (assoc m k
                    (when (pos? total)
                      (* 1.0 (/ (count v) total))))))
@@ -345,7 +322,7 @@
        (filter #(seq (syscall->file-paths %)))
        (take 10))
 
-  (defn extract-filepaths! [strace-filepath]
+  (defn- extract-filepaths! [strace-filepath]
     (let [out-path (str strace-filepath "-paths")
           lines (read-trace strace-filepath)]
       (->> lines
@@ -390,6 +367,20 @@
                {})
        (tap>))
 
+  (do
+    (defn- args-with-path? [args]
+      (boolean (some arg->path args)))
+
+    [(args-with-path? ["a" 1])
+     (args-with-path? ["/etc/fstab" 1])])
+
+  (defn- open-flags [trace]
+    (->> (:args trace)
+         (some #(and (map? %)
+                     (= (:name %) "O_")
+                     (:value %)))))
+
+  ;; open flags - start of trying to distinguish RO vs RW access
   (->> trace
        (filter #(some? (:syscall %)))
        (filter #(args-with-path? (:args %)))

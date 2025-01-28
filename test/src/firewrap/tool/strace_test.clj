@@ -8,7 +8,7 @@
 
 (deftest bwrap->paths
   (is (= #{"/etc/machine-id" "/var/lib/dbus/machine-id" "/run/user/1000/bus"}
-         (strace/bwrap2->paths (sb/ctx->args (oldsystem/dbus-unrestricted {}))))))
+         (strace/bwrap->paths (sb/ctx->args (oldsystem/dbus-unrestricted {}))))))
 
 (deftest match-xdg-runtime-dir
   (is (= '[[system/xdg-runtime-dir "at-spi/bus_1"]]
