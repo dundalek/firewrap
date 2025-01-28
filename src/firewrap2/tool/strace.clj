@@ -239,6 +239,47 @@
                   (keep (fn [matcher] (matcher path)) matchers))]
     matches))
 
+(defn- trace-matches [trace]
+  (->> trace
+       (mapcat syscall->file-paths)
+       (reduce
+        (fn [m path]
+          (let [matches (match-path path)]
+            (if (seq matches)
+              (reduce
+               (fn [m match]
+                 (update-in m match (fnil conj []) path))
+               m
+               matches)
+              (update-in m [(vector 'system/bind-ro-try path)] (fnil conj []) path))))
+        {})))
+
+(defn trace->suggest [trace]
+  (let [matches (trace-matches trace)
+        {without-args false
+         with-args true} (->> matches
+                              (keys)
+                              (group-by (fn [[_ & args]]
+                                          (pos? (count args)))))]
+    (concat
+     ['-> '(base/base)]
+     (->> without-args
+          (sort)
+          (walk/postwalk (fn [x] (if (vector? x) (seq x) x))))
+     (->> with-args
+          (group-by first)
+          (sort-by key)
+          (mapcat (fn [[k items]]
+                    (let [path-tree (->> items
+                                        ;; assumption: all args are paths
+                                         (mapcat (fn [[_ & args]]
+                                                   args))
+                                         (reduce (fn [m path]
+                                                   (let [segments (str/split path #"/")]
+                                                     (update-in m segments merge {})))
+                                                 {}))]
+                      [(bind-autogen path-tree nil k)])))))))
+
 (comment
   (def trace (read-trace "test/fixtures/echo-strace")))
 
@@ -250,54 +291,17 @@
   (->> trace
        (trace->file-syscalls))
 
-  (def matches
-    (->> trace
-         (mapcat syscall->file-paths)
-         (reduce
-          (fn [m path]
-            (let [matches (match-path path)]
-              (if (seq matches)
-                (reduce
-                 (fn [m match]
-                   (update-in m match (fnil conj []) path))
-                 m
-                 matches)
-                (update-in m [(vector 'system/bind-ro-try path)] (fnil conj []) path))))
-          {})))
+  (->> trace
+       (mapcat syscall->file-paths)
+       (map match-path))
 
-  (update-vals matches #(update-vals % count))
+  (def matches (trace-matches trace))
 
-  #_(def bindings
-      (->> matches
-           (keys)
-           sort
-           (walk/postwalk (fn [x] (if (vector? x) (seq x) x)))
-           (concat ['-> 'ctx])))
+  (-> trace
+      (trace-matches)
+      (update-vals #(update-vals % count)))
 
-  (def bindings
-    (let [{without-args false
-           with-args true} (->> matches
-                                (keys)
-                                (group-by (fn [[_ & args]]
-                                            (pos? (count args)))))]
-      (concat
-       ['-> '(system/base)]
-       (->> without-args
-            (sort)
-            (walk/postwalk (fn [x] (if (vector? x) (seq x) x))))
-       (->> with-args
-            (group-by first)
-            (sort-by key)
-            (mapcat (fn [[k items]]
-                      (let [path-tree (->> items
-                                        ;; assumption: all args are paths
-                                           (mapcat (fn [[_ & args]]
-                                                     args))
-                                           (reduce (fn [m path]
-                                                     (let [segments (str/split path #"/")]
-                                                       (update-in m segments merge {})))
-                                                   {}))]
-                        [(bind-autogen path-tree nil k)])))))))
+  (def bindings (trace->suggest trace))
 
   (with-open [writer (io/writer "tmp/bindings.clj")]
     (.write writer "#_:clj-kondo/ignore")

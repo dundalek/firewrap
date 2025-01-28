@@ -1,0 +1,12 @@
+(->
+ (base/base)
+ (system/libs)
+ (->
+  (system/bind-ro-try "")
+  (->
+   (system/bind-ro-try "/etc")
+   (-> (system/bind-ro-try "/etc/ld.so.preload"))
+   (system/bind-ro-try "/usr")
+   (->
+    (system/bind-ro-try "/usr/bin")
+    (-> (system/bind-ro-try "/usr/bin/echo"))))))

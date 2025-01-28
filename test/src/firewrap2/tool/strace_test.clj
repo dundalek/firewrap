@@ -3,7 +3,8 @@
    [clojure.test :refer [deftest is]]
    [firewrap2.tool.strace :as strace]
    [firewrap2.bwrap :as bwrap]
-   [firewrap2.preset.oldsystem :as oldsystem]))
+   [firewrap2.preset.oldsystem :as oldsystem]
+   [snap.core :as snap]))
 
 (deftest bwrap->paths
   (is (= #{"/etc/machine-id" "/var/lib/dbus/machine-id" "/run/user/1000/bus"}
@@ -53,4 +54,6 @@
             ["/etc/ld.so.cache" "openat"]
             ["/lib/x86_64-linux-gnu/libc.so.6" "openat"]
             ["/usr/lib/locale/locale-archive" "openat"]]
-           (strace/trace->file-syscalls trace)))))
+           (strace/trace->file-syscalls trace)))
+
+    (snap/match-snapshot ::echo-suggest (strace/trace->suggest trace))))
