@@ -2,5 +2,10 @@
 
 cmd="${1//\//_}"
 
+# From man: Specify the maximum string size to print (the default is 32). Note that filenames are not considered strings and are always printed in full.
+# Since we only care about filenames for now, set to 0 to reduce noise. Can set to other value in the future in case we discover there is some data missing.
+strsize=0
+# strsize=1024
+
 # set XDG_ dirs to smaller number of candidates for less noisy trace
-XDG_DATA_DIRS="$HOME/.local/share:/usr/share" XDG_CONFIG_DIRS="/etc/xdg" strace -s 1024 -f -o "tmp/${cmd}-strace" "$@"
+XDG_DATA_DIRS="$HOME/.local/share:/usr/share" XDG_CONFIG_DIRS="/etc/xdg" strace -s "$strsize" -f -o "tmp/${cmd}-strace" "$@"

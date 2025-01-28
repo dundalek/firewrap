@@ -1,4 +1,4 @@
 #kaocha/v1
  {:tests [{:id :unit
-           :test-paths ["test" "src"]
+           :test-paths ["test/src"]
            :source-paths ["src"]}]}
