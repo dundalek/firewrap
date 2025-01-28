@@ -1,7 +1,7 @@
-(ns firewrap.internal.strace-test
+(ns firewrap2.tool.strace-test
   (:require
    [clojure.test :refer [deftest is]]
-   [firewrap.internal.strace :as strace]
+   [firewrap2.tool.strace :as strace]
    [firewrap2.bwrap :as bwrap]
    [firewrap2.preset.oldsystem :as oldsystem]))
 

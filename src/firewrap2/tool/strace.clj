@@ -1,4 +1,4 @@
-(ns firewrap.internal.strace
+(ns firewrap2.tool.strace
   (:require
    [babashka.process :refer [process]]
    [cheshire.core :as json]
