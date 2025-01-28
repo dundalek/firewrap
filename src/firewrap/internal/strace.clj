@@ -247,10 +247,6 @@
     matches))
 
 (comment
-  (match-xdg-runtime-dir "/run/user/1000/at-spi/bus_1")
-  (match-xdg-runtime-dir "/dev/null"))
-
-(comment
   (extract-filepaths "tmp/gedit-strace")
   (extract-filepaths "tmp/gedit-strace-sandbox")
 
