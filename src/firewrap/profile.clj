@@ -1,11 +1,11 @@
-(ns firewrap2.profile
+(ns firewrap.profile
   (:refer-clojure :exclude [resolve]))
 
 (defonce ^:private !registry (atom {}))
 
 (defn resolve-builtin-profile [appname]
   (try
-    (requiring-resolve (symbol (str "firewrap2.profile." appname) "profile"))
+    (requiring-resolve (symbol (str "firewrap.profile." appname) "profile"))
     (catch Exception _)))
 
 (defn resolve [name]

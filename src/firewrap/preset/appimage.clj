@@ -1,6 +1,6 @@
-(ns firewrap2.preset.appimage
+(ns firewrap.preset.appimage
   (:require
-   [firewrap2.bwrap :as bwrap]))
+   [firewrap.bwrap :as bwrap]))
 
 (defn appimage-command? [s]
   (some? (re-find #"(?i)\.appimage$" s)))

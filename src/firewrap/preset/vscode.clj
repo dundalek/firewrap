@@ -1,7 +1,7 @@
-(ns firewrap2.preset.vscode
+(ns firewrap.preset.vscode
   (:require
-   [firewrap2.bwrap :as bwrap]
-   [firewrap2.preset.dumpster :as dumpster]))
+   [firewrap.bwrap :as bwrap]
+   [firewrap.preset.dumpster :as dumpster]))
 
 (defn vscode-nvim [ctx]
   (-> ctx

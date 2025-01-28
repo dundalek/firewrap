@@ -1,9 +1,9 @@
-(ns firewrap2.preset.oldprofiles
+(ns firewrap.preset.oldprofiles
   (:require
-   [firewrap2.bwrap :as bwrap]
-   [firewrap2.preset.base :as base]
-   [firewrap2.preset.dumpster :as dumpster]
-   [firewrap2.preset.oldsystem :as system]))
+   [firewrap.bwrap :as bwrap]
+   [firewrap.preset.base :as base]
+   [firewrap.preset.dumpster :as dumpster]
+   [firewrap.preset.oldsystem :as system]))
 
 (defn chatall []
   (->

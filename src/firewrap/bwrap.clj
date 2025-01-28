@@ -1,4 +1,4 @@
-(ns firewrap2.bwrap
+(ns firewrap.bwrap
   (:require
    [babashka.fs :as fs]
    [clojure.set :as set]))

@@ -1,8 +1,8 @@
-(ns firewrap2.profile.godmode
+(ns firewrap.profile.godmode
   (:require
-   [firewrap2.preset.appimage :as appimage]
-   [firewrap2.preset.base :as base]
-   [firewrap2.preset.dumpster :as dumpster]))
+   [firewrap.preset.appimage :as appimage]
+   [firewrap.preset.base :as base]
+   [firewrap.preset.dumpster :as dumpster]))
 
 (defn profile [appimage]
   (-> (base/base5)

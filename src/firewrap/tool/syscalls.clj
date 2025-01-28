@@ -1,4 +1,4 @@
-(ns firewrap2.tool.syscalls
+(ns firewrap.tool.syscalls
   (:require
    [cheshire.core :as json]
    [clojure.string :as str]))

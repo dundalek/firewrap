@@ -1,8 +1,8 @@
-(ns firewrap2.preset.oldsystem
+(ns firewrap.preset.oldsystem
   (:require
    [babashka.fs :as fs]
    [clojure.string :as str]
-   [firewrap2.bwrap :as bwrap]))
+   [firewrap.bwrap :as bwrap]))
 
 (defn escape-shell [s]
   ;; TODO

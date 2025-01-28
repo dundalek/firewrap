@@ -1,7 +1,7 @@
-(ns firewrap2.profile.ferdium
+(ns firewrap.profile.ferdium
   (:require
-   [firewrap2.preset.base :as base]
-   [firewrap2.preset.dumpster :as dumpster]))
+   [firewrap.preset.base :as base]
+   [firewrap.preset.dumpster :as dumpster]))
 
 (defn profile [_]
   (-> (base/base5)

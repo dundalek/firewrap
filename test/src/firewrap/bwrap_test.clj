@@ -1,7 +1,7 @@
-(ns firewrap2.bwrap-test
+(ns firewrap.bwrap-test
   (:require
    [clojure.test :refer [deftest is]]
-   [firewrap2.bwrap :as bwrap]))
+   [firewrap.bwrap :as bwrap]))
 
 (deftest env
   (let [ctx {::bwrap/envs-system {"FOO" "123"}}]

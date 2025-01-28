@@ -1,4 +1,4 @@
-(ns firewrap2.tool.strace
+(ns firewrap.tool.strace
   (:require
    [babashka.process :refer [process]]
    [cheshire.core :as json]
@@ -6,9 +6,9 @@
    [clojure.pprint :refer [pprint]]
    [clojure.string :as str]
    [clojure.walk :as walk]
-   [firewrap2.bwrap :as bwrap]
-   [firewrap2.preset.oldsystem :as system]
-   [firewrap2.preset.dumpster :as dumpster]))
+   [firewrap.bwrap :as bwrap]
+   [firewrap.preset.oldsystem :as system]
+   [firewrap.preset.dumpster :as dumpster]))
 
 ; Using strace parser:
 ;     https://github.com/dannykopping/b3

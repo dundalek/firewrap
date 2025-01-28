@@ -1,4 +1,4 @@
-(ns firewrap2.preset.env
+(ns firewrap.preset.env
   (:require
    [clojure.set :as set]))
 

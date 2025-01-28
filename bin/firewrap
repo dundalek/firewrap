@@ -9,6 +9,6 @@
 (add-classpath (-> (io/file (str *file* "/../../src"))
                    (.getCanonicalPath)))
 
-(require '[firewrap2.main :as main])
+(require '[firewrap.main :as main])
 
 (apply main/main *file* *command-line-args*)

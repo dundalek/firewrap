@@ -1,11 +1,11 @@
-(ns firewrap2.preset-test
+(ns firewrap.preset-test
   (:require
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]
-   [firewrap2.bwrap :as bwrap]
-   [firewrap2.main :as main]
-   [firewrap2.profile.godmode :as godmode]
-   [firewrap2.profile.windsurf :as windsurf]
+   [firewrap.bwrap :as bwrap]
+   [firewrap.main :as main]
+   [firewrap.profile.godmode :as godmode]
+   [firewrap.profile.windsurf :as windsurf]
    [snap.core :as snap]))
 
 (def test-env

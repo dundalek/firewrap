@@ -1,9 +1,9 @@
-(ns firewrap2.tool.strace-test
+(ns firewrap.tool.strace-test
   (:require
    [clojure.test :refer [deftest is]]
-   [firewrap2.tool.strace :as strace]
-   [firewrap2.bwrap :as bwrap]
-   [firewrap2.preset.oldsystem :as oldsystem]
+   [firewrap.tool.strace :as strace]
+   [firewrap.bwrap :as bwrap]
+   [firewrap.preset.oldsystem :as oldsystem]
    [snap.core :as snap]))
 
 (deftest bwrap->paths

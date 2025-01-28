@@ -1,8 +1,8 @@
-(ns firewrap2.preset.dumpster
+(ns firewrap.preset.dumpster
   (:require
    [babashka.fs :as fs]
    [clojure.string :as str]
-   [firewrap2.bwrap :as bwrap]))
+   [firewrap.bwrap :as bwrap]))
 
 (defn path->appname [path]
   (some-> (re-find #"([^/]+)$" path)

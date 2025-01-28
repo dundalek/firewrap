@@ -1,16 +1,16 @@
-(ns firewrap2.main
+(ns firewrap.main
   (:require
    [babashka.cli :as cli]
    [babashka.fs :as fs]
    [babashka.process :as process]
    [clojure.string :as str]
-   [firewrap2.bwrap :as bwrap]
-   [firewrap2.preset.appimage :as appimage]
-   [firewrap2.preset.base :as base]
-   [firewrap2.preset.dumpster :as dumpster]
-   [firewrap2.profile :as profile]
-   [firewrap2.profile.godmode :as godmode]
-   [firewrap2.profile.windsurf :as windsurf]))
+   [firewrap.bwrap :as bwrap]
+   [firewrap.preset.appimage :as appimage]
+   [firewrap.preset.base :as base]
+   [firewrap.preset.dumpster :as dumpster]
+   [firewrap.profile :as profile]
+   [firewrap.profile.godmode :as godmode]
+   [firewrap.profile.windsurf :as windsurf]))
 
 (def ^:dynamic *exec-fn* process/exec)
 

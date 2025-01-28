@@ -1,7 +1,7 @@
-(ns firewrap2.preset.appimage-test
+(ns firewrap.preset.appimage-test
   (:require
    [clojure.test :refer [deftest is]]
-   [firewrap2.preset.appimage :as appimage]))
+   [firewrap.preset.appimage :as appimage]))
 
 (deftest appimage-command?
   (is (= true (appimage/appimage-command? "x.AppImage")))

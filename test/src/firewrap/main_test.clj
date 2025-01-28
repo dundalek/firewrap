@@ -1,8 +1,8 @@
-(ns firewrap2.main-test
+(ns firewrap.main-test
   (:require
    [clojure.string :as str]
    [clojure.test :refer [are deftest is]]
-   [firewrap2.main :as main]))
+   [firewrap.main :as main]))
 
 (deftest parse-args
   (are [args expected] (= expected (main/parse-args (str/split args #"\s+")))
