@@ -139,6 +139,16 @@
                    destination))))
        (into #{})))
 
+(defn bwrap2->paths [bwrap-args]
+  (loop [ret #{}
+         [arg & args] bwrap-args]
+    (if (nil? arg)
+      ret
+      (if (bind-params arg)
+        (let [[_source destination & args] args]
+          (recur (conj ret destination) args))
+        (recur ret args)))))
+
 ;; abstractions are static matches, taking no arguments besides context
 (def abstractions
   (let [ctx {:getenv (fn [k] (System/getenv k))}]

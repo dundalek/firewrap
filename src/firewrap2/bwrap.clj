@@ -55,6 +55,15 @@
   ([ctx src dest {:keys [perms try]}]
    (bind ctx src dest {:perms perms :try try :access :rw})))
 
+(defn bind-rw-try
+  ([ctx path] (bind-rw ctx path path))
+  ([ctx path dest-or-opts]
+   (if (string? dest-or-opts)
+     (bind-rw ctx path dest-or-opts {})
+     (bind-rw ctx path path dest-or-opts)))
+  ([ctx src dest {:keys [perms try]}]
+   (bind ctx src dest {:perms perms :try true :access :rw})))
+
 (defn bind-dev
   ([ctx path] (bind-dev ctx path path))
   ([ctx path dest-or-opts]
@@ -63,6 +72,15 @@
      (bind-dev ctx path path dest-or-opts)))
   ([ctx src dest {:keys [perms try]}]
    (bind ctx src dest {:perms perms :try try :access :dev})))
+
+(defn bind-dev-try
+  ([ctx path] (bind-dev ctx path path))
+  ([ctx path dest-or-opts]
+   (if (string? dest-or-opts)
+     (bind-dev ctx path dest-or-opts {})
+     (bind-dev ctx path path dest-or-opts)))
+  ([ctx src dest {:keys [perms try]}]
+   (bind ctx src dest {:perms perms :try try true :dev})))
 
 (def ^:private heredoc-terminator "FIREWRAP_HEREDOC_TERMINATOR")
 
