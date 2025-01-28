@@ -1,6 +1,6 @@
 (ns firewrap.preset.oldprofiles
   (:require
-   [firewrap.sandbox :as bwrap]
+   [firewrap.sandbox :as sb]
    [firewrap.preset.base :as base]
    [firewrap.preset.dumpster :as dumpster]
    [firewrap.preset.oldsystem :as system]))
@@ -187,14 +187,14 @@
    (system/xdg-open)))
 
 (comment
-  (bwrap/ctx->args (chatall))
+  (sb/ctx->args (chatall))
 
-  (bwrap/ctx->args (cheese {:executable "/usr/bin/cheese"}))
+  (sb/ctx->args (cheese {:executable "/usr/bin/cheese"}))
 
-  (bwrap/ctx->args (gedit {:executable "gedit"}))
+  (sb/ctx->args (gedit {:executable "gedit"}))
 
-  (bwrap/ctx->args (gnome-calculator {:executable "gnome-calculator"}))
+  (sb/ctx->args (gnome-calculator {:executable "gnome-calculator"}))
 
-  (bwrap/ctx->args (notify-send {:executable "notify-send"}))
+  (sb/ctx->args (notify-send {:executable "notify-send"}))
 
-  (bwrap/ctx->args (xdg-open)))
+  (sb/ctx->args (xdg-open)))

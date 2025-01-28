@@ -2,13 +2,13 @@
   (:require
    [clojure.test :refer [deftest is]]
    [firewrap.tool.strace :as strace]
-   [firewrap.sandbox :as bwrap]
+   [firewrap.sandbox :as sb]
    [firewrap.preset.oldsystem :as oldsystem]
    [snap.core :as snap]))
 
 (deftest bwrap->paths
   (is (= #{"/etc/machine-id" "/var/lib/dbus/machine-id" "/run/user/1000/bus"}
-         (strace/bwrap2->paths (bwrap/ctx->args (oldsystem/dbus-unrestricted {}))))))
+         (strace/bwrap2->paths (sb/ctx->args (oldsystem/dbus-unrestricted {}))))))
 
 (deftest match-xdg-runtime-dir
   (is (= '[[system/xdg-runtime-dir "at-spi/bus_1"]]

@@ -2,7 +2,7 @@
   (:require
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]
-   [firewrap.sandbox :as bwrap]
+   [firewrap.sandbox :as sb]
    [firewrap.main :as main]
    [firewrap.profile.godmode :as godmode]
    [firewrap.profile.windsurf :as windsurf]
@@ -11,19 +11,19 @@
 (def test-env
   {"HOME" "/home/user"})
 
-(def env-ctx {::bwrap/envs-system test-env
-              ::bwrap/system-cwd "/home/user/somedir"})
+(def env-ctx {::sb/envs-system test-env
+              ::sb/system-cwd "/home/user/somedir"})
 
 (defn test-main [& args]
   (binding [main/*exec-fn* (fn [& args] args)
-            bwrap/*populate-env!* (constantly env-ctx)
-            bwrap/*run-effects!* (fn [_])]
+            sb/*populate-env!* (constantly env-ctx)
+            sb/*run-effects!* (fn [_])]
     (apply main/main args)))
 
 (deftest presets
-  (binding [bwrap/*populate-env!* (constantly env-ctx)]
-    (snap/match-snapshot ::godmode (main/unwrap-raw (bwrap/ctx->args (godmode/profile "/path/to/GodMode.AppImage"))))
-    (snap/match-snapshot ::windsurf (main/unwrap-raw (bwrap/ctx->args (windsurf/profile))))
+  (binding [sb/*populate-env!* (constantly env-ctx)]
+    (snap/match-snapshot ::godmode (main/unwrap-raw (sb/ctx->args (godmode/profile "/path/to/GodMode.AppImage"))))
+    (snap/match-snapshot ::windsurf (main/unwrap-raw (sb/ctx->args (windsurf/profile))))
     (snap/match-snapshot ::windsurf-cwd (test-main "windsurf" "--cwd" "--" "."))
     (snap/match-snapshot ::ferdium (test-main "ferdium"))
     (snap/match-snapshot ::ferdium-absolute (test-main "/some/path/ferdium"))))

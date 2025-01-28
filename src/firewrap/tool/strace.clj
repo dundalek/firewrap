@@ -6,7 +6,7 @@
    [clojure.pprint :refer [pprint]]
    [clojure.string :as str]
    [clojure.walk :as walk]
-   [firewrap.sandbox :as bwrap]
+   [firewrap.sandbox :as sb]
    [firewrap.preset.oldsystem :as system]
    [firewrap.preset.dumpster :as dumpster]))
 
@@ -146,7 +146,7 @@
 
 ;; abstractions are static matches, taking no arguments besides context
 (def abstractions
-  (let [ctx (bwrap/*populate-env!* {})]
+  (let [ctx (sb/*populate-env!* {})]
     (->> ['dumpster/network
           'system/fontconfig
           'system/fontconfig-shared-cache
@@ -166,7 +166,7 @@
           'system/at-spi
           'system/mime-cache]
          (map (fn [sym]
-                [(vector sym) (bwrap2->paths (bwrap/ctx->args ((resolve sym) ctx)))]))
+                [(vector sym) (bwrap2->paths (sb/ctx->args ((resolve sym) ctx)))]))
          (into {}))))
 
 (defn match-xdg-runtime-dir [path]

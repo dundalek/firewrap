@@ -2,16 +2,16 @@
   (:require
    [babashka.fs :as fs]
    [clojure.string :as str]
-   [firewrap.sandbox :as bwrap]))
+   [firewrap.sandbox :as sb]))
 
 (defn escape-shell [s]
   ;; TODO
   s)
 
-(def add-bwrap-args #'bwrap/add-raw-args)
+(def add-bwrap-args #'sb/add-raw-args)
 
-(def bind-ro bwrap/bind-ro)
-(def bind-ro-try bwrap/bind-ro-try)
+(def bind-ro sb/bind-ro)
+(def bind-ro-try sb/bind-ro-try)
 
 ;; might need helpers like this since ctx would be in wrong position using `->`
 ;; alternative that comes to mind is `(-> ctx ((partial reduce bind-ro-try) paths))`
@@ -19,10 +19,10 @@
 (defn bind-ro-try-many [ctx paths]
   (reduce bind-ro-try ctx paths))
 
-(def bind-rw bwrap/bind-rw)
-(def bind-rw-try bwrap/bind-rw-try)
-(def bind-dev bwrap/bind-dev)
-(def bind-dev-try bwrap/bind-dev-try)
+(def bind-rw sb/bind-rw)
+(def bind-rw-try sb/bind-rw-try)
+(def bind-dev sb/bind-dev)
+(def bind-dev-try sb/bind-dev-try)
 
 (defn- xdg-dirs [dirs-env subfolders]
   (let [dirs (some-> dirs-env
@@ -98,7 +98,7 @@
 
 (defn xdg-runtime-dir-path [ctx]
   ;; fallback to "/run/user/$(id -u)" if missing?
-  (bwrap/getenv ctx "XDG_RUNTIME_DIR"))
+  (sb/getenv ctx "XDG_RUNTIME_DIR"))
 
 (defn xdg-runtime-dir [ctx subdir]
   (let [path (str (xdg-runtime-dir-path ctx) "/" subdir)]

@@ -1,20 +1,20 @@
 (ns firewrap.preset.base
   (:require
-   [firewrap.sandbox :as bwrap]
+   [firewrap.sandbox :as sb]
    [firewrap.preset.dumpster :as dumpster]
    [firewrap.preset.env :as env]))
 
 (defn bind-system-programs [ctx]
   (-> ctx
-      (bwrap/bind-ro "/usr")
-      (bwrap/symlink "usr/bin" "/bin")
-      (bwrap/symlink "usr/bin" "/sbin")
-      (bwrap/symlink "usr/lib" "/lib")
-      (bwrap/symlink "usr/lib" "/lib64")))
+      (sb/bind-ro "/usr")
+      (sb/symlink "usr/bin" "/bin")
+      (sb/symlink "usr/bin" "/sbin")
+      (sb/symlink "usr/lib" "/lib")
+      (sb/symlink "usr/lib" "/lib64")))
 
 (defn bind-extra-system-programs [ctx]
   (-> ctx
-      (bwrap/bind-ro "/nix")))
+      (sb/bind-ro "/nix")))
 
 (defn bind-user-programs [ctx]
   ;; no-op as a placeholder for extenion point
@@ -32,14 +32,14 @@
 
 (defn base []
   (-> {}
-      (bwrap/*populate-env!*)
-      (bwrap/die-with-parent)
-      (bwrap/unshare-all)
+      (sb/*populate-env!*)
+      (sb/die-with-parent)
+      (sb/unshare-all)
       ;; Create a new session to prevent using the TIOCSTI ioctl to push
       ;; characters into the terminal's input buffer, allowing an attacker to
       ;; escape the sandbox.
       ;; See https://github.com/containers/bubblewrap/issues/555
-      (bwrap/new-session)))
+      (sb/new-session)))
 
 (defn base4 [ctx]
   (-> (base)
@@ -48,21 +48,21 @@
 (defn base5 []
   (let [ctx (base)]
     (-> ctx
-        (bwrap/env-pass-many env/allowed)
-        (bwrap/bind-dev "/")
-        (bwrap/tmpfs (dumpster/home ctx))
-        (bwrap/tmpfs "/tmp")
+        (sb/env-pass-many env/allowed)
+        (sb/bind-dev "/")
+        (sb/tmpfs (dumpster/home ctx))
+        (sb/tmpfs "/tmp")
         (bind-user-programs))))
 
 (defn base-gui []
   (-> (base5)
       ;; would need x11 proxying for better security
-      (bwrap/bind-ro-try "/tmp/.X11-unix/X1")))
+      (sb/bind-ro-try "/tmp/.X11-unix/X1")))
 
 (defn base9 [ctx]
   (-> ctx
-      (bwrap/bind-dev "/")
-      (bwrap/tmpfs (dumpster/home ctx))))
+      (sb/bind-dev "/")
+      (sb/tmpfs (dumpster/home ctx))))
 
 (defn configurable [ctx params]
   (let [{:keys [opts args]} params

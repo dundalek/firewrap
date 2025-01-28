@@ -1,6 +1,6 @@
 (ns firewrap.preset.appimage
   (:require
-   [firewrap.sandbox :as bwrap]))
+   [firewrap.sandbox :as sb]))
 
 (defn appimage-command? [s]
   (some? (re-find #"(?i)\.appimage$" s)))
@@ -11,16 +11,16 @@
   ;; As a workaround we extract it inside the sandbox to tmpfs with --appimage-extract.
   ;; Note: Might need to ro-bind bash/sh as well.
   (-> ctx
-      (bwrap/bind-data-ro {:perms "0555" :fd 9 :path "/tmp/app.AppImage"
-                           :file appimage})
-      (bwrap/bind-data-ro {:perms "0555" :fd 8 :path "/tmp/run.sh"
-                           :content (str
-                                     "#!/usr/bin/env sh\n"
-                                     "cd /tmp\n"
-                                     "./app.AppImage --appimage-extract\n"
+      (sb/bind-data-ro {:perms "0555" :fd 9 :path "/tmp/app.AppImage"
+                        :file appimage})
+      (sb/bind-data-ro {:perms "0555" :fd 8 :path "/tmp/run.sh"
+                        :content (str
+                                  "#!/usr/bin/env sh\n"
+                                  "cd /tmp\n"
+                                  "./app.AppImage --appimage-extract\n"
                                      ; "strace -f bash squashfs-root/AppRun\n"
                                      ;; run with bash in case script hardcodes #!/bin/bash
                                      ; "bash\n"
-                                     "bash squashfs-root/AppRun\n")})
-      #_(bwrap/set-cmd-args ["bash"])
-      (bwrap/set-cmd-args (into ["/tmp/run.sh"] args))))
+                                  "bash squashfs-root/AppRun\n")})
+      #_(sb/set-cmd-args ["bash"])
+      (sb/set-cmd-args (into ["/tmp/run.sh"] args))))

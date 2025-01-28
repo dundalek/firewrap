@@ -4,7 +4,7 @@
    [babashka.fs :as fs]
    [babashka.process :as process]
    [clojure.string :as str]
-   [firewrap.sandbox :as bwrap]
+   [firewrap.sandbox :as sb]
    [firewrap.preset.appimage :as appimage]
    [firewrap.preset.base :as base]
    [firewrap.preset.dumpster :as dumpster]
@@ -70,13 +70,13 @@
 (defn unwrap-escaping [args]
   (for [arg args]
     (if (map? arg)
-      (::bwrap/escaped arg)
+      (::sb/escaped arg)
       (escape-shell (str arg)))))
 
 (defn unwrap-raw [args]
   (for [arg args]
     (if (map? arg)
-      (::bwrap/escaped arg)
+      (::sb/escaped arg)
       arg)))
 
 ;; Workaround to write bwrap command as temporary script because process/exec
@@ -105,8 +105,8 @@
                        (str/includes? s "--ro-bind-data"))))))
 
 (defn run-bwrap [ctx opts]
-  (let [args (bwrap/ctx->args ctx)]
-    (bwrap/*run-effects!* ctx)
+  (let [args (sb/ctx->args ctx)]
+    (sb/*run-effects!* ctx)
     (if (needs-bwrap-sh-wrapper? args)
       (run-bwrap-sh-wrapper args opts)
       (run-bwrap-exec args opts))))
@@ -122,11 +122,11 @@
                                          gui (base/base-gui)
                                          :else (base/base))))
             ctx (base/configurable (profile-fn parsed) parsed)
-            ctx (if (bwrap/cmd-args ctx)
+            ctx (if (sb/cmd-args ctx)
                   ctx
                   (if (appimage/appimage-command? (first args))
                     (apply appimage/run ctx args)
-                    (bwrap/set-cmd-args ctx args)))]
+                    (sb/set-cmd-args ctx args)))]
         (run-bwrap ctx
                    {:dry-run dry-run})))))
 
@@ -135,7 +135,7 @@
 (defn bind-user-programs [ctx]
   (-> ctx
       ;; need to rebind nix-profile again over home
-      (bwrap/bind-ro (str (dumpster/home ctx) "/.nix-profile/bin"))))
+      (sb/bind-ro (str (dumpster/home ctx) "/.nix-profile/bin"))))
 
 (alter-var-root #'base/bind-user-programs (constantly bind-user-programs))
 
@@ -155,8 +155,8 @@
                                (when (:cwd opts) ["--new-window"])
                                (rest args))]
      (-> (windsurf/profile)
-         (bwrap/bind-ro windsurf-dir)
-         (bwrap/set-cmd-args windsurf-args)))))
+         (sb/bind-ro windsurf-dir)
+         (sb/set-cmd-args windsurf-args)))))
 
 (comment
   (main "chrome")
