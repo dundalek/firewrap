@@ -6,7 +6,9 @@
    [clojure.pprint :refer [pprint]]
    [clojure.string :as str]
    [clojure.walk :as walk]
-   [firewrap.system :as system]))
+   [firewrap2.bwrap :as bwrap]
+   [firewrap2.preset.oldsystem :as system]
+   [firewrap2.preset.dumpster :as dumpster]))
 
 ; Using strace parser:
 ;     https://github.com/dannykopping/b3
@@ -144,8 +146,8 @@
 
 ;; abstractions are static matches, taking no arguments besides context
 (def abstractions
-  (let [ctx {:getenv (fn [k] (System/getenv k))}]
-    (->> ['system/network
+  (let [ctx (bwrap/*populate-env!* {})]
+    (->> ['dumpster/network
           'system/fontconfig
           'system/fontconfig-shared-cache
           'system/fonts
@@ -164,7 +166,7 @@
           'system/at-spi
           'system/mime-cache]
          (map (fn [sym]
-                [(vector sym) (bwrap->paths ((resolve sym) ctx))]))
+                [(vector sym) (bwrap2->paths (bwrap/ctx->args ((resolve sym) ctx)))]))
          (into {}))))
 
 (defn match-xdg-runtime-dir [path]
