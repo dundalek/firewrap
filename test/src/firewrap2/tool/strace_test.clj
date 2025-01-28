@@ -23,6 +23,7 @@
 (deftest read-trace
   (let [trace (strace/read-trace "test/fixtures/echo-strace")]
     (is (= 40 (count trace)))
+
     (is (= [{:args [["AT_FDCWD"] "/etc/ld.so.cache" {:name "O_", :value ["RDONLY" "O_CLOEXEC"]}],
              :pid 620239,
              :result 3,
@@ -45,4 +46,12 @@
              :syscall "openat",
              :timing nil,
              :type "SYSCALL"}]
-           (->> trace (filter (comp #{"openat"} :syscall)))))))
+           (->> trace (filter (comp #{"openat"} :syscall)))))
+
+    (is (= ["/usr/bin/echo"
+            "/etc/ld.so.preload"
+            "/etc/ld.so.cache"
+            "/lib/x86_64-linux-gnu/libc.so.6"
+            "/usr/lib/locale/locale-archive"]
+           (->> trace (map strace/syscall->file-paths) (apply concat))))))
+
