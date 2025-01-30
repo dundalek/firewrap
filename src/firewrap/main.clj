@@ -52,7 +52,7 @@
       result)))
 
 (defn print-help []
-  (println "Run program in sanbox")
+  (println "Run program in sandbox")
   (println)
   (println "Usage: firewrap [<options> --] <command> [<args>]")
   (println)
