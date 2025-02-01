@@ -15,7 +15,13 @@ Dependencies:
 - [Bubblewrap](https://github.com/containers/bubblewrap)
 - Posix shell (optional for appimage wrapper)
 
-TODO
+```
+git clone https://github.com/dundalek/firewrap.git
+cd firewrap
+bin/firewrap
+```
+
+TODO using [bbin](https://github.com/babashka/bbin)
 
 ## Getting started
 
