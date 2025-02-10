@@ -42,6 +42,41 @@ To actually run the command:
 firewrap -b -- cmd
 ```
 
+## Philosophy and Design
+
+#### Full lisp-based programming language for specifying rules
+
+- Flexibility in creating composable abstractions
+  - Similar to Infrastructure-as-Code principles but for security.
+- Production grade tooling and IDE integration
+  - Completion, Signature help, Go to definition, References, Refactoring
+
+#### The Principle of Least Privilege
+
+- Process should have the lowest level of privilege needed to accomplish its task.
+- Default Deny as a baseline: Everything is forbidden unless explicitly allowed.
+- Sometimes hard to achieve in practice.
+  - Be pragmatic to allow starting with wider sandboxes,
+    but have mechanims to show warnings as a reminder to nudge to tighten as future improvements.
+
+#### Tooling (ideas)
+
+Creating sandbox profiles takes a lot of effort.
+A good sandboxing solution should provide tools to assist with the effort.
+Worfklow to create a profile is an iteration loop of:
+
+1. Record trace
+    - Log program behavior inside an isolated environment like a VM using strace.
+    - There is an initial [strace parsing](src/firewrap/tool/strace.clj) prototype.
+2. Map to abstractions composed out of presets
+    - Using generated rules based on a trace as-is would make it unmanageable to have a confidence that sandbox is secure and does not contain extraneous rules.
+    - Composing the rules using higher-level presents makes it possible to reason about security of the sandbox.
+3. Audit rules
+    - To make iteration and testing easier a tool could provide static analysis and report if rules are too tight or too loose. And only test the sandbox end-to-end by running it once static issues resolved.
+    - Possible sandbox rules problems:
+      - too tight - breaks program functionality
+      - too loose - exposes unnecessary resources, violates principle of least priviledge
+
 ## Concepts
 
 - Presets - Are reusable pieces that define security policy.
