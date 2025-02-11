@@ -57,7 +57,7 @@ firewrap -b -- cmd
 - Default Deny as a baseline: Everything is forbidden unless explicitly allowed.
 - Sometimes hard to achieve in practice.
   - Be pragmatic to allow starting with wider sandboxes,
-    but have mechanims to show warnings as a reminder to nudge to tighten as future improvements.
+    but have mechanisms to show warnings as a reminder to nudge to tighten as future improvements.
 
 #### Tooling (ideas)
 
@@ -75,7 +75,7 @@ Worfklow to create a profile is an iteration loop of:
     - To make iteration and testing easier a tool could provide static analysis and report if rules are too tight or too loose. And only test the sandbox end-to-end by running it once static issues resolved.
     - Possible sandbox rules problems:
       - too tight - breaks program functionality
-      - too loose - exposes unnecessary resources, violates principle of least priviledge
+      - too loose - exposes unnecessary resources, violates principle of least privilege
 
 ## Concepts
 
@@ -249,3 +249,17 @@ Unimplemented:
 - [ ] XDG Portals
 - [ ] Network filtering
 - [ ] ...
+
+## Related projects
+
+- SELinux and AppArmor Linux Security Modules (LSM) systems
+  - Difficult for an end-user to configure.
+- Containers like Docker, Podman
+  - Complected packaging, distribution and containment.
+  - I would like to have security independent of distribution.
+- Flatpak, Snap
+  - Complected distribution and containment.
+  - Vendor provided security policies incentivize to make them too loose.
+- Firejail
+  - Larger attack surface, needs SUID.
+  - Profiles often use Default Allow instead of Default Deny principle.
