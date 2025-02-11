@@ -250,7 +250,7 @@ Unimplemented:
 - [ ] Network filtering
 - [ ] ...
 
-## Related projects
+## Alternatives
 
 - SELinux and AppArmor Linux Security Modules (LSM) systems
   - Difficult for an end-user to configure.
@@ -263,3 +263,12 @@ Unimplemented:
 - Firejail
   - Larger attack surface, needs SUID.
   - Profiles often use Default Allow instead of Default Deny principle.
+
+### Other Bubblewrap-based projects
+
+- [Bubblejail](https://github.com/igo95862/bubblejail)
+  - Python, configuration in TOML, GUI configuration utility
+- [Sandbubble](https://github.com/CauldronDevelopmentLLC/sandbubble)
+  - Python, configuration in YAML
+- [Bubblebox](https://github.com/RalfJung/bubblebox)
+  - Python, configuration as Python scripts
