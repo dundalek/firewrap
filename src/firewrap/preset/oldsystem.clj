@@ -268,3 +268,12 @@
 (defn mime-cache [ctx]
   (-> ctx
       (bind-ro-try-many (xdg-data-dir-paths "mime/mime.cache"))))
+
+(defn command [ctx cmd]
+  (let [paths (some-> (sb/getenv ctx "PATH")
+                      (str/split #":"))]
+    ;; Consider resolving and binding only existing binaries?
+    (reduce (fn [ctx path]
+              (bind-ro-try ctx (str path "/" cmd)))
+            ctx
+            paths)))
