@@ -113,7 +113,8 @@
     "--bind"
     "--bind-try"
     "--dev-bind"
-    "--dev-bind-try"})
+    "--dev-bind-try"
+    "--symlink"})
 
 (defn bwrap->paths [bwrap-args]
   (loop [ret #{}

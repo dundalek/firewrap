@@ -100,7 +100,8 @@
 (defn tmpfs [ctx path]
   (add-raw-args ctx ["--tmpfs" path]))
 
-(defn symlink [ctx target link])
+(defn symlink [ctx target link]
+  (add-raw-args ctx ["--symlink" target link]))
 
 (defn chdir [ctx path]
   (add-raw-args ctx ["--chdir" path]))

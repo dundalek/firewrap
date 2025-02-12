@@ -185,8 +185,9 @@
       ;; is it safe to include ld.so.cache?
       (bind-ro-try "/etc/ld.so.cache")
       (bind-ro-try "/usr/lib")
-      (bind-ro-try "/lib")
-      (bind-ro-try "/lib64")))
+      (bind-ro-try "/usr/lib64")
+      (sb/symlink "usr/lib" "/lib")
+      (sb/symlink "usr/lib64" "/lib64")))
 
 (defn processes [ctx]
   ;; Should restrict /proc but how to whitelist individual pids?
