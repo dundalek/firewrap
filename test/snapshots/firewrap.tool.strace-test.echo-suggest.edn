@@ -5,8 +5,5 @@
   (system/nop system/bind-ro-try "/")
   (->
    (system/nop system/bind-ro-try "/etc")
-   (-> (system/bind-ro-try "/etc/ld.so.preload"))
-   (system/nop system/bind-ro-try "/usr")
-   (->
-    (system/nop system/bind-ro-try "/usr/bin")
-    (-> (system/bind-ro-try "/usr/bin/echo"))))))
+   (-> (system/bind-ro-try "/etc/ld.so.preload"))))
+ (-> (system/command "echo")))

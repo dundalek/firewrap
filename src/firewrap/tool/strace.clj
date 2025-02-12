@@ -192,6 +192,19 @@
   (when-some [subdir (match-xdg-dir (system/xdg-state-home-path) path)]
     [(vector 'system/xdg-state-home subdir)]))
 
+(def ^:private command-paths
+  (->> (str/split (System/getenv "PATH") #":")
+       (map #(str % "/"))))
+
+(defn match-command [path]
+  ;; hack: reaching for current global env variable
+  ;; will need to add ability to pass options when creating matchers
+  (when-some [matched-path (->> command-paths
+                                (some (fn [p]
+                                        (when (str/starts-with? path p)
+                                          p))))]
+    [['system/command (str/replace path matched-path "")]]))
+
 (comment
   (match-xdg-data-dir "/usr/share/somedir/somefile")
   (match-xdg-data-dir "/tmp/somedir/somefile")
@@ -209,7 +222,8 @@
    match-xdg-data-home
    match-xdg-config-home
    match-xdg-cache-home
-   match-xdg-state-home])
+   match-xdg-state-home
+   match-command])
 
 (defn match-path [path]
   (let [matches (->> static-matchers
@@ -266,6 +280,7 @@
 
 (comment
   (def trace-prefix "echo")
+  (def trace-prefix "date")
   (def trace (read-trace (format "tmp/%s-strace" trace-prefix)))
 
   (def trace (read-trace "test/fixtures/echo-strace")))
