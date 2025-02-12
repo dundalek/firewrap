@@ -4,6 +4,10 @@ Firewrap is a tool to run programs in an isolated runtime environment using a co
 
 It is similar to [Firejail](https://github.com/netblue30/firejail), but based on [Bubblewrap](https://github.com/containers/bubblewrap).
 
+There will be a lot of wasted effort creating wrappers and middlewares for AI agent tool use.
+What we need is first-class security mechanisms in programming languages and operating systems.
+In the end AIs will just execute commands and call APIs with provided authority.
+
 > ⚠️ **Disclaimer**:  
 This is an experimental and incomplete project.  
 Always verify the source before running anything.
