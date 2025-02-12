@@ -4,7 +4,7 @@
    [firewrap.preset.dumpster :as dumpster]
    [firewrap.preset.vscode :as vscode]))
 
-(defn profile []
+(defn profile [_]
   (-> (base/base5)
       (base/bind-isolated-home-with-user-programs "windsurf")
       (dumpster/network)

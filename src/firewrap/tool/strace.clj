@@ -61,7 +61,9 @@
       (vec paths))))
 
 (defn read-trace [file-path]
-  (with-open [rdr (-> (process {:in (io/reader file-path)} "npm exec -y b3-strace-parser")
+  (with-open [rdr (-> (process {:in (io/reader file-path)}
+                               "bunx b3-strace-parser"
+                               #_"npm exec -y b3-strace-parser")
                       :out
                       io/reader)]
     (doall (json/parsed-seq rdr true))))
@@ -96,9 +98,11 @@
                                          (let [path (if parent-path
                                                       (str parent-path "/" k)
                                                       k)
-                                               children (bind-autogen v path symb)]
-                                           (cond-> [(list symb path)]
-                                             (some? children) (conj children)))))
+                                               children (bind-autogen v path symb)
+                                               form (list symb (if (= path "") "/" path))]
+                                           (if (some? children)
+                                             [(cons 'system/nop form) children]
+                                             [form]))))
                                seq)]
        ;; could also wrap it in vectors or (->)
        (concat ['->] bindings)))))
@@ -260,6 +264,9 @@
                       [(bind-autogen path-tree nil k)])))))))
 
 (comment
+  (def trace-prefix "echo")
+  (def trace (read-trace (format "tmp/%s-strace" trace-prefix)))
+
   (def trace (read-trace "test/fixtures/echo-strace")))
 
 (comment
@@ -272,6 +279,12 @@
 
   (->> trace
        (mapcat syscall->file-paths)
+       (distinct)
+       ; (count)
+       (take 10))
+
+  (->> trace
+       (mapcat syscall->file-paths)
        (map match-path))
 
   (def matches (trace-matches trace))
@@ -280,12 +293,16 @@
       (trace-matches)
       (update-vals #(update-vals % count)))
 
-  (def bindings (trace->suggest trace))
+  (do
+    (def bindings (trace->suggest trace))
 
-  (with-open [writer (io/writer "tmp/bindings.clj")]
-    (.write writer "#_:clj-kondo/ignore")
-    (.write writer "\n")
-    (pprint bindings writer))
+    (with-open [writer (io/writer (format "tmp/%s-bindings.clj" trace-prefix))]
+      (let [result (list
+                    'defn 'profile ['_]
+                    bindings)]
+        (.write writer "#_:clj-kondo/ignore")
+        (.write writer "\n")
+        (pprint result writer))))
 
   (->> matches
        (reduce-kv
@@ -316,7 +333,8 @@
 
   (->> trace
        (map :syscall)
-       (frequencies))
+       (frequencies)
+       (sort-by val))
 
   (->> trace
        (filter #(seq (syscall->file-paths %)))

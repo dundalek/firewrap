@@ -23,7 +23,7 @@
 (deftest presets
   (binding [sb/*populate-env!* (constantly env-ctx)]
     (snap/match-snapshot ::godmode (main/unwrap-raw (sb/ctx->args (godmode/profile "/path/to/GodMode.AppImage"))))
-    (snap/match-snapshot ::windsurf (main/unwrap-raw (sb/ctx->args (windsurf/profile))))
+    (snap/match-snapshot ::windsurf (main/unwrap-raw (sb/ctx->args (windsurf/profile nil))))
     (snap/match-snapshot ::windsurf-cwd (test-main "windsurf" "--cwd" "--" "."))
     (snap/match-snapshot ::ferdium (test-main "ferdium"))
     (snap/match-snapshot ::ferdium-absolute (test-main "/some/path/ferdium"))))

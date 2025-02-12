@@ -8,6 +8,9 @@
   ;; TODO
   s)
 
+(defmacro nop [ctx & _]
+  ctx)
+
 (def add-bwrap-args #'sb/add-raw-args)
 
 (def bind-ro sb/bind-ro)

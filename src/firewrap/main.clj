@@ -154,7 +154,7 @@
                                ;; or specify different --user-data-dir ?
                                (when (:cwd opts) ["--new-window"])
                                (rest args))]
-     (-> (windsurf/profile)
+     (-> (windsurf/profile nil)
          (sb/bind-ro windsurf-dir)
          (sb/set-cmd-args windsurf-args)))))
 
