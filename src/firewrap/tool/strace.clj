@@ -1,13 +1,14 @@
 (ns firewrap.tool.strace
   (:require
+   [babashka.cli :as cli]
    [babashka.process :refer [process]]
    [cheshire.core :as json]
    [clojure.java.io :as io]
    [clojure.pprint :refer [pprint]]
    [clojure.string :as str]
    [clojure.walk :as walk]
-   [firewrap.sandbox :as sb]
    [firewrap.preset.oldsystem :as system]
+   [firewrap.sandbox :as sb]
    [firewrap.preset.dumpster :as dumpster]))
 
 ; Using strace parser:
@@ -278,12 +279,54 @@
                                                  {}))]
                       [(bind-autogen path-tree nil k)])))))))
 
+(defn write-rules [writer rules]
+  (let [result (list
+                'defn 'profile ['_]
+                rules)]
+    (.write writer "#_:clj-kondo/ignore")
+    (.write writer "\n")
+    (pprint result writer)))
+
+(defn generate-rules [_]
+  (let [trace (with-open [rdr (io/reader *in*)]
+                (doall (json/parsed-seq rdr true)))
+        rules (trace->suggest trace)]
+    (write-rules *out* rules)))
+
+(declare cli-table)
+
+(defn print-help [_]
+  (println "Generate suggested rules from a trace
+
+Usage: firewrap generate"))
+
+(def cli-table
+  [{:cmds ["generate"]
+    :fn generate-rules
+    :args->opts [:file]}
+   {:cmds []
+    :fn print-help}])
+
+(defn -main [& args]
+  (cli/dispatch cli-table args {}))
+
 (comment
   (def trace-prefix "echo")
-  (def trace-prefix "date")
+  (def trace-prefix "clojure")
   (def trace (read-trace (format "tmp/%s-strace" trace-prefix)))
 
-  (def trace (read-trace "test/fixtures/echo-strace")))
+  (def trace (read-trace "test/fixtures/echo-strace"))
+
+  (tap> trace)
+
+  (do
+    (def rules (trace->suggest trace))
+    (with-open [writer (io/writer (format "tmp/%s-bindings.clj" trace-prefix))]
+      (write-rules writer rules)))
+
+  (do
+    (def rules (trace->suggest trace))
+    (write-rules *out* rules)))
 
 (comment
   (->> trace
@@ -308,17 +351,6 @@
   (-> trace
       (trace-matches)
       (update-vals #(update-vals % count)))
-
-  (do
-    (def bindings (trace->suggest trace))
-
-    (with-open [writer (io/writer (format "tmp/%s-bindings.clj" trace-prefix))]
-      (let [result (list
-                    'defn 'profile ['_]
-                    bindings)]
-        (.write writer "#_:clj-kondo/ignore")
-        (.write writer "\n")
-        (pprint result writer))))
 
   (->> matches
        (reduce-kv

@@ -1,0 +1,14 @@
+#!/usr/bin/env bb
+;; -*- clojure -*-
+;; vim: set filetype=clojure:
+
+(require
+ '[babashka.classpath :refer [add-classpath]]
+ '[clojure.java.io :as io])
+
+(add-classpath (-> (io/file (str *file* "/../../src"))
+                   (.getCanonicalPath)))
+
+(require '[firewrap.tool.strace :as strace])
+
+(apply strace/-main *command-line-args*)
