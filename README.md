@@ -239,6 +239,83 @@ As a workaround use bash for restricted shells:
 
 `firewrap -b -- bash`
 
+## Trace helper tool
+
+Capture a trace using strace (ideally on an isolated physical hardware or in a VM):
+
+```
+strace -f -o output.trace your-command
+```
+
+Tip: Set `XDG_` dirs to smaller number of candidates for less noisy trace:
+
+```
+export XDG_DATA_DIRS="$HOME/.local/share:/usr/share" XDG_CONFIG_DIRS="/etc/xdg"
+```
+
+We leverage [b3-strace-parser](https://github.com/dannykopping/b3) to parse strace file as JSON. 
+Install it with:
+
+```
+npm install -g b3-strace-parser
+```
+
+Then use the `firehelper generate` command to generate a profile based on the captured trace.
+
+```
+cat output.trace | b3-strace-parser | bin/firehelper generate > profile/foo.clj
+```
+
+As you can see in the example output below,
+the tool tries to match captured file paths to existing presets like `system/libs` `system/command`.
+
+Remaining paths are then structured as a tree of `bind-ro-try` forms.
+These can be left as is granularly binding leaf paths.
+Alternatively, they can edited or extracted into higher-level presets.
+
+```clj
+(defn
+ profile
+ [_]
+ (->
+  (base/base)
+  (system/libs)
+  (->
+   (system/nop system/bind-ro-try "/")
+   (->
+    (system/nop system/bind-ro-try "/etc")
+    (-> (system/bind-ro-try "/etc/ld.so.preload"))))
+  (-> (system/command "echo"))))
+```
+
+Now a smaller example will show why the forms are structured using nested threading `->` forms.
+For example for input paths `/foo/a` and `/foo/b` we will get:
+
+```clj
+(->
+ (system/nop system/bind-ro-try "/foo")
+ (-> 
+   (system/bind-ro-try "/foo/a")
+   (system/bind-ro-try "/foo/b")))
+```
+
+Notice `system/nop` in the `/foo` form which makes the form to just pass through the context and ignore the binding function.
+It is effectively same as following granular bindings (and we can remove the `nop` form manually when decided to use the granular approach):
+
+```clj
+(-> 
+  (system/bind-ro-try "/foo/a")
+  (system/bind-ro-try "/foo/b"))
+```
+
+The other option is to delete the whole tree under form and remove the `nop` form to apply the parent form.
+This can be useful when nested paths are well scoped to the containing directory, for example when there are too many nested files or the filenames are dynamic/randomized.
+
+```clj
+(->
+ (system/bind-ro-try "/foo"))
+```
+
 ## Implemented mechanisms
 
 Implemented:

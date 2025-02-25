@@ -298,7 +298,11 @@
 (defn print-help [_]
   (println "Generate suggested rules from a trace
 
-Usage: firewrap generate"))
+Usage: firewrap generate
+
+Reads JSON trace from stdin, prints result to stdout.
+
+Example: cat foo.trace | b3-strace-parser | firehelper generate > profile/foo.clj"))
 
 (def cli-table
   [{:cmds ["generate"]
