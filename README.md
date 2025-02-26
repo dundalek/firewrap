@@ -1,12 +1,12 @@
 # Firewrap
 
-Firewrap is a tool to run programs in an isolated runtime environment using a container type sandbox.
+Firewrap is a tool to run programs in an isolated runtime environment using a container-type sandbox.
 
 It is similar to [Firejail](https://github.com/netblue30/firejail), but based on [Bubblewrap](https://github.com/containers/bubblewrap).
 
-There will be a lot of wasted effort creating wrappers and middlewares for AI agent tool use.
+Motivation: There will be a lot of wasted effort creating wrappers and middlewares for AI agent tool use.
 What we need is first-class security mechanisms in programming languages and operating systems.
-In the end AIs will just execute commands and call APIs with provided authority.
+In the end AIs will just execute commands and call APIs with given authority.
 
 > ⚠️ **Disclaimer**:  
 This is an experimental and incomplete project.  
@@ -58,12 +58,13 @@ firewrap -b -- cmd
 #### The Principle of Least Privilege
 
 - Process should have the lowest level of privilege needed to accomplish its task.
-- Default Deny as a baseline: Everything is forbidden unless explicitly allowed.
+- Secure by default
+  - Default Deny as a baseline: Everything is forbidden unless explicitly allowed.
 - Sometimes hard to achieve in practice.
   - Be pragmatic to allow starting with wider sandboxes,
-    but have mechanisms to show warnings as a reminder to nudge to tighten as future improvements.
+    but have mechanisms to show warnings as a reminder to nudge to tighten in future iterations.
 
-#### Tooling (ideas)
+#### Tooling
 
 Creating sandbox profiles takes a lot of effort.
 A good sandboxing solution should provide tools to assist with the effort.
@@ -71,11 +72,13 @@ Worfklow to create a profile is an iteration loop of:
 
 1. Record trace
     - Log program behavior inside an isolated environment like a VM using strace.
-    - There is an initial [strace parsing](src/firewrap/tool/strace.clj) prototype.
 2. Map to abstractions composed out of presets
     - Using generated rules based on a trace as-is would make it unmanageable to have a confidence that sandbox is secure and does not contain extraneous rules.
+    - For example tools like [minijail](https://www.chromium.org/chromium-os/developer-library/guides/development/sandboxing/) and [Sydbox Pandora](https://git.sr.ht/~alip/syd/tree/main/item/pandora/README.md) also use tracing to help create profiles.
+	    However, the output can be overwhelming and some undesired access can be easily overlooked.
     - Composing the rules using higher-level presents makes it possible to reason about security of the sandbox.
-3. Audit rules
+      There is an experimental [Trace helper tool](#trace-helper-tool) that explores the approach.
+3. Audit rules (idea)
     - To make iteration and testing easier a tool could provide static analysis and report if rules are too tight or too loose. And only test the sandbox end-to-end by running it once static issues resolved.
     - Possible sandbox rules problems:
       - too tight - breaks program functionality
@@ -83,8 +86,8 @@ Worfklow to create a profile is an iteration loop of:
 
 ## Concepts
 
-- Presets - Are reusable pieces that define security policy.
-- Profiles - Define sandbox environment for an application and are automatically used if application name matches, usually use one or more presets.
+- [Presets](src/firewrap/preset) - Are reusable pieces that define security policy.
+- [Profiles](src/firewrap/preset) - Define sandbox environment for an application and are automatically used if application name matches, usually use one or more presets.
 - Levels (idea) - It is usually hard to create minimal profile that does not break any functionality.
   - The idea is to have common levels that add privileges.
   Then based on risk one can:
@@ -316,6 +319,8 @@ This can be useful when nested paths are well scoped to the containing directory
  (system/bind-ro-try "/foo"))
 ```
 
+TODO consider using [sysdig](https://github.com/draios/sysdig) instead of `strace` for capturing traces since it includes builtin support to output JSON-formatted traces.
+
 ## Implemented mechanisms
 
 Implemented:
@@ -333,7 +338,7 @@ Unimplemented:
 
 ## Alternatives
 
-- SELinux and AppArmor Linux Security Modules (LSM) systems
+- Linux Security Modules (LSM) systems like SELinux and AppArmor
   - Difficult for an end-user to configure.
 - Containers like Docker, Podman
   - Complected packaging, distribution and containment.
