@@ -13,8 +13,8 @@
       (sb/symlink "usr/lib" "/lib64")))
 
 (defn bind-extra-system-programs [ctx]
-  (-> ctx
-      (sb/bind-ro "/nix")))
+  ;; no-op as a placeholder for extenion point
+  ctx)
 
 (defn bind-user-programs [ctx]
   ;; no-op as a placeholder for extenion point
@@ -43,7 +43,8 @@
 
 (defn base4 [ctx]
   (-> (base)
-      (bind-system-programs)))
+      (bind-system-programs)
+      (bind-extra-system-programs)))
 
 (defn base5 []
   (let [ctx (base)]

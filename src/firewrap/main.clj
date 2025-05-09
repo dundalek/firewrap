@@ -132,12 +132,24 @@
 
 ;; == "user" config
 
+(defn bind-nix-shell [ctx]
+  (-> ctx
+      ;; to make nixpkgs channels available and be able to run nix-shell inside sandbox
+      (sb/bind-ro (str (dumpster/home ctx) "/.local/state/nix"))
+      (sb/bind-ro (str (dumpster/home ctx) "/.nix-defexpr"))))
+
 (defn bind-user-programs [ctx]
   (-> ctx
       ;; need to rebind nix-profile again over home
-      (sb/bind-ro (str (dumpster/home ctx) "/.nix-profile/bin"))))
+      (sb/bind-ro (str (dumpster/home ctx) "/.nix-profile"))
+      (bind-nix-shell)))
+
+(defn bind-extra-system-programs [ctx]
+  (-> ctx
+      (sb/bind-ro "/nix")))
 
 (alter-var-root #'base/bind-user-programs (constantly bind-user-programs))
+(alter-var-root #'base/bind-extra-system-programs (constantly bind-extra-system-programs))
 
 (profile/register!
  "godmode"
