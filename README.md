@@ -242,6 +242,14 @@ As a workaround use bash for restricted shells:
 
 `firewrap -b -- bash`
 
+Another option is to use `--unsafe-session` option:
+
+`firewrap -b --unsafe-session -- fish`
+
+The `--unsafe-session` option makes the sandbox open to TIOCSTI ioctl attack.
+However, it makes it less easier to forget to run a program under a sandbox by running the whole shell in sandbox.
+So it can end up better when the risk profile is protection against mostly misconfigured programs rather then malicious programs.
+
 ## Trace helper tool
 
 Capture a trace using strace (ideally on an isolated physical hardware or in a VM):

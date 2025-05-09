@@ -18,6 +18,7 @@
   {:profile {:desc ""
              :ref "<profile>"}
    :dry-run {:desc "Only print bubblewrap arguments but don't execute"}
+   :unsafe-session {:desc "Don't use --new-session option for bubblewrap (less secure)"}
    :help {:desc "Show help"}})
 
 (def base-options
@@ -113,14 +114,14 @@
 
 (defn main [& root-args]
   (let [{:keys [opts args] :as parsed} (parse-args root-args)
-        {:keys [profile base gui dry-run help]} opts]
+        {:keys [profile base gui dry-run help unsafe-session]} opts]
     (if (or help (empty? args))
       (print-help)
       (let [profile-fn (or (profile/resolve profile)
                            (constantly (cond
-                                         base (base/base5)
+                                         base (base/base5 {:unsafe-session unsafe-session})
                                          gui (base/base-gui)
-                                         :else (base/base))))
+                                         :else (base/base {:unsafe-session unsafe-session}))))
             ctx (base/configurable (profile-fn parsed) parsed)
             ctx (if (sb/cmd-args ctx)
                   ctx
