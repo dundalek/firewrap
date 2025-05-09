@@ -154,8 +154,12 @@
 (profile/register!
  "godmode"
  (fn [_]
-   (godmode/profile "/home/me/bin/vendor/GodMode/release/build/GodMode-1.0.0-beta.9.AppImage")))
+   (godmode/profile
+    #_(dumpster/glob-one (str (System/getenv "HOME") "/bin/vendor/GodMode/release/build/") "GodMode-*.AppImage")
+    ;; hardcoding version because glob picks up then -arm64 appimage variant
+    (str (System/getenv "HOME") "/bin/vendor/GodMode-1.0.0-beta.9.AppImage"))))
 
+;; distributed as tarball
 (profile/register!
  "windsurf"
  (fn [{:keys [args opts]}]
@@ -169,6 +173,28 @@
      (-> (windsurf/profile nil)
          (sb/bind-ro windsurf-dir)
          (sb/set-cmd-args windsurf-args)))))
+
+;; try to run windsurf from nix-env
+#_(profile/register!
+   "windsurf"
+   (fn [{:keys [args opts]}]
+     (let [windsurf-bin "windsurf"
+           windsurf-args (concat [windsurf-bin]
+                               ;; when restricting to cwd, opening a different folder will load it in existing instance so files will not be visible
+                               ;; or specify different --user-data-dir ?
+                                 (when (:cwd opts) ["--new-window"])
+                                 (rest args))]
+       (-> (windsurf/profile nil)
+           (sb/set-cmd-args windsurf-args)))))
+
+(profile/register!
+ "wscribe"
+ (fn [_]
+   (-> (base/base5)
+       (base/configurable {:opts {:cwd true
+                                  ; :net true
+                                  :home "wscribe"}})
+       (sb/env-set "WSCRIBE_MODELS_DIR" "wscribe_models"))))
 
 (comment
   (main "chrome")
