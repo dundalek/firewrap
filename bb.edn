@@ -1,9 +1,21 @@
- {:tasks {test:once
-          {:doc  "runs tests"
-           :task (clojure {:dir "."} "-M:test")}
+ {:tasks
+  {test:once
+   {:doc  "runs tests"
+    :task (clojure {:dir "."} "-M:test")}
 
-          test
-          {:doc  "runs tests in watch mode"
-           :task (clojure {:dir "."} "-M:test --watch")}
+   test
+   {:doc  "runs tests in watch mode"
+    :task (clojure {:dir "."} "-M:test --watch")}
 
-          test:coverage (clojure "-M:test:coverage")}}
+   test:coverage
+   {:doc "generate test coverage report"
+    :task (clojure "-M:test:coverage")}
+
+   docs
+   {:doc "Invoke quickdoc"
+    :extra-deps {io.github.borkdude/quickdoc {:git/tag "v0.2.5", :git/sha "25784ca"}}
+    :task (exec 'quickdoc.api/quickdoc)
+    :exec-args {:git/branch "master"
+                :github/repo "https://github.com/dundalek/firewrap"
+                :source-paths ["src"]
+                :outfile "doc/API.md"}}}}

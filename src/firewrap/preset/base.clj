@@ -30,7 +30,9 @@
       (dumpster/bind-isolated-tmphome)
       (bind-user-programs)))
 
-(defn base []
+(defn base
+  "Base with basic bubblewrap flags, does not grant any resources."
+  []
   (-> {}
       (sb/*populate-env!*)
       (sb/die-with-parent)
@@ -41,12 +43,16 @@
       ;; See https://github.com/containers/bubblewrap/issues/555
       (sb/new-session)))
 
-(defn base4 [ctx]
+(defn base4
+  "More granular base with system files"
+  [ctx]
   (-> (base)
       (bind-system-programs)
       (bind-extra-system-programs)))
 
-(defn base5 []
+(defn base5
+  "Low effort sandbox, includes system files with temporary home and empty tmp"
+  []
   (let [ctx (base)]
     (-> ctx
         (sb/env-pass-many env/allowed)
