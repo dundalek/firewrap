@@ -190,7 +190,7 @@ firewrap -bh -- appname
 Use `--tmphome` or `-t` for persistent temporary home, this will create `~/sandboxes/tmp-<current-date-time>`. This is useful for having a temporary home, but it is preserved even after app finishes.
 
 ```
-firewrap -bh -- appname
+firewrap -bt -- appname
 ```
 
 #### Appimages
