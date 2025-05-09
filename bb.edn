@@ -11,8 +11,22 @@
    {:doc "generate test coverage report"
     :task (clojure "-M:test:coverage")}
 
+   update-readme-help
+   {:doc "Update README.md with help output"
+    :requires [[clojure.string :as str]
+               [babashka.process :refer [sh]]
+               [babashka.fs :as fs]]
+    :task (let [help-output (:out (sh "bin/firewrap" "--help"))]
+            (fs/update-file
+             "README.md"
+             (fn [content]
+               (str/replace content
+                            (re-pattern "(<!-- FIREWRAP_HELP_BEGIN -->)[\\s\\S]*?(<!-- /FIREWRAP_HELP_END -->)")
+                            (str "$1\n```\n" help-output "```\n$2")))))}
+
    docs
-   {:doc "Invoke quickdoc"
+   {:doc "Generate documentation"
+    :depends [update-readme-help]
     :extra-deps {io.github.borkdude/quickdoc {:git/tag "v0.2.5", :git/sha "25784ca"}}
     :task (exec 'quickdoc.api/quickdoc)
     :exec-args {:git/branch "master"

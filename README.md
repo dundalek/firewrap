@@ -97,15 +97,17 @@ Worfklow to create a profile is an iteration loop of:
 
 ## Usage
 
+<!-- FIREWRAP_HELP_BEGIN -->
 ```
 Run program in sandbox
 
 Usage: firewrap [<options> --] <command> [<args>]
 
 Options:
-  --profile <profile>
-  --dry-run           Only print bubblewrap arguments but don't execute
-  --help              Show help
+  --profile        <profile>
+  --dry-run                  Only print bubblewrap arguments but don't execute
+  --unsafe-session           Don't use --new-session option for bubblewrap (less secure)
+  --help                     Show help
 
 Ad-hoc profile options:
   -b, --base
@@ -115,6 +117,7 @@ Ad-hoc profile options:
   -c, --cwd
   -n, --net
 ```
+<!-- /FIREWRAP_HELP_END -->
 
 For convenience `firewrap` can be aliased to `fw`.
 
