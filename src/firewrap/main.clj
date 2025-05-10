@@ -135,8 +135,8 @@
       (print-help)
       (let [profile-fn (or (profile/resolve profile)
                            (constantly (cond
-                                         (= base 4) (base/base4 {:unsafe-session unsafe-session})
-                                         (or (= base 5) (true? base)) (base/base5 {:unsafe-session unsafe-session})
+                                         (or (= base 4) (true? base)) (base/base4 {:unsafe-session unsafe-session})
+                                         (= base 5) (base/base5 {:unsafe-session unsafe-session})
                                          gui (base/base-gui)
                                          :else (base/base {:unsafe-session unsafe-session}))))
             ctx (base/configurable (profile-fn parsed) parsed)
