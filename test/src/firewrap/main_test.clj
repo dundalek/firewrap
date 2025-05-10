@@ -46,4 +46,33 @@
     ;; pass extra `--` if subcommand needs `--`
     "bin/cmd -- --arg -- some other"
     {:args ["bin/cmd" "--arg" "--" "some" "other"]
-     :opts {:profile "cmd"}}))
+     :opts {:profile "cmd"}}
+
+    "firewrap -bcn -- cmd --arg"
+    {:args ["cmd" "--arg"]
+     :opts {:base true :cwd true :net true}}
+
+    "firewrap -bn -- cmd -c"
+    {:args ["cmd" "-c"]
+     :opts {:base true :net true}}
+
+    "firewrap --base 4 -- cmd"
+    {:args ["cmd"]
+     :opts {:base 4}}
+
+    "firewrap -b4 -- cmd"
+    {:args ["cmd"]
+     :opts {:base 4}}
+
+    "firewrap -b4n -- cmd -b4"
+    {:args ["cmd" "-b4"]
+     :opts {:base 4 :net true}}
+
+    "firewrap -cb5 -- cmd -b5"
+    {:args ["cmd" "-b5"]
+     :opts {:base 5 :cwd true}}))
+
+(deftest preprocess-short-options
+  (is (= ["--base" "4" "cmd"] (main/preprocess-short-options ["-b4" "cmd"])))
+  (is (= ["-cn" "--base" "4" "cmd"] (main/preprocess-short-options ["-b4cn" "cmd"])))
+  (is (= ["-cn" "--base" "5" "cmd"] (main/preprocess-short-options ["-cnb5" "cmd"]))))

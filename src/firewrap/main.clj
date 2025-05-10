@@ -37,16 +37,32 @@
 
 (def cli-spec (merge cli-options base-options))
 
+(defn preprocess-short-options [args]
+  (reduce
+   (fn [processed arg]
+     (or (when (and (string? arg)
+                    (str/starts-with? arg "-")
+                    (not (str/starts-with? arg "--")))
+           (when-some [[_ base-val] (re-find #"b([0-9]+)" arg)]
+             (let [remaining-opts (str/replace arg (str "b" base-val) "")]
+               (cond-> processed
+                 (not= remaining-opts "-") (conj remaining-opts)
+                 :always (into ["--base" base-val])))))
+         (conj processed arg)))
+   [] args))
+
 (defn parse-args [args]
   (let [appname (dumpster/path->appname (first args))
         firewrap? (#{"firewrap" "frap" "fw"} appname)
         parse (if (some #{"--"} args)
-                #(cli/parse-args % {:spec cli-spec})
+                (fn [args]
+                  (let [[firewrap-args cmd-args] (split-with (complement #{"--"}) args)
+                        args (concat (preprocess-short-options firewrap-args) cmd-args)]
+                    (cli/parse-args args {:spec cli-spec})))
                 (fn [args] {:args args :opts {}}))
-        result (if firewrap?
-                 (parse (rest args))
-                 (-> (parse (rest args))
-                     (update :opts #(merge {:profile appname} %))
+        result (cond-> (parse (rest args))
+                 (not firewrap?)
+                 (-> (update :opts #(merge {:profile appname} %))
                      (update :args #(into [(first args)] %))))]
     (if (= result {:opts {} :args ["--help"]})
       {:opts {:help true}}
@@ -119,7 +135,8 @@
       (print-help)
       (let [profile-fn (or (profile/resolve profile)
                            (constantly (cond
-                                         base (base/base5 {:unsafe-session unsafe-session})
+                                         (= base 4) (base/base4 {:unsafe-session unsafe-session})
+                                         (or (= base 5) (true? base)) (base/base5 {:unsafe-session unsafe-session})
                                          gui (base/base-gui)
                                          :else (base/base {:unsafe-session unsafe-session}))))
             ctx (base/configurable (profile-fn parsed) parsed)
@@ -181,8 +198,8 @@
    (fn [{:keys [args opts]}]
      (let [windsurf-bin "windsurf"
            windsurf-args (concat [windsurf-bin]
-                               ;; when restricting to cwd, opening a different folder will load it in existing instance so files will not be visible
-                               ;; or specify different --user-data-dir ?
+                                 ;; when restricting to cwd, opening a different folder will load it in existing instance so files will not be visible
+                                 ;; or specify different --user-data-dir ?
                                  (when (:cwd opts) ["--new-window"])
                                  (rest args))]
        (-> (windsurf/profile nil)

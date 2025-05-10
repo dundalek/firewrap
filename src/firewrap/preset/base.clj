@@ -10,7 +10,7 @@
       (sb/symlink "usr/bin" "/bin")
       (sb/symlink "usr/bin" "/sbin")
       (sb/symlink "usr/lib" "/lib")
-      (sb/symlink "usr/lib" "/lib64")
+      (sb/symlink "usr/lib64" "/lib64")
       (sb/bind-ro-try "/lib32")))
 
 (defn bind-extra-system-programs [ctx]
@@ -48,17 +48,20 @@
 
 (defn base4
   "More granular base with system files"
-  [ctx]
-  (-> (base)
-      (sb/dev "/dev")
-      (sb/bind-ro "/etc")
-      (sb/proc "/proc")
-      (sb/tmpfs "/tmp")
-      (bind-system-programs)
-      (bind-extra-system-programs)
-      (sb/tmpfs (dumpster/home ctx))
-      (bind-user-programs)))
-      ;; media, mnt, opt, root, run, srv, sys, var?
+  ([] (base4 {}))
+  ([{:keys [unsafe-session]}]
+   (let [ctx (base {:unsafe-session unsafe-session})]
+     (-> ctx
+         (sb/env-pass-many env/allowed)
+         (sb/dev "/dev")
+         (sb/bind-ro "/etc")
+         (sb/proc "/proc")
+         (sb/tmpfs "/tmp")
+         (bind-system-programs)
+         (bind-extra-system-programs)
+         (sb/tmpfs (dumpster/home ctx))
+         (bind-user-programs)))))
+     ;; media, mnt, opt, root, run, srv, sys, var?
 
 (defn base5
   "Low effort sandbox, includes system files with temporary home and empty tmp"
