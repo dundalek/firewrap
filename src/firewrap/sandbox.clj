@@ -97,6 +97,12 @@
     content (add-heredoc-args (unsafe-escaped-arg (str fd "<<"))
                               (unsafe-escaped-arg (str "\"" heredoc-terminator "\"\n" content "\n" heredoc-terminator)))))
 
+(defn dev [ctx path]
+  (add-raw-args ctx ["--dev" path]))
+
+(defn proc [ctx path]
+  (add-raw-args ctx ["--proc" path]))
+
 (defn tmpfs [ctx path]
   (add-raw-args ctx ["--tmpfs" path]))
 

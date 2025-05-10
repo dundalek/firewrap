@@ -10,7 +10,8 @@
       (sb/symlink "usr/bin" "/bin")
       (sb/symlink "usr/bin" "/sbin")
       (sb/symlink "usr/lib" "/lib")
-      (sb/symlink "usr/lib" "/lib64")))
+      (sb/symlink "usr/lib" "/lib64")
+      (sb/bind-ro-try "/lib32")))
 
 (defn bind-extra-system-programs [ctx]
   ;; no-op as a placeholder for extenion point
@@ -49,8 +50,15 @@
   "More granular base with system files"
   [ctx]
   (-> (base)
+      (sb/dev "/dev")
+      (sb/bind-ro "/etc")
+      (sb/proc "/proc")
+      (sb/tmpfs "/tmp")
       (bind-system-programs)
-      (bind-extra-system-programs)))
+      (bind-extra-system-programs)
+      (sb/tmpfs (dumpster/home ctx))
+      (bind-user-programs)))
+      ;; media, mnt, opt, root, run, srv, sys, var?
 
 (defn base5
   "Low effort sandbox, includes system files with temporary home and empty tmp"
