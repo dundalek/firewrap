@@ -4,13 +4,14 @@
    [babashka.fs :as fs]
    [babashka.process :as process]
    [clojure.string :as str]
-   [firewrap.sandbox :as sb]
    [firewrap.preset.appimage :as appimage]
    [firewrap.preset.base :as base]
    [firewrap.preset.dumpster :as dumpster]
    [firewrap.profile :as profile]
+   [firewrap.profile.cursor :as cursor]
    [firewrap.profile.godmode :as godmode]
-   [firewrap.profile.windsurf :as windsurf]))
+   [firewrap.profile.windsurf :as windsurf]
+   [firewrap.sandbox :as sb]))
 
 (def ^:dynamic *exec-fn* process/exec)
 
@@ -204,6 +205,18 @@
                                  (rest args))]
        (-> (windsurf/profile nil)
            (sb/set-cmd-args windsurf-args)))))
+
+(profile/register!
+ "cursor"
+ (fn [{:keys [args opts]}]
+   (let [cursor-args (concat
+                      ;; when restricting to cwd, opening a different folder will load it in existing instance so files will not be visible
+                      ;; or specify different --user-data-dir ?
+                      (when (:cwd opts) ["--new-window"])
+                      (rest args))
+         appimage (dumpster/glob-one (str (System/getenv "HOME") "/Applications") "Cursor-*-x86_64.AppImage")
+         ctx (-> (cursor/profile nil))]
+     (apply appimage/run ctx appimage cursor-args))))
 
 (profile/register!
  "wscribe"
