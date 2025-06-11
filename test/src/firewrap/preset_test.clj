@@ -30,10 +30,10 @@
 
 (deftest base
   (snap/match-snapshot ::no-base (test-main "firewrap" "date"))
-  (snap/match-snapshot ::base-b (test-main "firewrap" "-b" "--" "date"))
-  (snap/match-snapshot ::base-bc (test-main "firewrap" "-bc" "--" "date"))
-  (snap/match-snapshot ::base-bhn (test-main "firewrap" "-bhn" "--" "date"))
-  (snap/match-snapshot ::base-home-arg (test-main "firewrap" "-b" "--home" "customhome" "--" "date")))
+  (snap/match-snapshot ::base5-b (test-main "firewrap" "-b5" "--" "date"))
+  (snap/match-snapshot ::base5-bc (test-main "firewrap" "-b5c" "--" "date"))
+  (snap/match-snapshot ::base5-bhn (test-main "firewrap" "-b5hn" "--" "date"))
+  (snap/match-snapshot ::base5-home-arg (test-main "firewrap" "-b5" "--home" "customhome" "--" "date")))
 
 (deftest help
   (let [help-text (with-out-str (main/print-help))]
