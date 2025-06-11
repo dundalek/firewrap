@@ -12,6 +12,7 @@
     -  [`main`](#firewrap.main/main)
     -  [`needs-bwrap-sh-wrapper?`](#firewrap.main/needs-bwrap-sh-wrapper?)
     -  [`parse-args`](#firewrap.main/parse-args)
+    -  [`preprocess-short-options`](#firewrap.main/preprocess-short-options)
     -  [`print-help`](#firewrap.main/print-help)
     -  [`run-bwrap`](#firewrap.main/run-bwrap)
     -  [`run-bwrap-exec`](#firewrap.main/run-bwrap-exec)
@@ -25,7 +26,7 @@
     -  [`base`](#firewrap.preset.base/base) - Base with basic bubblewrap flags, does not grant any resources.
     -  [`base-gui`](#firewrap.preset.base/base-gui)
     -  [`base4`](#firewrap.preset.base/base4) - More granular base with system files.
-    -  [`base5`](#firewrap.preset.base/base5) - Low effort sandbox, incluedes system files with temporary home and empty tmp.
+    -  [`base5`](#firewrap.preset.base/base5) - Low effort sandbox, includes system files with temporary home and empty tmp.
     -  [`base9`](#firewrap.preset.base/base9)
     -  [`bind-extra-system-programs`](#firewrap.preset.base/bind-extra-system-programs)
     -  [`bind-isolated-home-with-user-programs`](#firewrap.preset.base/bind-isolated-home-with-user-programs)
@@ -120,6 +121,10 @@
     -  [`resolve-builtin-profile`](#firewrap.profile/resolve-builtin-profile)
 -  [`firewrap.profile.bash`](#firewrap.profile.bash) 
     -  [`profile`](#firewrap.profile.bash/profile)
+-  [`firewrap.profile.clojure`](#firewrap.profile.clojure) 
+    -  [`profile`](#firewrap.profile.clojure/profile)
+-  [`firewrap.profile.cursor`](#firewrap.profile.cursor) 
+    -  [`profile`](#firewrap.profile.cursor/profile)
 -  [`firewrap.profile.date`](#firewrap.profile.date) 
     -  [`profile`](#firewrap.profile.date/profile)
 -  [`firewrap.profile.echo`](#firewrap.profile.echo) 
@@ -148,6 +153,7 @@
     -  [`cmd-args`](#firewrap.sandbox/cmd-args)
     -  [`ctx->args`](#firewrap.sandbox/ctx->args)
     -  [`cwd`](#firewrap.sandbox/cwd)
+    -  [`dev`](#firewrap.sandbox/dev)
     -  [`die-with-parent`](#firewrap.sandbox/die-with-parent)
     -  [`env-pass`](#firewrap.sandbox/env-pass)
     -  [`env-pass-many`](#firewrap.sandbox/env-pass-many)
@@ -157,6 +163,7 @@
     -  [`getenvs`](#firewrap.sandbox/getenvs)
     -  [`new-session`](#firewrap.sandbox/new-session)
     -  [`new-session-disable`](#firewrap.sandbox/new-session-disable)
+    -  [`proc`](#firewrap.sandbox/proc)
     -  [`set-cmd-args`](#firewrap.sandbox/set-cmd-args)
     -  [`share-net`](#firewrap.sandbox/share-net)
     -  [`skip-own-symlink`](#firewrap.sandbox/skip-own-symlink)
@@ -204,13 +211,13 @@
 
 
 
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L15-L15">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L16-L16">Source</a></sub></p>
 
 ## <a name="firewrap.main/base-options">`base-options`</a>
 
 
 
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L23-L35">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L25-L37">Source</a></sub></p>
 
 ## <a name="firewrap.main/bind-extra-system-programs">`bind-extra-system-programs`</a>
 ``` clojure
@@ -218,7 +225,7 @@
 (bind-extra-system-programs ctx)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L147-L149">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L166-L168">Source</a></sub></p>
 
 ## <a name="firewrap.main/bind-nix-shell">`bind-nix-shell`</a>
 ``` clojure
@@ -226,7 +233,7 @@ Function.
 (bind-nix-shell ctx)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L135-L139">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L154-L158">Source</a></sub></p>
 
 ## <a name="firewrap.main/bind-user-programs">`bind-user-programs`</a>
 ``` clojure
@@ -234,7 +241,7 @@ Function.
 (bind-user-programs ctx)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L141-L145">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L160-L164">Source</a></sub></p>
 
 ## <a name="firewrap.main/bwrap-args">`bwrap-args`</a>
 ``` clojure
@@ -242,19 +249,19 @@ Function.
 (bwrap-args args)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L93-L94">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L111-L112">Source</a></sub></p>
 
 ## <a name="firewrap.main/cli-options">`cli-options`</a>
 
 
 
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L17-L21">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L18-L23">Source</a></sub></p>
 
 ## <a name="firewrap.main/cli-spec">`cli-spec`</a>
 
 
 
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L37-L37">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L39-L39">Source</a></sub></p>
 
 ## <a name="firewrap.main/escape-shell">`escape-shell`</a>
 ``` clojure
@@ -262,7 +269,7 @@ Function.
 (escape-shell s)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L65-L68">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L83-L86">Source</a></sub></p>
 
 ## <a name="firewrap.main/main">`main`</a>
 ``` clojure
@@ -270,7 +277,7 @@ Function.
 (main & root-args)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L114-L131">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L132-L150">Source</a></sub></p>
 
 ## <a name="firewrap.main/needs-bwrap-sh-wrapper?">`needs-bwrap-sh-wrapper?`</a>
 ``` clojure
@@ -278,7 +285,7 @@ Function.
 (needs-bwrap-sh-wrapper? args)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L102-L105">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L120-L123">Source</a></sub></p>
 
 ## <a name="firewrap.main/parse-args">`parse-args`</a>
 ``` clojure
@@ -286,7 +293,15 @@ Function.
 (parse-args args)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L39-L52">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L55-L70">Source</a></sub></p>
+
+## <a name="firewrap.main/preprocess-short-options">`preprocess-short-options`</a>
+``` clojure
+
+(preprocess-short-options args)
+```
+Function.
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L41-L53">Source</a></sub></p>
 
 ## <a name="firewrap.main/print-help">`print-help`</a>
 ``` clojure
@@ -294,7 +309,7 @@ Function.
 (print-help)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L54-L63">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L72-L81">Source</a></sub></p>
 
 ## <a name="firewrap.main/run-bwrap">`run-bwrap`</a>
 ``` clojure
@@ -302,7 +317,7 @@ Function.
 (run-bwrap ctx opts)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L107-L112">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L125-L130">Source</a></sub></p>
 
 ## <a name="firewrap.main/run-bwrap-exec">`run-bwrap-exec`</a>
 ``` clojure
@@ -310,7 +325,7 @@ Function.
 (run-bwrap-exec args {:keys [dry-run]})
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L96-L100">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L114-L118">Source</a></sub></p>
 
 ## <a name="firewrap.main/run-bwrap-sh-wrapper">`run-bwrap-sh-wrapper`</a>
 ``` clojure
@@ -318,7 +333,7 @@ Function.
 (run-bwrap-sh-wrapper args {:keys [dry-run]})
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L84-L91">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L102-L109">Source</a></sub></p>
 
 ## <a name="firewrap.main/unwrap-escaping">`unwrap-escaping`</a>
 ``` clojure
@@ -326,7 +341,7 @@ Function.
 (unwrap-escaping args)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L70-L74">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L88-L92">Source</a></sub></p>
 
 ## <a name="firewrap.main/unwrap-raw">`unwrap-raw`</a>
 ``` clojure
@@ -334,7 +349,7 @@ Function.
 (unwrap-raw args)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L76-L80">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.clj#L94-L98">Source</a></sub></p>
 
 -----
 # <a name="firewrap.preset.appimage">firewrap.preset.appimage</a>
@@ -372,11 +387,12 @@ Function.
 ``` clojure
 
 (base)
+(base {:keys [unsafe-session]})
 ```
 Function.
 
 Base with basic bubblewrap flags, does not grant any resources.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L33-L44">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L34-L47">Source</a></sub></p>
 
 ## <a name="firewrap.preset.base/base-gui">`base-gui`</a>
 ``` clojure
@@ -384,27 +400,29 @@ Base with basic bubblewrap flags, does not grant any resources.
 (base-gui)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L64-L67">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L78-L81">Source</a></sub></p>
 
 ## <a name="firewrap.preset.base/base4">`base4`</a>
 ``` clojure
 
-(base4 ctx)
+(base4)
+(base4 {:keys [unsafe-session]})
 ```
 Function.
 
 More granular base with system files
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L46-L51">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L49-L63">Source</a></sub></p>
 
 ## <a name="firewrap.preset.base/base5">`base5`</a>
 ``` clojure
 
 (base5)
+(base5 {:keys [unsafe-session]})
 ```
 Function.
 
-Low effort sandbox, incluedes system files with temporary home and empty tmp
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L53-L62">Source</a></sub></p>
+Low effort sandbox, includes system files with temporary home and empty tmp
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L66-L76">Source</a></sub></p>
 
 ## <a name="firewrap.preset.base/base9">`base9`</a>
 ``` clojure
@@ -412,7 +430,7 @@ Low effort sandbox, incluedes system files with temporary home and empty tmp
 (base9 ctx)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L69-L72">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L83-L86">Source</a></sub></p>
 
 ## <a name="firewrap.preset.base/bind-extra-system-programs">`bind-extra-system-programs`</a>
 ``` clojure
@@ -420,7 +438,7 @@ Function.
 (bind-extra-system-programs ctx)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L15-L17">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L16-L18">Source</a></sub></p>
 
 ## <a name="firewrap.preset.base/bind-isolated-home-with-user-programs">`bind-isolated-home-with-user-programs`</a>
 ``` clojure
@@ -428,7 +446,7 @@ Function.
 (bind-isolated-home-with-user-programs ctx appname)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L23-L26">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L24-L27">Source</a></sub></p>
 
 ## <a name="firewrap.preset.base/bind-isolated-tmphome-with-user-programs">`bind-isolated-tmphome-with-user-programs`</a>
 ``` clojure
@@ -436,7 +454,7 @@ Function.
 (bind-isolated-tmphome-with-user-programs ctx)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L28-L31">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L29-L32">Source</a></sub></p>
 
 ## <a name="firewrap.preset.base/bind-system-programs">`bind-system-programs`</a>
 ``` clojure
@@ -444,7 +462,7 @@ Function.
 (bind-system-programs ctx)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L7-L13">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L7-L14">Source</a></sub></p>
 
 ## <a name="firewrap.preset.base/bind-user-programs">`bind-user-programs`</a>
 ``` clojure
@@ -452,7 +470,7 @@ Function.
 (bind-user-programs ctx)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L19-L21">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L20-L22">Source</a></sub></p>
 
 ## <a name="firewrap.preset.base/configurable">`configurable`</a>
 ``` clojure
@@ -460,7 +478,7 @@ Function.
 (configurable ctx params)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L74-L85">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.clj#L88-L99">Source</a></sub></p>
 
 -----
 # <a name="firewrap.preset.dumpster">firewrap.preset.dumpster</a>
@@ -1131,6 +1149,38 @@ Function.
 <p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/profile/bash.clj#L6-L10">Source</a></sub></p>
 
 -----
+# <a name="firewrap.profile.clojure">firewrap.profile.clojure</a>
+
+
+
+
+
+
+## <a name="firewrap.profile.clojure/profile">`profile`</a>
+``` clojure
+
+(profile _)
+```
+Function.
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/profile/clojure.clj#L6-L20">Source</a></sub></p>
+
+-----
+# <a name="firewrap.profile.cursor">firewrap.profile.cursor</a>
+
+
+
+
+
+
+## <a name="firewrap.profile.cursor/profile">`profile`</a>
+``` clojure
+
+(profile _)
+```
+Function.
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/profile/cursor.clj#L7-L11">Source</a></sub></p>
+
+-----
 # <a name="firewrap.profile.date">firewrap.profile.date</a>
 
 
@@ -1208,7 +1258,7 @@ Function.
 (profile _)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/profile/java.clj#L12-L24">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/profile/java.clj#L12-L25">Source</a></sub></p>
 
 -----
 # <a name="firewrap.profile.windsurf">firewrap.profile.windsurf</a>
@@ -1240,7 +1290,7 @@ Function.
 (*populate-env!* ctx)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L139-L142">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L145-L148">Source</a></sub></p>
 
 ## <a name="firewrap.sandbox/*run-effects!*">`*run-effects!*`</a>
 ``` clojure
@@ -1248,7 +1298,7 @@ Function.
 (*run-effects!* ctx)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L186-L189">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L192-L195">Source</a></sub></p>
 
 ## <a name="firewrap.sandbox/add-heredoc-args">`add-heredoc-args`</a>
 ``` clojure
@@ -1340,7 +1390,7 @@ Function.
 (chdir ctx path)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L106-L107">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L112-L113">Source</a></sub></p>
 
 ## <a name="firewrap.sandbox/cmd-args">`cmd-args`</a>
 ``` clojure
@@ -1356,7 +1406,7 @@ Function.
 (ctx->args ctx)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L179-L184">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L185-L190">Source</a></sub></p>
 
 ## <a name="firewrap.sandbox/cwd">`cwd`</a>
 ``` clojure
@@ -1364,7 +1414,15 @@ Function.
 (cwd ctx)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L144-L145">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L150-L151">Source</a></sub></p>
+
+## <a name="firewrap.sandbox/dev">`dev`</a>
+``` clojure
+
+(dev ctx path)
+```
+Function.
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L100-L101">Source</a></sub></p>
 
 ## <a name="firewrap.sandbox/die-with-parent">`die-with-parent`</a>
 ``` clojure
@@ -1372,7 +1430,7 @@ Function.
 (die-with-parent ctx)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L109-L110">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L115-L116">Source</a></sub></p>
 
 ## <a name="firewrap.sandbox/env-pass">`env-pass`</a>
 ``` clojure
@@ -1380,7 +1438,7 @@ Function.
 (env-pass ctx k)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L126-L127">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L132-L133">Source</a></sub></p>
 
 ## <a name="firewrap.sandbox/env-pass-many">`env-pass-many`</a>
 ``` clojure
@@ -1388,7 +1446,7 @@ Function.
 (env-pass-many ctx ks)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L129-L130">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L135-L136">Source</a></sub></p>
 
 ## <a name="firewrap.sandbox/env-set">`env-set`</a>
 ``` clojure
@@ -1396,7 +1454,7 @@ Function.
 (env-set ctx k v)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L123-L124">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L129-L130">Source</a></sub></p>
 
 ## <a name="firewrap.sandbox/fx-create-dirs">`fx-create-dirs`</a>
 ``` clojure
@@ -1404,7 +1462,7 @@ Function.
 (fx-create-dirs ctx path)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L176-L177">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L182-L183">Source</a></sub></p>
 
 ## <a name="firewrap.sandbox/getenv">`getenv`</a>
 ``` clojure
@@ -1412,7 +1470,7 @@ Function.
 (getenv ctx x)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L135-L137">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L141-L143">Source</a></sub></p>
 
 ## <a name="firewrap.sandbox/getenvs">`getenvs`</a>
 ``` clojure
@@ -1420,7 +1478,7 @@ Function.
 (getenvs ctx)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L132-L133">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L138-L139">Source</a></sub></p>
 
 ## <a name="firewrap.sandbox/new-session">`new-session`</a>
 ``` clojure
@@ -1428,7 +1486,7 @@ Function.
 (new-session ctx)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L112-L113">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L118-L119">Source</a></sub></p>
 
 ## <a name="firewrap.sandbox/new-session-disable">`new-session-disable`</a>
 ``` clojure
@@ -1436,7 +1494,15 @@ Function.
 (new-session-disable ctx)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L115-L115">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L121-L121">Source</a></sub></p>
+
+## <a name="firewrap.sandbox/proc">`proc`</a>
+``` clojure
+
+(proc ctx path)
+```
+Function.
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L103-L104">Source</a></sub></p>
 
 ## <a name="firewrap.sandbox/set-cmd-args">`set-cmd-args`</a>
 ``` clojure
@@ -1452,7 +1518,7 @@ Function.
 (share-net ctx)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L120-L121">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L126-L127">Source</a></sub></p>
 
 ## <a name="firewrap.sandbox/skip-own-symlink">`skip-own-symlink`</a>
 ``` clojure
@@ -1460,7 +1526,7 @@ Function.
 (skip-own-symlink [cmd & args])
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L165-L174">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L171-L180">Source</a></sub></p>
 
 ## <a name="firewrap.sandbox/symlink">`symlink`</a>
 ``` clojure
@@ -1468,7 +1534,7 @@ Function.
 (symlink ctx target link)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L103-L104">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L109-L110">Source</a></sub></p>
 
 ## <a name="firewrap.sandbox/tmpfs">`tmpfs`</a>
 ``` clojure
@@ -1476,7 +1542,7 @@ Function.
 (tmpfs ctx path)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L100-L101">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L106-L107">Source</a></sub></p>
 
 ## <a name="firewrap.sandbox/unsafe-escaped-arg">`unsafe-escaped-arg`</a>
 ``` clojure
@@ -1492,7 +1558,7 @@ Function.
 (unshare-all ctx)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L117-L118">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/sandbox.clj#L123-L124">Source</a></sub></p>
 
 -----
 # <a name="firewrap.tool.strace">firewrap.tool.strace</a>
