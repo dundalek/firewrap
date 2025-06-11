@@ -227,6 +227,22 @@
                                   :home "wscribe"}})
        (sb/env-set "WSCRIBE_MODELS_DIR" "wscribe_models"))))
 
+(profile/register!
+ "claude"
+ (fn [_]
+   (let [ctx (base/base5)]
+     (-> ctx
+         (base/configurable {:opts {:cwd true
+                                    :net true
+                                    :home "claude"}})
+         ;; bind claude files, alternative consider symlinking to sandbox dir
+         (sb/bind-rw-try (str (dumpster/home ctx) "/.claude"))
+         (sb/bind-rw-try (str (dumpster/home ctx) "/.claude.json"))
+         ;; Installed via Bun
+         (sb/bind-ro-try (str (dumpster/home ctx) "/.bun"))
+         ;; To use the usual name when committing
+         (sb/bind-ro-try (str (dumpster/home ctx) "/.gitconfig"))))))
+
 (comment
   (main "chrome")
   (main "xx")
