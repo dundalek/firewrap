@@ -30,6 +30,7 @@
 
 (deftest base
   (snap/match-snapshot ::no-base (test-main "firewrap" "date"))
+  (snap/match-snapshot ::base-b (test-main "firewrap" "-b" "--" "date"))
   (snap/match-snapshot ::base5-b (test-main "firewrap" "-b5" "--" "date"))
   (snap/match-snapshot ::base5-bc (test-main "firewrap" "-b5c" "--" "date"))
   (snap/match-snapshot ::base5-bhn (test-main "firewrap" "-b5hn" "--" "date"))
