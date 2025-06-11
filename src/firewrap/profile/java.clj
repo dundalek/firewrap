@@ -11,14 +11,15 @@
 
 (defn profile [_]
   ;; use --cwd option to run classes from current directory
-  (->
-   (base/base)
-   (system/libs)
+  (let [ctx (base/base)]
+    (-> ctx
+        (system/libs)
 
-   (sb/env-pass "PATH")
+        (sb/env-pass "PATH")
+        (sb/env-pass "JAVA_HOME")
 
-   ; (system/bind-ro-try "/nix")
+        (system/bind-ro-try (sb/getenv ctx "JAVA_HOME"))
 
-   (system/command "java")
-   ;; on Ubuntu /usr/bin/java symlinks to /etc/alternatives/java which then symlinks to /usr/lib/jvm/...
-   (sb/bind-ro-try "/etc/alternatives/java")))
+        (system/command "java")
+        ;; on Ubuntu /usr/bin/java symlinks to /etc/alternatives/java which then symlinks to /usr/lib/jvm/...
+        (sb/bind-ro-try "/etc/alternatives/java"))))
