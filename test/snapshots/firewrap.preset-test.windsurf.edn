@@ -30,7 +30,7 @@
  "/home/user/.nix-defexpr"
  "/home/user/.nix-defexpr"
  "--share-net"
- "--ro-bind"
+ "--ro-bind-try"
  "/etc/resolv.conf"
  "/etc/resolv.conf"
  "--ro-bind-try"

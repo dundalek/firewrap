@@ -21,7 +21,7 @@
  "/home/user/sandboxes/godmode"
  "/home/user"
  "--share-net"
- "--ro-bind"
+ "--ro-bind-try"
  "/etc/resolv.conf"
  "/etc/resolv.conf"
  "--ro-bind-try"
