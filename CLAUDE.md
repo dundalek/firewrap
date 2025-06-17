@@ -16,3 +16,5 @@ The tool prioritizes security through programming language abstractions rather t
 ## Development
 
 Run tests using `bb test:once`
+
+Run test coverage report with `bb test:coverage`

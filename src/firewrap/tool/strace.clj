@@ -63,7 +63,8 @@
 
 (defn read-trace [file-path]
   (with-open [rdr (-> (process {:in (io/reader file-path)}
-                               "bunx b3-strace-parser"
+                               "b3-strace-parser"
+                               #_"bunx b3-strace-parser"
                                #_"npm exec -y b3-strace-parser")
                       :out
                       io/reader)]

@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(bb test:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(./bin/firewrap:*--dry-run*--*)",
+      "WebFetch(domain:docs.anthropic.com)"
     ],
     "deny": []
   }

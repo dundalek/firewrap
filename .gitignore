@@ -6,3 +6,5 @@
 .calva
 /target/coverage
 .lsp/.cache
+node_modules
+/target/bin
