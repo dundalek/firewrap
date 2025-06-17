@@ -37,4 +37,4 @@
  "--ro-bind-try"
  "/run/systemd/resolve"
  "/run/systemd/resolve"
- "/home/me/.nix-profile/bin/ferdium")
+ "/some/path/ferdium")

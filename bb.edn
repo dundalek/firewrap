@@ -1,17 +1,22 @@
  {:tasks
-  {test:once
+  {:init (def extra-env {"PATH" (str "target/bin:test/fixtures/bin:" (System/getenv "PATH"))})
+
+   test:once
    {:doc  "runs tests"
     :task (clojure {:dir "."
-                    :extra-env {"PATH" (str "target/bin" ":" (System/getenv "PATH"))}}
+                    :extra-env extra-env}
                    "-M:test")}
 
    test
    {:doc  "runs tests in watch mode"
-    :task (clojure {:dir "."} "-M:test --watch")}
+    :task (clojure {:dir "."
+                    :extra-env extra-env}
+                   "-M:test --watch")}
 
    test:coverage
    {:doc "generate test coverage report"
-    :task (clojure "-M:test:coverage")}
+    :task (clojure {:extra-env extra-env}
+                   "-M:test:coverage")}
 
    update-readme-help
    {:doc "Update README.md with help output"

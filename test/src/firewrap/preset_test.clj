@@ -2,10 +2,11 @@
   (:require
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]
-   [firewrap.sandbox :as sb]
    [firewrap.main :as main]
+   [firewrap.profile :as profile]
    [firewrap.profile.godmode :as godmode]
    [firewrap.profile.windsurf :as windsurf]
+   [firewrap.sandbox :as sb]
    [snap.core :as snap]))
 
 (def test-env
@@ -24,7 +25,10 @@
   (binding [sb/*populate-env!* (constantly env-ctx)]
     (snap/match-snapshot ::godmode (main/unwrap-raw (sb/ctx->args (godmode/profile "/path/to/GodMode.AppImage"))))
     (snap/match-snapshot ::windsurf (main/unwrap-raw (sb/ctx->args (windsurf/profile nil))))
-    (snap/match-snapshot ::windsurf-cwd (test-main "windsurf" "--cwd" "--" "."))
+    (with-redefs [profile/resolve (fn [name]
+                                    (assert (= name "windsurf"))
+                                    (partial main/windsurf-profile {:windsurf-dir "/tmp/windsurf-dir"}))]
+      (snap/match-snapshot ::windsurf-cwd (test-main "windsurf" "--cwd" "--" ".")))
     (snap/match-snapshot ::ferdium (test-main "ferdium"))
     (snap/match-snapshot ::ferdium-absolute (test-main "/some/path/ferdium"))))
 

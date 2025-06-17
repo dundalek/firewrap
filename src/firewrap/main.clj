@@ -179,19 +179,21 @@
     (str (System/getenv "HOME") "/bin/vendor/GodMode-1.0.0-beta.9.AppImage"))))
 
 ;; distributed as tarball
-(profile/register!
- "windsurf"
- (fn [{:keys [args opts]}]
-   (let [windsurf-dir (dumpster/glob-one (str (System/getenv "HOME") "/bin/vendor") "Windsurf-linux-x64-*/Windsurf")
-         windsurf-bin (str windsurf-dir "/windsurf")
-         windsurf-args (concat [windsurf-bin]
+(defn windsurf-profile [{:keys [windsurf-dir]} {:keys [args opts]}]
+  (let [windsurf-bin (str windsurf-dir "/windsurf")
+        windsurf-args (concat [windsurf-bin]
                                ;; when restricting to cwd, opening a different folder will load it in existing instance so files will not be visible
                                ;; or specify different --user-data-dir ?
-                               (when (:cwd opts) ["--new-window"])
-                               (rest args))]
-     (-> (windsurf/profile nil)
-         (sb/bind-ro windsurf-dir)
-         (sb/set-cmd-args windsurf-args)))))
+                              (when (:cwd opts) ["--new-window"])
+                              (rest args))]
+    (-> (windsurf/profile nil)
+        (sb/bind-ro windsurf-dir)
+        (sb/set-cmd-args windsurf-args))))
+
+(profile/register!
+ "windsurf"
+ (partial windsurf-profile
+          {:windsurf-dir (dumpster/glob-one (str (System/getenv "HOME") "/bin/vendor") "Windsurf-linux-x64-*/Windsurf")}))
 
 ;; try to run windsurf from nix-env
 #_(profile/register!
