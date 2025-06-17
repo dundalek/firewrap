@@ -241,7 +241,9 @@
          (sb/bind-rw-try (str (dumpster/home ctx) "/.claude"))
          (sb/bind-rw-try (str (dumpster/home ctx) "/.claude.json"))
          ;; Installed via Bun
-         (sb/bind-ro-try (str (dumpster/home ctx) "/.bun"))
+         ;; have its own packages, install inside sandbox with:
+         ;; fw --profile claude -- bun install -g @anthropic-ai/claude-code
+         ; (sb/bind-ro-try (str (dumpster/home ctx) "/.bun"))
          ;; To use the usual name when committing
          (sb/bind-ro-try (str (dumpster/home ctx) "/.gitconfig"))))))
 
