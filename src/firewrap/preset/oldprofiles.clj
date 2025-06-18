@@ -102,7 +102,7 @@
 
      (system/bind-ro-try "/etc/locale.alias")
 
-     (system/bind-ro-try (str (sb/getenv ctx "HOME") "/.config/ibus/bus"))
+     (system/bind-ro-try (dumpster/home ctx ".config/ibus/bus"))
 
      (system/bind-ro-try-many
       (system/xdg-data-dir-paths ctx "icons" "mime"))

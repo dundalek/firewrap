@@ -2,7 +2,8 @@
   (:require
    [babashka.fs :as fs]
    [clojure.string :as str]
-   [firewrap.sandbox :as sb]))
+   [firewrap.sandbox :as sb]
+   [firewrap.preset.dumpster :as dumpster]))
 
 (defn escape-shell [s]
   ;; TODO
@@ -26,6 +27,8 @@
 (def bind-rw-try sb/bind-rw-try)
 (def bind-dev sb/bind-dev)
 (def bind-dev-try sb/bind-dev-try)
+
+(def isolated-home dumpster/bind-isolated-home)
 
 (defn- xdg-dirs [dirs-env subfolders]
   (let [dirs (some-> dirs-env
@@ -58,28 +61,28 @@
 
 (defn xdg-data-home-path [ctx]
   (or (sb/getenv ctx "XDG_DATA_HOME")
-      (str (sb/getenv ctx "HOME") "/.local/share")))
+      (dumpster/home ctx ".local/share")))
 
 (defn xdg-data-home-paths [ctx & subfolders]
   (xdg-dirs (xdg-data-home-path ctx) subfolders))
 
 (defn xdg-config-home-path [ctx]
   (or (sb/getenv ctx "XDG_CONFIG_HOME")
-      (str (sb/getenv ctx "HOME") "/.config")))
+      (dumpster/home ctx ".config")))
 
 (defn xdg-config-home-paths [ctx & subfolders]
   (xdg-dirs (xdg-config-home-path ctx) subfolders))
 
 (defn xdg-cache-home-path [ctx]
   (or (sb/getenv ctx "XDG_CACHE_HOME")
-      (str (sb/getenv ctx "HOME") "/.cache")))
+      (dumpster/home ctx ".cache")))
 
 (defn xdg-cache-home-paths [ctx & subfolders]
   (xdg-dirs (xdg-cache-home-path ctx) subfolders))
 
 (defn xdg-state-home-path [ctx]
   (or (sb/getenv ctx "XDG_STATE_HOME")
-      (str (sb/getenv ctx "HOME") "/.local/state")))
+      (dumpster/home ctx ".local/state")))
 
 (defn xdg-state-home-paths [ctx & subfolders]
   (xdg-dirs (xdg-state-home-path ctx) subfolders))
@@ -110,7 +113,7 @@
 
 (defn fontconfig [ctx]
   (-> ctx
-      (bind-ro-try (str (sb/getenv ctx "HOME") "/.config/fontconfig"))
+      (bind-ro-try (dumpster/home ctx ".config/fontconfig"))
       (bind-ro-try "/usr/share/fontconfig")))
 
 (defn fontconfig-shared-cache [ctx]
@@ -118,7 +121,7 @@
   ;; but for better security one can avoid it
   (-> ctx
       ;; TODO read xdg cache dir
-      (bind-rw-try (str (sb/getenv ctx "HOME") "/.cache/fontconfig"))
+      (bind-rw-try (dumpster/home ctx ".cache/fontconfig"))
       (bind-ro-try "/var/cache/fontconfig")))
 
 (defn fonts [ctx]
@@ -126,14 +129,14 @@
       (bind-ro-try "/etc/fonts")
       (bind-ro-try "/usr/share/fonts")
       (bind-ro-try "/usr/local/share/fonts")
-      (bind-ro-try (str (sb/getenv ctx "HOME") "/.fonts"))
-      (bind-ro-try (str (sb/getenv ctx "HOME") "/.local/share/fonts"))))
+      (bind-ro-try (dumpster/home ctx ".fonts"))
+      (bind-ro-try (dumpster/home ctx ".local/share/fonts"))))
 
 (defn icons [ctx]
   (-> ctx
       (bind-ro-try "/usr/share/icons")
-      (bind-ro-try (str (sb/getenv ctx "HOME") "/.icons"))
-      (bind-ro-try (str (sb/getenv ctx "HOME") "/.local/share/icons"))))
+      (bind-ro-try (dumpster/home ctx ".icons"))
+      (bind-ro-try (dumpster/home ctx ".local/share/icons"))))
 
 (defn locale [ctx]
   (-> ctx
@@ -143,15 +146,15 @@
 (defn themes [ctx]
   ;; include /usr/share/pixmaps?
   (-> ctx
-      (bind-ro-try (str (sb/getenv ctx "HOME") "/.themes"))
-      (bind-ro-try (str (sb/getenv ctx "HOME") "/.local/share/themes"))
+      (bind-ro-try (dumpster/home ctx ".themes"))
+      (bind-ro-try (dumpster/home ctx ".local/share/themes"))
       (bind-ro-try "/usr/share/themes")))
 
 (defn dconf [ctx]
   ;; are there some security implications of apps sharing access to dconf?
   (-> ctx
       (bind-ro-try "/etc/dconf/profile/user")
-      (bind-ro-try (str (sb/getenv ctx "HOME") "/.config/dconf/user"))
+      (bind-ro-try (dumpster/home ctx ".config/dconf/user"))
       ;; should it be more granular to enable user and profile explicitly?
       ;; is there a difference between user and profile?
       ; (bind-ro-try (str (xdg-runtime-dir-path ctx) "/dconf/user"))
@@ -171,14 +174,6 @@
       (bind-dev-try "/dev/dri")
       (bind-ro-try "/sys/dev")
       (bind-ro-try "/sys/devices")))
-
-(defn isolated-home [ctx appname]
-  (let [HOME (sb/getenv ctx "HOME")
-        source-path (str HOME "/sandboxes/" appname)]
-    ;; Side-effect! Ideally make it pure and interpret side effects separately
-    (fs/create-dirs source-path)
-    (-> ctx
-        (bind-rw (escape-shell source-path) (escape-shell HOME)))))
 
 (defn libs [ctx]
   (-> ctx

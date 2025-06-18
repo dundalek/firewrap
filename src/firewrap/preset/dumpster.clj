@@ -14,15 +14,17 @@
       (first)
       (str)))
 
-(defn home [ctx]
-  (sb/getenv ctx "HOME"))
+(defn home
+  ([ctx]
+   (sb/getenv ctx "HOME"))
+  ([ctx path]
+   (str (home ctx) "/" path)))
 
 (defn bind-isolated-home [ctx appname]
-  (let [HOME (home ctx)
-        source-path (str HOME "/sandboxes/" appname)]
+  (let [source-path (home ctx (str "sandboxes/" appname))]
     (-> ctx
         (sb/fx-create-dirs source-path)
-        (sb/bind-rw source-path HOME))))
+        (sb/bind-rw source-path (home ctx)))))
 
 (defn bind-isolated-tmphome [ctx]
   (let [sandbox (str "tmp-" (-> (str (java.time.LocalDateTime/now))
