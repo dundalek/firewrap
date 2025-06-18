@@ -153,34 +153,34 @@
   (when-some [subdir (match-xdg-dir (sb/getenv ctx "XDG_CONFIG_DIRS") path)]
     [(vector 'system/xdg-config-dir subdir)]))
 
-(defn match-xdg-data-home [path]
-  (when-some [subdir (match-xdg-dir (system/xdg-data-home-path) path)]
+(defn match-xdg-data-home [ctx path]
+  (when-some [subdir (match-xdg-dir (system/xdg-data-home-path ctx) path)]
     [(vector 'system/xdg-data-home subdir)]))
 
-(defn match-xdg-config-home [path]
-  (when-some [subdir (match-xdg-dir (system/xdg-config-home-path) path)]
+(defn match-xdg-config-home [ctx path]
+  (when-some [subdir (match-xdg-dir (system/xdg-config-home-path ctx) path)]
     [(vector 'system/xdg-config-home subdir)]))
 
-(defn match-xdg-cache-home [path]
-  (when-some [subdir (match-xdg-dir (system/xdg-cache-home-path) path)]
+(defn match-xdg-cache-home [ctx path]
+  (when-some [subdir (match-xdg-dir (system/xdg-cache-home-path ctx) path)]
     [(vector 'system/xdg-cache-home subdir)]))
 
-(defn match-xdg-state-home [path]
-  (when-some [subdir (match-xdg-dir (system/xdg-state-home-path) path)]
+(defn match-xdg-state-home [ctx path]
+  (when-some [subdir (match-xdg-dir (system/xdg-state-home-path ctx) path)]
     [(vector 'system/xdg-state-home subdir)]))
 
-(def ^:private command-paths
-  (->> (str/split (System/getenv "PATH") #":")
-       (map #(str % "/"))))
+(defn- command-paths [ctx]
+  (when-some [path (sb/getenv ctx "PATH")]
+    (->> (str/split path #":")
+         (map #(str % "/")))))
 
-(defn match-command [path]
-  ;; hack: reaching for current global env variable
-  ;; will need to add ability to pass options when creating matchers
-  (when-some [matched-path (->> command-paths
-                                (some (fn [p]
-                                        (when (str/starts-with? path p)
-                                          p))))]
-    [['system/command (str/replace path matched-path "")]]))
+(defn match-command [ctx path]
+  (when-some [paths (command-paths ctx)]
+    (when-some [matched-path (->> paths
+                                  (some (fn [p]
+                                          (when (str/starts-with? path p)
+                                            p))))]
+      [['system/command (str/replace path matched-path "")]])))
 
 (comment
   (match-xdg-data-dir "/usr/share/somedir/somefile")
@@ -217,11 +217,11 @@
         dynamic-matchers [(partial match-xdg-runtime-dir ctx)
                           (partial match-xdg-data-dir ctx)
                           (partial match-xdg-config-dir ctx)
-                          match-xdg-data-home
-                          match-xdg-config-home
-                          match-xdg-cache-home
-                          match-xdg-state-home
-                          match-command]]
+                          (partial match-xdg-data-home ctx)
+                          (partial match-xdg-config-home ctx)
+                          (partial match-xdg-cache-home ctx)
+                          (partial match-xdg-state-home ctx)
+                          (partial match-command ctx)]]
     {:static static-matchers
      :dynamic dynamic-matchers}))
 

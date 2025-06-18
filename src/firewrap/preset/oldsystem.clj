@@ -35,69 +35,69 @@
       (str (str/replace dir #"\/+$" "")
            "/" subfolder))))
 
-(defn xdg-data-dirs-path []
-  (or (System/getenv "XDG_DATA_DIRS")
+(defn xdg-data-dirs-path [ctx]
+  (or (sb/getenv ctx "XDG_DATA_DIRS")
       "/usr/local/share/:/usr/share/"))
 
-(defn xdg-data-dir-paths [& subfolders]
+(defn xdg-data-dir-paths [ctx & subfolders]
   ;; e.g. $HOME/.local/share /usr/local/share /usr/share
-  (xdg-dirs (xdg-data-dirs-path) subfolders))
+  (xdg-dirs (xdg-data-dirs-path ctx) subfolders))
 
 (comment
   (xdg-data-dir-paths "icons" "themes"))
 
-(defn xdg-config-dirs-path []
-  (or (System/getenv "XDG_CONFIG_DIRS")
+(defn xdg-config-dirs-path [ctx]
+  (or (sb/getenv ctx "XDG_CONFIG_DIRS")
       "/etc/xdg"))
 
-(defn xdg-config-dir-paths [& subfolders]
-  (xdg-dirs (xdg-config-dirs-path) subfolders))
+(defn xdg-config-dir-paths [ctx & subfolders]
+  (xdg-dirs (xdg-config-dirs-path ctx) subfolders))
 
 (comment
   (xdg-config-dir-paths "gtk-3.0" "glib-2.0"))
 
-(defn xdg-data-home-path []
-  (or (System/getenv "XDG_DATA_HOME")
-      (str (System/getenv "HOME") "/.local/share")))
+(defn xdg-data-home-path [ctx]
+  (or (sb/getenv ctx "XDG_DATA_HOME")
+      (str (sb/getenv ctx "HOME") "/.local/share")))
 
-(defn xdg-data-home-paths [& subfolders]
-  (xdg-dirs (xdg-data-home-path) subfolders))
+(defn xdg-data-home-paths [ctx & subfolders]
+  (xdg-dirs (xdg-data-home-path ctx) subfolders))
 
-(defn xdg-config-home-path []
-  (or (System/getenv "XDG_CONFIG_HOME")
-      (str (System/getenv "HOME") "/.config")))
+(defn xdg-config-home-path [ctx]
+  (or (sb/getenv ctx "XDG_CONFIG_HOME")
+      (str (sb/getenv ctx "HOME") "/.config")))
 
-(defn xdg-config-home-paths [& subfolders]
-  (xdg-dirs (xdg-config-home-path) subfolders))
+(defn xdg-config-home-paths [ctx & subfolders]
+  (xdg-dirs (xdg-config-home-path ctx) subfolders))
 
-(defn xdg-cache-home-path []
-  (or (System/getenv "XDG_CACHE_HOME")
-      (str (System/getenv "HOME") "/.cache")))
+(defn xdg-cache-home-path [ctx]
+  (or (sb/getenv ctx "XDG_CACHE_HOME")
+      (str (sb/getenv ctx "HOME") "/.cache")))
 
-(defn xdg-cache-home-paths [& subfolders]
-  (xdg-dirs (xdg-cache-home-path) subfolders))
+(defn xdg-cache-home-paths [ctx & subfolders]
+  (xdg-dirs (xdg-cache-home-path ctx) subfolders))
 
-(defn xdg-state-home-path []
-  (or (System/getenv "XDG_STATE_HOME")
-      (str (System/getenv "HOME") "/.local/state")))
+(defn xdg-state-home-path [ctx]
+  (or (sb/getenv ctx "XDG_STATE_HOME")
+      (str (sb/getenv ctx "HOME") "/.local/state")))
 
-(defn xdg-state-home-paths [& subfolders]
-  (xdg-dirs (xdg-state-home-path) subfolders))
+(defn xdg-state-home-paths [ctx & subfolders]
+  (xdg-dirs (xdg-state-home-path ctx) subfolders))
 
 (defn xdg-data-dir [ctx & subfolders]
-  (bind-ro-try-many ctx (apply xdg-data-dir-paths subfolders)))
+  (bind-ro-try-many ctx (apply xdg-data-dir-paths ctx subfolders)))
 
 (defn xdg-data-home [ctx & subfolders]
-  (bind-ro-try-many ctx (apply xdg-data-home-paths subfolders)))
+  (bind-ro-try-many ctx (apply xdg-data-home-paths ctx subfolders)))
 
 (defn xdg-cache-home [ctx & subfolders]
-  (bind-ro-try-many ctx (apply xdg-cache-home-paths subfolders)))
+  (bind-ro-try-many ctx (apply xdg-cache-home-paths ctx subfolders)))
 
 (defn xdg-config-home [ctx & subfolders]
-  (bind-ro-try-many ctx (apply xdg-config-home-paths subfolders)))
+  (bind-ro-try-many ctx (apply xdg-config-home-paths ctx subfolders)))
 
 (defn xdg-state-home [ctx & subfolders]
-  (bind-ro-try-many ctx (apply xdg-state-home-paths subfolders)))
+  (bind-ro-try-many ctx (apply xdg-state-home-paths ctx subfolders)))
 
 (defn xdg-runtime-dir-path [ctx]
   ;; fallback to "/run/user/$(id -u)" if missing?
@@ -110,7 +110,7 @@
 
 (defn fontconfig [ctx]
   (-> ctx
-      (bind-ro-try (str (System/getenv "HOME") "/.config/fontconfig"))
+      (bind-ro-try (str (sb/getenv ctx "HOME") "/.config/fontconfig"))
       (bind-ro-try "/usr/share/fontconfig")))
 
 (defn fontconfig-shared-cache [ctx]
@@ -118,7 +118,7 @@
   ;; but for better security one can avoid it
   (-> ctx
       ;; TODO read xdg cache dir
-      (bind-rw-try (str (System/getenv "HOME") "/.cache/fontconfig"))
+      (bind-rw-try (str (sb/getenv ctx "HOME") "/.cache/fontconfig"))
       (bind-ro-try "/var/cache/fontconfig")))
 
 (defn fonts [ctx]
@@ -126,14 +126,14 @@
       (bind-ro-try "/etc/fonts")
       (bind-ro-try "/usr/share/fonts")
       (bind-ro-try "/usr/local/share/fonts")
-      (bind-ro-try (str (System/getenv "HOME") "/.fonts"))
-      (bind-ro-try (str (System/getenv "HOME") "/.local/share/fonts"))))
+      (bind-ro-try (str (sb/getenv ctx "HOME") "/.fonts"))
+      (bind-ro-try (str (sb/getenv ctx "HOME") "/.local/share/fonts"))))
 
 (defn icons [ctx]
   (-> ctx
       (bind-ro-try "/usr/share/icons")
-      (bind-ro-try (str (System/getenv "HOME") "/.icons"))
-      (bind-ro-try (str (System/getenv "HOME") "/.local/share/icons"))))
+      (bind-ro-try (str (sb/getenv ctx "HOME") "/.icons"))
+      (bind-ro-try (str (sb/getenv ctx "HOME") "/.local/share/icons"))))
 
 (defn locale [ctx]
   (-> ctx
@@ -143,21 +143,21 @@
 (defn themes [ctx]
   ;; include /usr/share/pixmaps?
   (-> ctx
-      (bind-ro-try (str (System/getenv "HOME") "/.themes"))
-      (bind-ro-try (str (System/getenv "HOME") "/.local/share/themes"))
+      (bind-ro-try (str (sb/getenv ctx "HOME") "/.themes"))
+      (bind-ro-try (str (sb/getenv ctx "HOME") "/.local/share/themes"))
       (bind-ro-try "/usr/share/themes")))
 
 (defn dconf [ctx]
   ;; are there some security implications of apps sharing access to dconf?
   (-> ctx
       (bind-ro-try "/etc/dconf/profile/user")
-      (bind-ro-try (str (System/getenv "HOME") "/.config/dconf/user"))
+      (bind-ro-try (str (sb/getenv ctx "HOME") "/.config/dconf/user"))
       ;; should it be more granular to enable user and profile explicitly?
       ;; is there a difference between user and profile?
       ; (bind-ro-try (str (xdg-runtime-dir-path ctx) "/dconf/user"))
       ; (bind-ro-try (str (xdg-runtime-dir-path ctx) "/dconf/profile"))
       (bind-rw-try (str (xdg-runtime-dir-path ctx) "/dconf"))
-      (bind-ro-try-many (xdg-data-dir-paths "dconf"))))
+      (bind-ro-try-many (xdg-data-dir-paths ctx "dconf"))))
       ; (bind-ro "/user/share/dconf/user")))
 
 (defn at-spi [ctx]
@@ -173,7 +173,7 @@
       (bind-ro-try "/sys/devices")))
 
 (defn isolated-home [ctx appname]
-  (let [HOME (System/getenv "HOME")
+  (let [HOME (sb/getenv ctx "HOME")
         source-path (str HOME "/sandboxes/" appname)]
     ;; Side-effect! Ideally make it pure and interpret side effects separately
     (fs/create-dirs source-path)
@@ -254,20 +254,20 @@
 
 (defn glib [ctx]
   (-> ctx
-      (bind-ro-try-many (xdg-data-dir-paths "glib-2.0"))))
+      (bind-ro-try-many (xdg-data-dir-paths ctx "glib-2.0"))))
 
 (defn gtk [ctx]
   ;; add X11 and Wayland
   (-> ctx
       (glib)
       (bind-ro-try "/etc/gtk-3.0")
-      (bind-ro-try-many (xdg-config-dir-paths "gtk-3.0"))
-      (bind-ro-try-many (xdg-data-dir-paths "gtk-3.0"))
+      (bind-ro-try-many (xdg-config-dir-paths ctx "gtk-3.0"))
+      (bind-ro-try-many (xdg-data-dir-paths ctx "gtk-3.0"))
       (xdg-config-home "gtk-3.0")))
 
 (defn mime-cache [ctx]
   (-> ctx
-      (bind-ro-try-many (xdg-data-dir-paths "mime/mime.cache"))))
+      (bind-ro-try-many (xdg-data-dir-paths ctx "mime/mime.cache"))))
 
 (defn command [ctx cmd]
   (let [paths (some-> (sb/getenv ctx "PATH")

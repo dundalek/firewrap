@@ -7,7 +7,8 @@
    [snap.core :as snap]))
 
 (def test-ctx
-  {::sb/envs-system {"XDG_RUNTIME_DIR" "/run/user/1000"}})
+  {::sb/envs-system {"XDG_RUNTIME_DIR" "/run/user/1000"
+                     "PATH" "/usr/bin:/bin:/usr/sbin:/sbin"}})
 
 (deftest bwrap->paths
   (is (= #{"/etc/machine-id" "/var/lib/dbus/machine-id" "/run/user/1000/bus"}
