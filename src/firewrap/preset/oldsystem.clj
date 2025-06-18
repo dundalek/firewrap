@@ -210,10 +210,10 @@
   (-> ctx
       (bind-dev-try "/dev/null")))
 
-(defn dbus-bus-path []
-  ;; if missing could fallback to $XDG_RUNTIME_DIR/bus
-  (-> (System/getenv "DBUS_SESSION_BUS_ADDRESS")
-      (str/replace #"^unix:path=" "")))
+(defn dbus-bus-path [ctx]
+  (or (some-> (sb/getenv ctx "DBUS_SESSION_BUS_ADDRESS")
+              (str/replace #"^unix:path=" ""))
+      (str (xdg-runtime-dir-path ctx) "/bus")))
 
 (defn dbus-system-bus [ctx]
   (-> ctx
@@ -224,7 +224,7 @@
   (-> ctx
       (bind-ro "/etc/machine-id")
       (bind-ro "/var/lib/dbus/machine-id")
-      (bind-ro (dbus-bus-path))))
+      (bind-ro (dbus-bus-path ctx))))
 
 #_(defn dbus-see [])
 

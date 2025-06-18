@@ -6,9 +6,12 @@
    [firewrap.preset.oldsystem :as oldsystem]
    [snap.core :as snap]))
 
+(def test-ctx
+  {::sb/envs-system {"XDG_RUNTIME_DIR" "/run/user/1000"}})
+
 (deftest bwrap->paths
   (is (= #{"/etc/machine-id" "/var/lib/dbus/machine-id" "/run/user/1000/bus"}
-         (strace/bwrap->paths (sb/ctx->args (oldsystem/dbus-unrestricted {}))))))
+         (strace/bwrap->paths (sb/ctx->args (oldsystem/dbus-unrestricted test-ctx))))))
 
 (deftest match-xdg-runtime-dir
   (is (= '[[system/xdg-runtime-dir "at-spi/bus_1"]]
