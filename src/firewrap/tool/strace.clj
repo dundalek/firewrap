@@ -128,31 +128,6 @@
           (recur (conj ret destination) args))
         (recur ret args)))))
 
-;; abstractions are static matches, taking no arguments besides context
-(def static-matchers
-  (let [ctx (sb/*populate-env!* {})]
-    (->> ['dumpster/network
-          'system/fontconfig
-          'system/fontconfig-shared-cache
-          'system/fonts
-          'system/icons
-          'system/locale
-          'system/themes
-          'system/dconf
-          'system/gpu
-          'system/libs
-          'system/dbus-unrestricted
-          'system/dbus-system-bus
-          'system/x11
-          'system/gtk
-          'system/dev-urandom
-          'system/dev-null
-          'system/at-spi
-          'system/mime-cache]
-         (map (fn [sym]
-                [(vector sym) (bwrap->paths (sb/ctx->args ((resolve sym) ctx)))]))
-         (into {}))))
-
 (defn match-xdg-runtime-dir [ctx path]
   (let [runtime-dir (system/xdg-runtime-dir-path ctx)]
     (when (str/starts-with? path runtime-dir)
@@ -170,12 +145,12 @@
           (str/replace-first matched "")
           (str/replace #"^/+|/+$" "")))))
 
-(defn match-xdg-data-dir [path]
-  (when-some [subdir (match-xdg-dir (System/getenv "XDG_DATA_DIRS") path)]
+(defn match-xdg-data-dir [ctx path]
+  (when-some [subdir (match-xdg-dir (sb/getenv ctx "XDG_DATA_DIRS") path)]
     [(vector 'system/xdg-data-dir subdir)]))
 
-(defn match-xdg-config-dir [path]
-  (when-some [subdir (match-xdg-dir (System/getenv "XDG_CONFIG_DIRS") path)]
+(defn match-xdg-config-dir [ctx path]
+  (when-some [subdir (match-xdg-dir (sb/getenv ctx "XDG_CONFIG_DIRS") path)]
     [(vector 'system/xdg-config-dir subdir)]))
 
 (defn match-xdg-data-home [path]
@@ -218,25 +193,48 @@
 ;; taking it all the way bind-* fns could be viewed as dynamic matchers as well,
 ;; although the fact they are hierarchical makes it more complicated
 (defn make-matchers [ctx]
-  [(partial match-xdg-runtime-dir ctx)
-   match-xdg-data-dir
-   match-xdg-config-dir
-   match-xdg-data-home
-   match-xdg-config-home
-   match-xdg-cache-home
-   match-xdg-state-home
-   match-command])
+  (let [static-matchers (->> [['dumpster/network dumpster/network]
+                              ['system/fontconfig system/fontconfig]
+                              ['system/fontconfig-shared-cache system/fontconfig-shared-cache]
+                              ['system/fonts system/fonts]
+                              ['system/icons system/icons]
+                              ['system/locale system/locale]
+                              ['system/themes system/themes]
+                              ['system/dconf system/dconf]
+                              ['system/gpu system/gpu]
+                              ['system/libs system/libs]
+                              ['system/dbus-unrestricted system/dbus-unrestricted]
+                              ['system/dbus-system-bus system/dbus-system-bus]
+                              ['system/x11 system/x11]
+                              ['system/gtk system/gtk]
+                              ['system/dev-urandom system/dev-urandom]
+                              ['system/dev-null system/dev-null]
+                              ['system/at-spi system/at-spi]
+                              ['system/mime-cache system/mime-cache]]
+                             (map (fn [[sym f]]
+                                    [(vector sym) (bwrap->paths (sb/ctx->args (f ctx)))]))
+                             (into {}))
+        dynamic-matchers [(partial match-xdg-runtime-dir ctx)
+                          (partial match-xdg-data-dir ctx)
+                          (partial match-xdg-config-dir ctx)
+                          match-xdg-data-home
+                          match-xdg-config-home
+                          match-xdg-cache-home
+                          match-xdg-state-home
+                          match-command]]
+    {:static static-matchers
+     :dynamic dynamic-matchers}))
 
 (defn match-path [matchers path]
-  (let [matches (->> static-matchers
-                     (keep (fn [[k prefixes]]
-                             (when-some [match (->> prefixes
-                                                    (filter #(str/starts-with? path %))
-                                                    first)]
-                               [k match]))))
-        matches (if (seq matches)
-                  matches
-                  (keep (fn [matcher] (matcher path)) matchers))]
+  (let [static-matches (->> (:static matchers)
+                            (keep (fn [[k prefixes]]
+                                    (when-some [match (->> prefixes
+                                                           (filter #(str/starts-with? path %))
+                                                           first)]
+                                      [k match]))))
+        matches (if (seq static-matches)
+                  static-matches
+                  (keep (fn [matcher] (matcher path)) (:dynamic matchers)))]
     matches))
 
 (defn- trace-matches [matchers trace]
