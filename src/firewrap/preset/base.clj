@@ -8,7 +8,7 @@
   (-> ctx
       (sb/bind-ro "/usr")
       (sb/symlink "usr/bin" "/bin")
-      (sb/symlink "usr/bin" "/sbin")
+      (sb/symlink "usr/sbin" "/sbin")
       (sb/symlink "usr/lib" "/lib")
       (sb/symlink "usr/lib64" "/lib64")
       (sb/bind-ro-try "/lib32")))

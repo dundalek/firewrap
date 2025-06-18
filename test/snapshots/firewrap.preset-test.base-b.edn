@@ -18,7 +18,7 @@
  "usr/bin"
  "/bin"
  "--symlink"
- "usr/bin"
+ "usr/sbin"
  "/sbin"
  "--symlink"
  "usr/lib"
