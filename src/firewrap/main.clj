@@ -232,7 +232,7 @@
 (profile/register!
  "claude"
  (fn [_]
-   (let [ctx (base/base5)]
+   (let [ctx (base/base4)]
      (-> ctx
          (base/configurable {:opts {:cwd true
                                     :net true
