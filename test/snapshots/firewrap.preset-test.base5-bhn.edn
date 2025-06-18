@@ -32,9 +32,9 @@
  "/home/user/.nix-defexpr"
  "--share-net"
  "--ro-bind-try"
- "/etc/resolv.conf"
- "/etc/resolv.conf"
+ "/run/systemd/resolve"
+ "/run/systemd/resolve"
  "--ro-bind-try"
- "/run/systemd/resolve"
- "/run/systemd/resolve"
+ "/etc/resolv.conf"
+ "/etc/resolv.conf"
  "date")

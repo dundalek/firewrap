@@ -40,5 +40,6 @@
 (defn network [ctx]
   (-> ctx
       (sb/share-net)
-      (sb/bind-ro-try "/etc/resolv.conf")
-      (sb/bind-ro-try "/run/systemd/resolve")))
+      ;; /run/systemd/resolve needs to be before /etc/resolv.conf which links to it
+      (sb/bind-ro-try "/run/systemd/resolve")
+      (sb/bind-ro-try "/etc/resolv.conf")))
