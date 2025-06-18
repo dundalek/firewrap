@@ -15,14 +15,15 @@
 
 (deftest match-xdg-runtime-dir
   (is (= '[[system/xdg-runtime-dir "at-spi/bus_1"]]
-         (strace/match-xdg-runtime-dir "/run/user/1000/at-spi/bus_1")))
-  (is (= nil (strace/match-xdg-runtime-dir "/dev/null"))))
+         (strace/match-xdg-runtime-dir test-ctx "/run/user/1000/at-spi/bus_1")))
+  (is (= nil (strace/match-xdg-runtime-dir test-ctx "/dev/null"))))
 
 (deftest match-path
-  (is (= '[[[system/at-spi] "/run/user/1000/at-spi/bus_1"]]
-         (strace/match-path "/run/user/1000/at-spi/bus_1")))
-  (is (= '[[[system/dev-null] "/dev/null"]]
-         (strace/match-path "/dev/null"))))
+  (let [matchers (strace/make-matchers test-ctx)]
+    (is (= '[[[system/at-spi] "/run/user/1000/at-spi/bus_1"]]
+           (strace/match-path matchers "/run/user/1000/at-spi/bus_1")))
+    (is (= '[[[system/dev-null] "/dev/null"]]
+           (strace/match-path matchers "/dev/null")))))
 
 (deftest tracing
   (let [trace (strace/read-trace "test/fixtures/echo-strace")]
@@ -59,4 +60,4 @@
             ["/usr/lib/locale/locale-archive" "openat"]]
            (strace/trace->file-syscalls trace)))
 
-    (snap/match-snapshot ::echo-suggest (strace/trace->suggest trace))))
+    (snap/match-snapshot ::echo-suggest (strace/trace->suggest (strace/make-matchers test-ctx) trace))))

@@ -153,8 +153,8 @@
                 [(vector sym) (bwrap->paths (sb/ctx->args ((resolve sym) ctx)))]))
          (into {}))))
 
-(defn match-xdg-runtime-dir [path]
-  (let [runtime-dir (System/getenv "XDG_RUNTIME_DIR")]
+(defn match-xdg-runtime-dir [ctx path]
+  (let [runtime-dir (system/xdg-runtime-dir-path ctx)]
     (when (str/starts-with? path runtime-dir)
       [(vector 'system/xdg-runtime-dir (str/replace path (str runtime-dir "/") ""))])))
 
@@ -217,8 +217,8 @@
 ;; matchers are dynamic abstractions, taking some parameter
 ;; taking it all the way bind-* fns could be viewed as dynamic matchers as well,
 ;; although the fact they are hierarchical makes it more complicated
-(def matchers
-  [match-xdg-runtime-dir
+(defn make-matchers [ctx]
+  [(partial match-xdg-runtime-dir ctx)
    match-xdg-data-dir
    match-xdg-config-dir
    match-xdg-data-home
@@ -227,7 +227,7 @@
    match-xdg-state-home
    match-command])
 
-(defn match-path [path]
+(defn match-path [matchers path]
   (let [matches (->> static-matchers
                      (keep (fn [[k prefixes]]
                              (when-some [match (->> prefixes
@@ -239,12 +239,12 @@
                   (keep (fn [matcher] (matcher path)) matchers))]
     matches))
 
-(defn- trace-matches [trace]
+(defn- trace-matches [matchers trace]
   (->> trace
        (mapcat syscall->file-paths)
        (reduce
         (fn [m path]
-          (let [matches (match-path path)]
+          (let [matches (match-path matchers path)]
             (if (seq matches)
               (reduce
                (fn [m match]
@@ -254,8 +254,8 @@
               (update-in m [(vector 'system/bind-ro-try path)] (fnil conj []) path))))
         {})))
 
-(defn trace->suggest [trace]
-  (let [matches (trace-matches trace)
+(defn trace->suggest [matchers trace]
+  (let [matches (trace-matches matchers trace)
         {without-args false
          with-args true} (->> matches
                               (keys)
@@ -291,7 +291,9 @@
 (defn generate-rules [_]
   (let [trace (with-open [rdr (io/reader *in*)]
                 (doall (json/parsed-seq rdr true)))
-        rules (trace->suggest trace)]
+        ctx (sb/*populate-env!* {})
+        matchers (make-matchers ctx)
+        rules (trace->suggest matchers trace)]
     (write-rules *out* rules)))
 
 (declare cli-table)
@@ -324,13 +326,15 @@ Example: cat foo.trace | b3-strace-parser | firehelper generate > profile/foo.cl
 
   (tap> trace)
 
+  (def matchers (make-matchers (sb/*populate-env!* {})))
+
   (do
-    (def rules (trace->suggest trace))
+    (def rules (trace->suggest matchers trace))
     (with-open [writer (io/writer (format "tmp/%s-bindings.clj" trace-prefix))]
       (write-rules writer rules)))
 
   (do
-    (def rules (trace->suggest trace))
+    (def rules (trace->suggest matchers trace))
     (write-rules *out* rules)))
 
 (comment
@@ -351,7 +355,7 @@ Example: cat foo.trace | b3-strace-parser | firehelper generate > profile/foo.cl
        (mapcat syscall->file-paths)
        (map match-path))
 
-  (def matches (trace-matches trace))
+  (def matches (trace-matches matchers trace))
 
   (-> trace
       (trace-matches)
