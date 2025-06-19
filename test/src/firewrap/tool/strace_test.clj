@@ -1,9 +1,9 @@
 (ns firewrap.tool.strace-test
   (:require
-   [firewrap.tool.strace :as strace]
-   [firewrap.sandbox :as sb]
    [clojure.test :refer [deftest is testing]]
    [firewrap.preset.oldsystem :as oldsystem]
+   [firewrap.sandbox :as sb]
+   [firewrap.tool.strace :as strace]
    [snap.core :as snap]))
 
 (def test-ctx
@@ -89,3 +89,36 @@
            (strace/trace->file-syscalls trace)))
 
     (snap/match-snapshot ::echo-suggest (strace/trace->suggest (strace/make-matchers test-ctx) trace))))
+
+(deftest not-exists
+  ;; bin/strace-helper -o test/fixtures/trace/not-exists-sample-strace sh test/fixtures/trace/not-exists-sample
+  ;; cat test/fixtures/trace/not-exists-sample-strace | bunx b3-strace-parser > test/fixtures/trace/not-exists-sample-strace.jsonl
+  (comment
+    (->> (strace/read-json-trace "test/fixtures/trace/not-exists-sample-strace.jsonl")
+         (keep (fn [item]
+                 (let [paths (strace/syscall->file-paths item)]
+                   (when (#{["./README.md"] ["./NON_EXISTING_FILE"]} paths)
+                     item))))
+         (vec)))
+
+  (let [trace [{:syscall "openat",
+                :args [["AT_FDCWD"] "./README.md" {:name "O_", :value ["RDONLY"]}],
+                :result 3,
+                :timing nil,
+                :pid 1771299,
+                :type "SYSCALL"}
+               {:syscall "openat",
+                :args
+                [["AT_FDCWD"] "./NON_EXISTING_FILE" {:name "O_", :value ["RDONLY"]}],
+                :result "-1 ENOENT (No such file or directory)",
+                :timing nil,
+                :pid 1771300,
+                :type "SYSCALL"}]]
+    (is (= '(->
+             (base/base)
+             (->
+              (system/nop system/bind-ro-try ".")
+              (-> (system/not-exists system/bind-ro-try "./NON_EXISTING_FILE")
+                  (system/bind-ro-try "./README.md"))))
+
+           (strace/trace->suggest (strace/make-matchers test-ctx) trace)))))

@@ -1,0 +1,2 @@
+/usr/bin/cat ./README.md > /dev/null
+/usr/bin/cat ./NON_EXISTING_FILE

@@ -12,6 +12,9 @@
 (defmacro nop [ctx & _]
   ctx)
 
+(defmacro not-exists [ctx & _]
+  ctx)
+
 (def add-bwrap-args #'sb/add-raw-args)
 
 (def bind-ro sb/bind-ro)

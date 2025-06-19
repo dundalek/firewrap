@@ -1,6 +1,7 @@
 (ns firewrap.tool.strace
   (:require
    [babashka.cli :as cli]
+   [babashka.fs :as fs]
    [babashka.process :refer [process]]
    [cheshire.core :as json]
    [clojure.java.io :as io]
@@ -104,7 +105,10 @@
                                                       (str parent-path "/" k)
                                                       k)
                                                children (bind-autogen v path symb)
-                                               form (list symb (if (= path "") "/" path))]
+                                               binding-path (if (= path "") "/" path)
+                                               form (if (and (= symb 'system/bind-ro-try) (not (fs/exists? path)))
+                                                      (list 'system/not-exists symb binding-path)
+                                                      (list symb binding-path))]
                                            (if (some? children)
                                              [(cons 'system/nop form) children]
                                              [form]))))
