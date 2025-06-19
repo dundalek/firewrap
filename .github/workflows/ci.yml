@@ -20,8 +20,5 @@ jobs:
     - name: Prepare Clojure deps
       run: nix-shell --run "clojure -P -M:test"
 
-    - name: Install b3-strace-parser
-      run: nix-shell --run "bb compile-strace-parser"
-
     - name: Run tests
       run: nix-shell --run "bb test:once"

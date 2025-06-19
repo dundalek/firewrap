@@ -70,6 +70,9 @@
                       io/reader)]
     (doall (json/parsed-seq rdr true))))
 
+(defn read-json-trace [file-path]
+  (json/parsed-seq (io/reader file-path) true))
+
 ;; in case of symlinks - we can bind path, but still will get not exists error if we also don't bind target location
 ;; this is harder to understand from deduplicated calls
 (defn trace->file-syscalls [trace]

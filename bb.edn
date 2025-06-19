@@ -1,5 +1,6 @@
  {:tasks
-  {:init (def extra-env {"PATH" (str "target/bin:test/fixtures/bin:" (System/getenv "PATH"))})
+  {:init (def extra-env {"PATH" #_(str "target/bin:test/fixtures/bin:" (System/getenv "PATH"))
+                         (str "test/fixtures/bin:" (System/getenv "PATH"))})
 
    test:once
    {:doc  "runs tests"

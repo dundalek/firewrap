@@ -53,7 +53,8 @@
              :type "SYSCALL"})))))
 
 (deftest tracing
-  (let [trace (strace/read-trace "test/fixtures/echo-strace")]
+  (let [trace #_(strace/read-trace "test/fixtures/echo-strace")
+        (strace/read-json-trace "test/fixtures/echo-strace.jsonl")]
     (is (= 40 (count trace)))
 
     (is (= [{:args [["AT_FDCWD"] "/etc/ld.so.cache" {:name "O_", :value ["RDONLY" "O_CLOEXEC"]}],
