@@ -23,3 +23,10 @@ echo
 # set XDG_ dirs to smaller number of candidates for less noisy trace
 XDG_DATA_DIRS="$HOME/.local/share:/usr/share" XDG_CONFIG_DIRS="/etc/xdg" \
   strace --string-limit="$strsize" --follow-forks --output="$output_file" "$@"
+
+if command -v bunx >/dev/null 2>&1; then
+  parsed_output_file="${output_file}.jsonl"
+    bunx b3-strace-parser@0.3.0 < "$output_file" > "${parsed_output_file}"
+    echo
+    echo "Parsed output saved to: ${parsed_output_file}"
+fi
