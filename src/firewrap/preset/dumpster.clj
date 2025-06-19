@@ -44,4 +44,9 @@
       (sb/share-net)
       ;; /run/systemd/resolve needs to be before /etc/resolv.conf which links to it
       (sb/bind-ro-try "/run/systemd/resolve")
-      (sb/bind-ro-try "/etc/resolv.conf")))
+      (sb/bind-ro-try "/etc/resolv.conf")
+      (sb/bind-ro-try "/etc/gai.conf") ; getaddressinfo
+      (sb/bind-ro-try "/etc/host.conf")
+      (sb/bind-ro-try "/etc/hosts")
+      (sb/bind-ro-try "/etc/nsswitch.conf")
+      (sb/bind-ro-try "/etc/ssl/certs")))
