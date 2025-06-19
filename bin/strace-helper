@@ -1,11 +1,25 @@
 #!/usr/bin/env bash
 
-cmd="${1//\//_}"
+# Check if first argument is -o, or --output=file
+if [[ "$1" == "-o" ]]; then
+    output_file="$2"
+    shift 2
+elif [[ "$1" == --output=* ]]; then
+    output_file="${1#--output=}"
+    shift 1
+else
+    cmd="${1//\//_}"
+    output_file="tmp/${cmd}-strace"
+fi
 
 # From man: Specify the maximum string size to print (the default is 32). Note that filenames are not considered strings and are always printed in full.
 # Since we only care about filenames for now, set to 0 to reduce noise. Can set to other value in the future in case we discover there is some data missing.
 strsize=0
 # strsize=1024
 
+echo "Saving trace to: $output_file"
+echo
+
 # set XDG_ dirs to smaller number of candidates for less noisy trace
-XDG_DATA_DIRS="$HOME/.local/share:/usr/share" XDG_CONFIG_DIRS="/etc/xdg" strace -s "$strsize" -f -o "tmp/${cmd}-strace" "$@"
+XDG_DATA_DIRS="$HOME/.local/share:/usr/share" XDG_CONFIG_DIRS="/etc/xdg" \
+  strace --string-limit="$strsize" --follow-forks --output="$output_file" "$@"
