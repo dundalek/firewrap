@@ -3,6 +3,8 @@
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]
    [firewrap.main :as main]
+   [firewrap.preset.base :as base]
+   [firewrap.preset.dumpster :as dumpster]
    [firewrap.profile :as profile]
    [firewrap.profile.godmode :as godmode]
    [firewrap.profile.windsurf :as windsurf]
@@ -38,7 +40,10 @@
   (snap/match-snapshot ::base5-b (test-main "firewrap" "-b5" "--" "date"))
   (snap/match-snapshot ::base5-bc (test-main "firewrap" "-b5c" "--" "date"))
   (snap/match-snapshot ::base5-bhn (test-main "firewrap" "-b5hn" "--" "date"))
-  (snap/match-snapshot ::base5-home-arg (test-main "firewrap" "-b5" "--home" "customhome" "--" "date")))
+  (snap/match-snapshot ::base5-home-arg (test-main "firewrap" "-b5" "--home" "customhome" "--" "date"))
+  (with-redefs [base/bind-user-programs dumpster/bind-nix-profile
+                base/bind-extra-system-programs  dumpster/bind-nix-root]
+    (snap/match-snapshot ::base-b-nix (test-main "firewrap" "-b" "--" "date"))))
 
 (deftest help
   (let [help-text (with-out-str (main/print-help))]

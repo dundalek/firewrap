@@ -55,3 +55,15 @@
   (-> ctx
       (sb/bind-ro-try "/etc/profile")
       (sb/bind-ro-try "/etc/profile.d")))
+
+(defn bind-nix-profile [ctx]
+  ;; to make nixpkgs channels available and be able to run nix-shell inside sandbox
+  (-> ctx
+      ;; need to rebind nix-profile again over home
+      (sb/bind-ro (str (home ctx) "/.nix-profile"))
+      (sb/bind-ro (str (home ctx) "/.local/state/nix"))
+      (sb/bind-ro (str (home ctx) "/.nix-defexpr"))))
+
+(defn bind-nix-root [ctx]
+  (-> ctx
+      (sb/bind-ro "/nix")))

@@ -1,4 +1,1 @@
-(->
- (base/base)
- (system/libs)
- (-> (system/command "echo")))
+(-> (base/base) (system/libs) (-> (system/command "echo")))
