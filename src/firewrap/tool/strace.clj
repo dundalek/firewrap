@@ -8,9 +8,11 @@
    [clojure.pprint :refer [pprint]]
    [clojure.string :as str]
    [clojure.walk :as walk]
+   [firewrap.main :as main]
+   [firewrap.preset.base :as base]
+   [firewrap.preset.dumpster :as dumpster]
    [firewrap.preset.oldsystem :as system]
-   [firewrap.sandbox :as sb]
-   [firewrap.preset.dumpster :as dumpster]))
+   [firewrap.sandbox :as sb]))
 
 ; Using strace parser:
 ;     https://github.com/dannykopping/b3
@@ -202,7 +204,9 @@
     "/etc/ld.so.cache"})
 
 (def ^:private static-matcher-specs
-  [['dumpster/network dumpster/network]
+  [['base/bind-user-programs #'base/bind-user-programs]
+   ['base/bind-extra-system-programs #'base/bind-extra-system-programs]
+   ['dumpster/network dumpster/network]
    ['dumpster/shell-profile dumpster/shell-profile]
    ['system/fontconfig system/fontconfig]
    ['system/fontconfig-shared-cache system/fontconfig-shared-cache]
@@ -309,6 +313,7 @@
     (pprint result writer)))
 
 (defn generate-rules [_]
+  (main/load-user-config)
   (let [trace (with-open [rdr (io/reader *in*)]
                 (doall (json/parsed-seq rdr true)))
         ctx (sb/*populate-env!* {})

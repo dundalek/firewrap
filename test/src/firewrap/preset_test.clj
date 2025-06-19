@@ -27,7 +27,7 @@
     (snap/match-snapshot ::windsurf (main/unwrap-raw (sb/ctx->args (windsurf/profile nil))))
     (with-redefs [profile/resolve (fn [name]
                                     (assert (= name "windsurf"))
-                                    (partial main/windsurf-profile {:windsurf-dir "/tmp/windsurf-dir"}))]
+                                    (partial windsurf/profile-with-options {:windsurf-dir "/tmp/windsurf-dir"}))]
       (snap/match-snapshot ::windsurf-cwd (test-main "windsurf" "--cwd" "--" ".")))
     (snap/match-snapshot ::ferdium (test-main "ferdium"))
     (snap/match-snapshot ::ferdium-absolute (test-main "/some/path/ferdium"))))

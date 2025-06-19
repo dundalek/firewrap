@@ -11,4 +11,5 @@
 
 (require '[firewrap.main :as main])
 
+(main/load-user-config)
 (apply main/main *file* *command-line-args*)
