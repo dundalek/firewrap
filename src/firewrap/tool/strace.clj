@@ -192,53 +192,62 @@
   (match-xdg-config-dir "/etc/xdg/somedir/somefile")
   (match-xdg-config-dir "/tmp/somedir/somefile"))
 
+(def ^:private static-matcher-specs
+  [['dumpster/network dumpster/network]
+   ['system/fontconfig system/fontconfig]
+   ['system/fontconfig-shared-cache system/fontconfig-shared-cache]
+   ['system/fonts system/fonts]
+   ['system/icons system/icons]
+   ['system/locale system/locale]
+   ['system/themes system/themes]
+   ['system/dconf system/dconf]
+   ['system/gpu system/gpu]
+   ['system/libs system/libs]
+   ['system/dbus-unrestricted system/dbus-unrestricted]
+   ['system/dbus-system-bus system/dbus-system-bus]
+   ['system/x11 system/x11]
+   ['system/gtk system/gtk]
+   ['system/dev-urandom system/dev-urandom]
+   ['system/dev-null system/dev-null]
+   ['system/at-spi system/at-spi]
+   ['system/mime-cache system/mime-cache]])
+
+(def ^:private dynamic-matcher-specs
+  [match-xdg-runtime-dir
+   match-xdg-data-dir
+   match-xdg-config-dir
+   match-xdg-data-home
+   match-xdg-config-home
+   match-xdg-cache-home
+   match-xdg-state-home
+   match-command])
+
 ;; matchers are dynamic abstractions, taking some parameter
 ;; taking it all the way bind-* fns could be viewed as dynamic matchers as well,
 ;; although the fact they are hierarchical makes it more complicated
 (defn make-matchers [ctx]
-  (let [static-matchers (->> [['dumpster/network dumpster/network]
-                              ['system/fontconfig system/fontconfig]
-                              ['system/fontconfig-shared-cache system/fontconfig-shared-cache]
-                              ['system/fonts system/fonts]
-                              ['system/icons system/icons]
-                              ['system/locale system/locale]
-                              ['system/themes system/themes]
-                              ['system/dconf system/dconf]
-                              ['system/gpu system/gpu]
-                              ['system/libs system/libs]
-                              ['system/dbus-unrestricted system/dbus-unrestricted]
-                              ['system/dbus-system-bus system/dbus-system-bus]
-                              ['system/x11 system/x11]
-                              ['system/gtk system/gtk]
-                              ['system/dev-urandom system/dev-urandom]
-                              ['system/dev-null system/dev-null]
-                              ['system/at-spi system/at-spi]
-                              ['system/mime-cache system/mime-cache]]
+  (let [static-matchers (->> static-matcher-specs
                              (map (fn [[sym f]]
-                                    [(vector sym) (bwrap->paths (sb/ctx->args (f ctx)))]))
-                             (into {}))
-        dynamic-matchers [(partial match-xdg-runtime-dir ctx)
-                          (partial match-xdg-data-dir ctx)
-                          (partial match-xdg-config-dir ctx)
-                          (partial match-xdg-data-home ctx)
-                          (partial match-xdg-config-home ctx)
-                          (partial match-xdg-cache-home ctx)
-                          (partial match-xdg-state-home ctx)
-                          (partial match-command ctx)]]
-    {:static static-matchers
-     :dynamic dynamic-matchers}))
+                                    (let [prefixes (bwrap->paths (sb/ctx->args (f ctx)))
+                                          matcher-key (vector sym)]
+                                      (fn [path]
+                                        (when-some [match (->> prefixes
+                                                               (filter #(str/starts-with? path %))
+                                                               first)]
+                                          [matcher-key match]))))))
+        dynamic-matchers (->> dynamic-matcher-specs
+                              (map #(partial % ctx)))]
+    {::static static-matchers
+     ::dynamic dynamic-matchers}))
 
 (defn match-path [matchers path]
-  (let [static-matches (->> (:static matchers)
-                            (keep (fn [[k prefixes]]
-                                    (when-some [match (->> prefixes
-                                                           (filter #(str/starts-with? path %))
-                                                           first)]
-                                      [k match]))))
-        matches (if (seq static-matches)
-                  static-matches
-                  (keep (fn [matcher] (matcher path)) (:dynamic matchers)))]
-    matches))
+  (let [{::keys [static dynamic]} matchers
+        static-matches (keep (fn [matcher] (matcher path)) static)]
+    ;; Static matchers have a priority because they will result in denser rules.
+    ;; We try static first and if we get a match we skip dynamic matchers.
+    (if (seq static-matches)
+      static-matches
+      (keep (fn [matcher] (matcher path)) dynamic))))
 
 (defn- trace-matches [matchers trace]
   (->> trace

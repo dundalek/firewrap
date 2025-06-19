@@ -4,7 +4,9 @@
       "Bash(bb test:*)",
       "Bash(mkdir:*)",
       "Bash(./bin/firewrap:*--dry-run*--*)",
-      "WebFetch(domain:docs.anthropic.com)"
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }
