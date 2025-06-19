@@ -40,11 +40,4 @@
     :exec-args {:git/branch "master"
                 :github/repo "https://github.com/dundalek/firewrap"
                 :source-paths ["src"]
-                :outfile "doc/API.md"}}
-
-   compile-strace-parser
-   {:task
-    (do
-      (shell "bun install b3-strace-parser")
-      (shell "mkdir -p target/bin")
-      (shell "bun build node_modules/b3-strace-parser/cli.js --compile --outfile target/bin/b3-strace-parser"))}}}
+                :outfile "doc/API.md"}}}}
