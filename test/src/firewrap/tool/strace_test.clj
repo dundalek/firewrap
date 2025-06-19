@@ -1,8 +1,8 @@
 (ns firewrap.tool.strace-test
   (:require
-   [clojure.test :refer [deftest is]]
    [firewrap.tool.strace :as strace]
    [firewrap.sandbox :as sb]
+   [clojure.test :refer [deftest is testing]]
    [firewrap.preset.oldsystem :as oldsystem]
    [snap.core :as snap]))
 
@@ -25,6 +25,32 @@
            (strace/match-path matchers "/run/user/1000/at-spi/bus_1")))
     (is (= '[[[system/dev-null] "/dev/null"]]
            (strace/match-path matchers "/dev/null")))))
+
+(deftest syscall->file-paths
+  (is (= ["/dev/null"]
+         (strace/syscall->file-paths
+          {:syscall "openat",
+           :args
+           [["AT_FDCWD"]
+            "/dev/null"
+            {:name "O_", :value ["WRONLY" "O_CREAT" "O_TRUNC"]}
+            666],
+           :result 3,
+           :timing nil,
+           :pid 1760627,
+           :type "SYSCALL"})))
+
+  (testing "file path without slash is not detected
+    just recording current behavior, this is wrong due to naive path detection implementation and should be fixed"
+    (is (= []
+           #_["README.md"]
+           (strace/syscall->file-paths
+            {:syscall "openat",
+             :args [["AT_FDCWD"] "README.md" {:name "O_", :value ["RDONLY"]}],
+             :result 3,
+             :timing nil,
+             :pid 1760628,
+             :type "SYSCALL"})))))
 
 (deftest tracing
   (let [trace (strace/read-trace "test/fixtures/echo-strace")]

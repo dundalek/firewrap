@@ -50,7 +50,7 @@
             (map? arg) (:sun_path arg)) ; connect syscall
           (normalize-path)))
 
-(defn- syscall->file-paths [{:keys [syscall args]}]
+(defn syscall->file-paths [{:keys [syscall args]}]
   (when-not (data-call? syscall)
     ;; there are syscalls that take two file paths like `mount`, `rename`, `symlink` so keep vector of paths
     (let [paths (->> args
