@@ -50,3 +50,8 @@
       (sb/bind-ro-try "/etc/hosts")
       (sb/bind-ro-try "/etc/nsswitch.conf")
       (sb/bind-ro-try "/etc/ssl/certs")))
+
+(defn shell-profile [ctx]
+  (-> ctx
+      (sb/bind-ro-try "/etc/profile")
+      (sb/bind-ro-try "/etc/profile.d")))

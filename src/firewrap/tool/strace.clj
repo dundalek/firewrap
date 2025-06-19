@@ -198,6 +198,7 @@
 
 (def ^:private static-matcher-specs
   [['dumpster/network dumpster/network]
+   ['dumpster/shell-profile dumpster/shell-profile]
    ['system/fontconfig system/fontconfig]
    ['system/fontconfig-shared-cache system/fontconfig-shared-cache]
    ['system/fonts system/fonts]
