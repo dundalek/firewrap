@@ -196,6 +196,11 @@
   (match-xdg-config-dir "/etc/xdg/somedir/somefile")
   (match-xdg-config-dir "/tmp/somedir/somefile"))
 
+(def ignored-paths
+  #{"/etc/ld.so.preload"
+    "/etc/ld-nix.so.preload"
+    "/etc/ld.so.cache"})
+
 (def ^:private static-matcher-specs
   [['dumpster/network dumpster/network]
    ['dumpster/shell-profile dumpster/shell-profile]
@@ -259,13 +264,13 @@
        (mapcat syscall->file-paths)
        (reduce
         (fn [m path]
-          (let [matches (match-path matchers path)]
-            (if (seq matches)
-              (reduce
-               (fn [m match]
-                 (update-in m match (fnil conj []) path))
-               m
-               matches)
+          (if (contains? ignored-paths path)
+            m
+            (if-some [matches (seq (match-path matchers path))]
+              (reduce (fn [m match]
+                        (update-in m match (fnil conj []) path))
+                      m
+                      matches)
               (update-in m [(vector 'system/bind-ro-try path)] (fnil conj []) path))))
         {})))
 
