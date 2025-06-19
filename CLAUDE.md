@@ -18,3 +18,5 @@ The tool prioritizes security through programming language abstractions rather t
 Run tests using `bb test:once`
 
 Run test coverage report with `bb test:coverage`
+
+Run a single test using `clojure -M:test --focus some.namespace/some-test`
