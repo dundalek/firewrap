@@ -190,6 +190,12 @@
                                             p))))]
       [['system/command (str/replace path matched-path "")]])))
 
+(defn match-home [ctx path]
+  (let [home-path (sb/getenv ctx "HOME")]
+    (when (and home-path (str/starts-with? path (str home-path "/")))
+      (let [relative-path (str/replace path (str home-path "/") "")]
+        [['dumpster/home relative-path]]))))
+
 (comment
   (match-xdg-data-dir "/usr/share/somedir/somefile")
   (match-xdg-data-dir "/tmp/somedir/somefile")
@@ -240,7 +246,8 @@
    match-xdg-config-home
    match-xdg-cache-home
    match-xdg-state-home
-   match-command])
+   match-command
+   match-home])
 
 ;; matchers are dynamic abstractions, taking some parameter
 ;; taking it all the way bind-* fns could be viewed as dynamic matchers as well,
@@ -302,7 +309,7 @@
           (sort-by key)
           (mapcat (fn [[k items]]
                     (let [path-tree (->> items
-                                        ;; assumption: all args are paths
+                                         ;; assumption: all args are paths
                                          (mapcat (fn [[_ & args]]
                                                    args))
                                          (reduce (fn [m path]

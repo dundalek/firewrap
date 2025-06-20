@@ -19,7 +19,8 @@
         trace))
 
 (def test-ctx
-  {::sb/envs-system {"XDG_RUNTIME_DIR" "/run/user/1000"
+  {::sb/envs-system {"HOME" "/home/user"
+                     "XDG_RUNTIME_DIR" "/run/user/1000"
                      "PATH" "/usr/bin:/bin:/usr/sbin:/sbin"}})
 
 (defn- test-trace-suggest [trace]
@@ -153,4 +154,21 @@
             :result 3,
             :timing nil,
             :pid 70335,
+            :type "SYSCALL"}]))))
+
+(deftest home
+  (is (= '(-> (base/base) (-> (dumpster/home "Downloads")))
+         (test-trace-suggest
+          #_(let [file (str (System/getenv "HOME") "/Downloads")]
+              (->> (create-trace "ls" file)
+                   (filter-paths #{file})))
+          [{:syscall "openat",
+            :args
+            [["AT_FDCWD"]
+             "/home/user/Downloads"
+             {:name "O_",
+              :value ["RDONLY" "O_NONBLOCK" "O_CLOEXEC" "O_DIRECTORY"]}],
+            :result 3,
+            :timing nil,
+            :pid 77993,
             :type "SYSCALL"}]))))
