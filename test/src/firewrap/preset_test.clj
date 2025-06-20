@@ -8,6 +8,7 @@
    [firewrap.profile :as profile]
    [firewrap.profile.godmode :as godmode]
    [firewrap.profile.windsurf :as windsurf]
+   [firewrap.preset.oldprofiles :as oldprofiles]
    [firewrap.sandbox :as sb]
    [snap.core :as snap]))
 
@@ -52,6 +53,15 @@
   (with-redefs [base/bind-user-programs dumpster/bind-nix-profile
                 base/bind-extra-system-programs  dumpster/bind-nix-root]
     (snap/match-snapshot ::base-b-nix (test-main "firewrap" "-b" "--" "date"))))
+
+(deftest oldprofiles
+  (binding [sb/*populate-env!* (constantly env-ctx)]
+    (snap/match-snapshot ::chatall (main/unwrap-raw (sb/ctx->args (oldprofiles/chatall))))
+    (snap/match-snapshot ::cheese (main/unwrap-raw (sb/ctx->args (oldprofiles/cheese {:executable "/usr/bin/cheese"}))))
+    (snap/match-snapshot ::gedit (main/unwrap-raw (sb/ctx->args (oldprofiles/gedit {:executable "gedit"}))))
+    (snap/match-snapshot ::gnome-calculator (main/unwrap-raw (sb/ctx->args (oldprofiles/gnome-calculator {:executable "gnome-calculator"}))))
+    (snap/match-snapshot ::notify-send (main/unwrap-raw (sb/ctx->args (oldprofiles/notify-send {:executable "notify-send"}))))
+    (snap/match-snapshot ::xdg-open (main/unwrap-raw (sb/ctx->args (oldprofiles/xdg-open))))))
 
 (deftest help
   (let [help-text (with-out-str (main/print-help))]
