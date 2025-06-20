@@ -24,16 +24,19 @@
             sb/*run-effects!* (fn [_])]
     (apply main/main args)))
 
-(deftest presets
+(defn test-raw-profile [profile-fn]
   (binding [sb/*populate-env!* (constantly env-ctx)]
-    (snap/match-snapshot ::godmode (main/unwrap-raw (sb/ctx->args (godmode/profile "/path/to/GodMode.AppImage"))))
-    (snap/match-snapshot ::windsurf (main/unwrap-raw (sb/ctx->args (windsurf/profile nil))))
-    (with-redefs [profile/resolve (fn [name]
-                                    (assert (= name "windsurf"))
-                                    (partial windsurf/profile-with-options {:windsurf-dir "/tmp/windsurf-dir"}))]
-      (snap/match-snapshot ::windsurf-cwd (test-main "windsurf" "--cwd" "--" ".")))
-    (snap/match-snapshot ::ferdium (test-main "ferdium"))
-    (snap/match-snapshot ::ferdium-absolute (test-main "/some/path/ferdium"))))
+    (main/unwrap-raw (sb/ctx->args (profile-fn)))))
+
+(deftest presets
+  (snap/match-snapshot ::godmode (test-raw-profile #(godmode/profile "/path/to/GodMode.AppImage")))
+  (snap/match-snapshot ::windsurf (test-raw-profile #(windsurf/profile nil)))
+  (with-redefs [profile/resolve (fn [name]
+                                  (assert (= name "windsurf"))
+                                  (partial windsurf/profile-with-options {:windsurf-dir "/tmp/windsurf-dir"}))]
+    (snap/match-snapshot ::windsurf-cwd (test-main "windsurf" "--cwd" "--" ".")))
+  (snap/match-snapshot ::ferdium (test-main "ferdium"))
+  (snap/match-snapshot ::ferdium-absolute (test-main "/some/path/ferdium")))
 
 (deftest profiles
   (snap/match-snapshot ::bash (test-main "bash"))
@@ -55,13 +58,12 @@
     (snap/match-snapshot ::base-b-nix (test-main "firewrap" "-b" "--" "date"))))
 
 (deftest oldprofiles
-  (binding [sb/*populate-env!* (constantly env-ctx)]
-    (snap/match-snapshot ::chatall (main/unwrap-raw (sb/ctx->args (oldprofiles/chatall))))
-    (snap/match-snapshot ::cheese (main/unwrap-raw (sb/ctx->args (oldprofiles/cheese {:executable "/usr/bin/cheese"}))))
-    (snap/match-snapshot ::gedit (main/unwrap-raw (sb/ctx->args (oldprofiles/gedit {:executable "gedit"}))))
-    (snap/match-snapshot ::gnome-calculator (main/unwrap-raw (sb/ctx->args (oldprofiles/gnome-calculator {:executable "gnome-calculator"}))))
-    (snap/match-snapshot ::notify-send (main/unwrap-raw (sb/ctx->args (oldprofiles/notify-send {:executable "notify-send"}))))
-    (snap/match-snapshot ::xdg-open (main/unwrap-raw (sb/ctx->args (oldprofiles/xdg-open))))))
+  (snap/match-snapshot ::chatall (test-raw-profile oldprofiles/chatall))
+  (snap/match-snapshot ::cheese (test-raw-profile #(oldprofiles/cheese {:executable "/usr/bin/cheese"})))
+  (snap/match-snapshot ::gedit (test-raw-profile #(oldprofiles/gedit {:executable "gedit"})))
+  (snap/match-snapshot ::gnome-calculator (test-raw-profile #(oldprofiles/gnome-calculator {:executable "gnome-calculator"})))
+  (snap/match-snapshot ::notify-send (test-raw-profile #(oldprofiles/notify-send {:executable "notify-send"})))
+  (snap/match-snapshot ::xdg-open (test-raw-profile oldprofiles/xdg-open)))
 
 (deftest help
   (let [help-text (with-out-str (main/print-help))]
