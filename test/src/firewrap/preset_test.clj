@@ -28,24 +28,6 @@
   (binding [sb/*populate-env!* (constantly env-ctx)]
     (main/unwrap-raw (sb/ctx->args (profile-fn)))))
 
-(deftest presets
-  (snap/match-snapshot ::godmode (test-raw-profile #(godmode/profile "/path/to/GodMode.AppImage")))
-  (snap/match-snapshot ::windsurf (test-raw-profile #(windsurf/profile nil)))
-  (with-redefs [profile/resolve (fn [name]
-                                  (assert (= name "windsurf"))
-                                  (partial windsurf/profile-with-options {:windsurf-dir "/tmp/windsurf-dir"}))]
-    (snap/match-snapshot ::windsurf-cwd (test-main "windsurf" "--cwd" "--" ".")))
-  (snap/match-snapshot ::ferdium (test-main "ferdium"))
-  (snap/match-snapshot ::ferdium-absolute (test-main "/some/path/ferdium")))
-
-(deftest profiles
-  (snap/match-snapshot ::bash (test-main "bash"))
-  (snap/match-snapshot ::cursor (test-main "cursor"))
-  (snap/match-snapshot ::date (test-main "date"))
-  (snap/match-snapshot ::echo (test-main "echo"))
-  (with-redefs [env-ctx (assoc-in env-ctx [::sb/envs-system "JAVA_HOME"] "/some/path/to/jdk")]
-    (snap/match-snapshot ::clojure (test-main "clojure"))))
-
 (deftest base
   (snap/match-snapshot ::no-base (test-main "firewrap" "date"))
   (snap/match-snapshot ::base-b (test-main "firewrap" "-b" "--" "date"))
@@ -56,6 +38,25 @@
   (with-redefs [base/bind-user-programs dumpster/bind-nix-profile
                 base/bind-extra-system-programs  dumpster/bind-nix-root]
     (snap/match-snapshot ::base-b-nix (test-main "firewrap" "-b" "--" "date"))))
+
+(deftest profiles
+  (snap/match-snapshot ::godmode (test-raw-profile #(godmode/profile "/path/to/GodMode.AppImage")))
+  (snap/match-snapshot ::windsurf (test-raw-profile #(windsurf/profile nil)))
+
+  (snap/match-snapshot ::ferdium (test-main "ferdium"))
+  (snap/match-snapshot ::ferdium-absolute (test-main "/some/path/ferdium"))
+  (snap/match-snapshot ::bash (test-main "bash"))
+  (snap/match-snapshot ::cursor (test-main "cursor"))
+  (snap/match-snapshot ::date (test-main "date"))
+  (snap/match-snapshot ::echo (test-main "echo"))
+
+  (with-redefs [profile/resolve (fn [name]
+                                  (assert (= name "windsurf"))
+                                  (partial windsurf/profile-with-options {:windsurf-dir "/tmp/windsurf-dir"}))]
+    (snap/match-snapshot ::windsurf-cwd (test-main "windsurf" "--cwd" "--" ".")))
+
+  (with-redefs [env-ctx (assoc-in env-ctx [::sb/envs-system "JAVA_HOME"] "/some/path/to/jdk")]
+    (snap/match-snapshot ::clojure (test-main "clojure"))))
 
 (deftest oldprofiles
   (snap/match-snapshot ::chatall (test-raw-profile oldprofiles/chatall))
