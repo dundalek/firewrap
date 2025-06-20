@@ -17,6 +17,11 @@
   ;; no-op as a placeholder for extenion point
   ctx)
 
+(defn bind-system-and-extra-programs [ctx]
+  (-> ctx
+      (bind-system-programs)
+      (bind-extra-system-programs)))
+
 (defn bind-user-programs [ctx]
   ;; no-op as a placeholder for extenion point
   ctx)
@@ -57,8 +62,7 @@
          (sb/bind-ro "/etc")
          (sb/proc "/proc")
          (sb/tmpfs "/tmp")
-         (bind-system-programs)
-         (bind-extra-system-programs)
+         (bind-system-and-extra-programs)
          (sb/tmpfs (dumpster/home ctx))
          (bind-user-programs)))))
      ;; media, mnt, opt, root, run, srv, sys, var?

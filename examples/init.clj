@@ -4,6 +4,7 @@
    [firewrap.preset.base :as base]
    [firewrap.preset.dumpster :as dumpster]
    [firewrap.profile :as profile]
+   [firewrap.profile.claude :as claude]
    [firewrap.profile.cursor :as cursor]
    [firewrap.profile.godmode :as godmode]
    [firewrap.profile.windsurf :as windsurf]
@@ -59,20 +60,5 @@
                                   :home "wscribe"}})
        (sb/env-set "WSCRIBE_MODELS_DIR" "wscribe_models"))))
 
-(profile/register!
- "claude"
- (fn [_]
-   (let [ctx (base/base4)]
-     (-> ctx
-         (base/configurable {:opts {:cwd true
-                                    :net true
-                                    :home "claude"}})
-         ;; bind claude files, alternative consider symlinking to sandbox dir
-         (sb/bind-rw-try (str (dumpster/home ctx) "/.claude"))
-         (sb/bind-rw-try (str (dumpster/home ctx) "/.claude.json"))
-         ;; Installed via Bun
-         ;; have its own packages, install inside sandbox with:
-         ;; fw --profile claude -- bun install -g @anthropic-ai/claude-code
-         ; (sb/bind-ro-try (str (dumpster/home ctx) "/.bun"))
-         ;; To use the usual name when committing
-         (sb/bind-ro-try (str (dumpster/home ctx) "/.gitconfig"))))))
+; (profile/register! "claude" claude/wide)
+(profile/register! "claude" claude/narrow)
