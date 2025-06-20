@@ -34,6 +34,14 @@
     (snap/match-snapshot ::ferdium (test-main "ferdium"))
     (snap/match-snapshot ::ferdium-absolute (test-main "/some/path/ferdium"))))
 
+(deftest profiles
+  (snap/match-snapshot ::bash (test-main "bash"))
+  (snap/match-snapshot ::cursor (test-main "cursor"))
+  (snap/match-snapshot ::date (test-main "date"))
+  (snap/match-snapshot ::echo (test-main "echo"))
+  (with-redefs [env-ctx (assoc-in env-ctx [::sb/envs-system "JAVA_HOME"] "/some/path/to/jdk")]
+    (snap/match-snapshot ::clojure (test-main "clojure"))))
+
 (deftest base
   (snap/match-snapshot ::no-base (test-main "firewrap" "date"))
   (snap/match-snapshot ::base-b (test-main "firewrap" "-b" "--" "date"))
