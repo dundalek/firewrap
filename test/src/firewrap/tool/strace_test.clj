@@ -132,8 +132,8 @@
             :pid 71929,
             :type "SYSCALL"}]))))
 
-(deftest ignored-prefixes
-  (is (= '(-> (base/base))
+(deftest tmp-paths
+  (is (= '(-> (base/base) (system/tmp))
          (test-trace-suggest
           #_(->> (create-trace "cat" "/tmp/foo")
                  (filter-paths #{"/tmp/foo"}))

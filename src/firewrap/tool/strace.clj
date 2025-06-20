@@ -190,6 +190,10 @@
                                             p))))]
       [['system/command (str/replace path matched-path "")]])))
 
+(defn match-tmp [ctx path]
+  (when (str/starts-with? path "/tmp/")
+    [['system/tmp]]))
+
 (defn match-home [ctx path]
   (let [home-path (sb/getenv ctx "HOME")]
     (when (and home-path (str/starts-with? path (str home-path "/")))
@@ -209,8 +213,7 @@
     "/etc/ld.so.cache"})
 
 (def ignored-path-prefixes
-  ;; Shoud we create some tmp preset instead of just ignoring it?
-  #{"/tmp"})
+  #{})
 
 (def ^:private static-matcher-specs
   [['base/bind-user-programs #'base/bind-user-programs]
@@ -247,6 +250,7 @@
    match-xdg-cache-home
    match-xdg-state-home
    match-command
+   match-tmp
    match-home])
 
 ;; matchers are dynamic abstractions, taking some parameter
