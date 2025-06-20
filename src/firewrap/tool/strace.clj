@@ -193,6 +193,10 @@
     "/etc/ld-nix.so.preload"
     "/etc/ld.so.cache"})
 
+(def ignored-path-prefixes
+  ;; Shoud we create some tmp preset instead of just ignoring it?
+  #{"/tmp"})
+
 (def ^:private static-matcher-specs
   [['base/bind-user-programs #'base/bind-user-programs]
    ['base/bind-extra-system-programs #'base/bind-extra-system-programs]
@@ -258,7 +262,8 @@
        (mapcat syscall->file-paths)
        (reduce
         (fn [m path]
-          (if (contains? ignored-paths path)
+          (if (or (contains? ignored-paths path)
+                  (some #(str/starts-with? path %) ignored-path-prefixes))
             m
             (if-some [matches (seq (match-path matchers path))]
               (reduce (fn [m match]
