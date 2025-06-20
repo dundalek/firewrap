@@ -203,6 +203,10 @@
   (-> ctx
       (bind-dev-try "/dev/null")))
 
+(defn dev-pts [ctx]
+  (-> ctx
+      (bind-dev-try "/dev/pts")))
+
 (defn dbus-bus-path [ctx]
   (or (some-> (sb/getenv ctx "DBUS_SESSION_BUS_ADDRESS")
               (str/replace #"^unix:path=" ""))

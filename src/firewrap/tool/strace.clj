@@ -217,6 +217,7 @@
    ['system/gtk system/gtk]
    ['system/dev-urandom system/dev-urandom]
    ['system/dev-null system/dev-null]
+   ['system/dev-pts system/dev-pts]
    ['system/at-spi system/at-spi]
    ['system/mime-cache system/mime-cache]])
 
