@@ -60,5 +60,7 @@
                                   :home "wscribe"}})
        (sb/env-set "WSCRIBE_MODELS_DIR" "wscribe_models"))))
 
-; (profile/register! "claude" claude/wide)
-(profile/register! "claude" claude/narrow)
+(profile/register! "claude" claude/wide)
+;; Babashka does not work in narrow sandbox, bb fails with:
+;; Fatal error: Failed to create the main Isolate. (code 32)
+; (profile/register! "claude" claude/narrow)
