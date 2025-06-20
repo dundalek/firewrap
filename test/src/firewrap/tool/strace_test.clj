@@ -127,3 +127,16 @@
             :pid 71929,
             :type "SYSCALL"}]))))
 
+(deftest ignored-prefixes
+  (is (= '(-> (base/base))
+         (strace/trace->suggest
+          (strace/make-matchers test-ctx)
+          #_(->> (create-trace "cat" "/tmp/foo")
+                 (filter-paths #{"/tmp/foo"}))
+          [{:syscall "openat",
+            :args [["AT_FDCWD"] "/tmp/foo" {:name "O_", :value ["RDONLY"]}],
+            :result "-1 ENOENT (No such file or directory)",
+            :timing nil,
+            :pid 66284,
+            :type "SYSCALL"}]))))
+
