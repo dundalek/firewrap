@@ -108,7 +108,10 @@
        ;; could also wrap it in vectors or (->)
        (concat ['->] bindings)))))
 
-(def bind-params
+(def single-arity-bind-params
+  #{"--proc"})
+
+(def two-arity-bind-params
   #{"--ro-bind"
     "--ro-bind-try"
     "--bind"
@@ -120,12 +123,18 @@
 (defn bwrap->paths [bwrap-args]
   (loop [ret #{}
          [arg & args] bwrap-args]
-    (if (nil? arg)
-      ret
-      (if (bind-params arg)
-        (let [[_source destination & args] args]
-          (recur (conj ret destination) args))
-        (recur ret args)))))
+    (cond
+      (nil? arg) ret
+
+      (two-arity-bind-params arg)
+      (let [[_source destination & args] args]
+        (recur (conj ret destination) args))
+
+      (single-arity-bind-params arg)
+      (let [[destination & args] args]
+        (recur (conj ret destination) args))
+
+      :else (recur ret args))))
 
 (defn match-xdg-runtime-dir [ctx path]
   (let [runtime-dir (system/xdg-runtime-dir-path ctx)]
@@ -201,6 +210,7 @@
   [['base/bind-user-programs #'base/bind-user-programs]
    ['base/bind-extra-system-programs #'base/bind-extra-system-programs]
    ['dumpster/network dumpster/network]
+   ['dumpster/proc dumpster/proc]
    ['dumpster/shell-profile dumpster/shell-profile]
    ['system/fontconfig system/fontconfig]
    ['system/fontconfig-shared-cache system/fontconfig-shared-cache]

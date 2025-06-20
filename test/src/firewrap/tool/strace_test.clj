@@ -140,3 +140,15 @@
             :pid 66284,
             :type "SYSCALL"}]))))
 
+(deftest proc
+  (is (= '(-> (base/base) (dumpster/proc))
+         (strace/trace->suggest
+          (strace/make-matchers test-ctx)
+          #_(->> (create-trace "cat" "/proc/cpuinfo")
+                 (filter-paths #{"/proc/cpuinfo"}))
+          [{:syscall "openat",
+            :args [["AT_FDCWD"] "/proc/cpuinfo" {:name "O_", :value ["RDONLY"]}],
+            :result 3,
+            :timing nil,
+            :pid 70335,
+            :type "SYSCALL"}]))))

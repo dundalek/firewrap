@@ -14,6 +14,10 @@
       (first)
       (str)))
 
+(defn proc [ctx]
+  (-> ctx
+      (sb/proc "/proc")))
+
 (defn home
   ([ctx]
    (sb/getenv ctx "HOME"))
