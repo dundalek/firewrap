@@ -1,10 +1,22 @@
 (ns firewrap.tool.strace-test
   (:require
+   [babashka.fs :as fs]
+   [babashka.process :refer [shell]]
    [clojure.test :refer [deftest is testing]]
    [firewrap.preset.oldsystem :as oldsystem]
    [firewrap.sandbox :as sb]
    [firewrap.tool.strace :as strace]
    [snap.core :as snap]))
+
+(defn- create-trace [& cmd]
+  (let [tmp-file (fs/create-temp-file)]
+    (apply shell "bin/strace-helper" "-o" tmp-file cmd)
+    (strace/read-json-trace (str tmp-file ".jsonl"))))
+
+(defn- filter-paths [matches-path? trace]
+  (into []
+        (filter (fn [item] (some matches-path? (strace/syscall->file-paths item))))
+        trace))
 
 (def test-ctx
   {::sb/envs-system {"XDG_RUNTIME_DIR" "/run/user/1000"
@@ -53,8 +65,7 @@
              :type "SYSCALL"})))))
 
 (deftest tracing
-  (let [trace #_(strace/read-trace "test/fixtures/echo-strace")
-        (strace/read-json-trace "test/fixtures/echo-strace.jsonl")]
+  (let [trace (strace/read-json-trace "test/fixtures/echo-strace.jsonl")]
     (is (= 40 (count trace)))
 
     (is (= [{:args [["AT_FDCWD"] "/etc/ld.so.cache" {:name "O_", :value ["RDONLY" "O_CLOEXEC"]}],
@@ -91,34 +102,28 @@
     (snap/match-snapshot ::echo-suggest (strace/trace->suggest (strace/make-matchers test-ctx) trace))))
 
 (deftest not-exists
-  ;; bin/strace-helper -o test/fixtures/trace/not-exists-sample-strace sh test/fixtures/trace/not-exists-sample
-  ;; cat test/fixtures/trace/not-exists-sample-strace | bunx b3-strace-parser > test/fixtures/trace/not-exists-sample-strace.jsonl
-  (comment
-    (->> (strace/read-json-trace "test/fixtures/trace/not-exists-sample-strace.jsonl")
-         (keep (fn [item]
-                 (let [paths (strace/syscall->file-paths item)]
-                   (when (#{["./README.md"] ["./NON_EXISTING_FILE"]} paths)
-                     item))))
-         (vec)))
+  (is (= '(->
+           (base/base)
+           (->
+            (system/nop system/bind-ro-try ".")
+            (-> (system/not-exists system/bind-ro-try "./NON_EXISTING_FILE")
+                (system/bind-ro-try "./README.md"))))
 
-  (let [trace [{:syscall "openat",
-                :args [["AT_FDCWD"] "./README.md" {:name "O_", :value ["RDONLY"]}],
-                :result 3,
-                :timing nil,
-                :pid 1771299,
-                :type "SYSCALL"}
-               {:syscall "openat",
-                :args
-                [["AT_FDCWD"] "./NON_EXISTING_FILE" {:name "O_", :value ["RDONLY"]}],
-                :result "-1 ENOENT (No such file or directory)",
-                :timing nil,
-                :pid 1771300,
-                :type "SYSCALL"}]]
-    (is (= '(->
-             (base/base)
-             (->
-              (system/nop system/bind-ro-try ".")
-              (-> (system/not-exists system/bind-ro-try "./NON_EXISTING_FILE")
-                  (system/bind-ro-try "./README.md"))))
+         (strace/trace->suggest
+          (strace/make-matchers test-ctx)
+          #_(->> (create-trace "sh" "-c" "/usr/bin/cat ./README.md > /dev/null; /usr/bin/cat ./NON_EXISTING_FILE")
+                 (filter-paths #{"./README.md" "./NON_EXISTING_FILE"}))
+          [{:syscall "openat",
+            :args [["AT_FDCWD"] "./README.md" {:name "O_", :value ["RDONLY"]}],
+            :result 3,
+            :timing nil,
+            :pid 71928,
+            :type "SYSCALL"}
+           {:syscall "openat",
+            :args
+            [["AT_FDCWD"] "./NON_EXISTING_FILE" {:name "O_", :value ["RDONLY"]}],
+            :result "-1 ENOENT (No such file or directory)",
+            :timing nil,
+            :pid 71929,
+            :type "SYSCALL"}]))))
 
-           (strace/trace->suggest (strace/make-matchers test-ctx) trace)))))
