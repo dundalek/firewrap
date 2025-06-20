@@ -1,13 +1,8 @@
 (ns firewrap.preset.oldsystem
   (:require
-   [babashka.fs :as fs]
    [clojure.string :as str]
    [firewrap.sandbox :as sb]
    [firewrap.preset.dumpster :as dumpster]))
-
-(defn escape-shell [s]
-  ;; TODO
-  s)
 
 (defmacro nop [ctx & _]
   ctx)

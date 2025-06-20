@@ -2,7 +2,6 @@
   (:require
    [babashka.cli :as cli]
    [babashka.fs :as fs]
-   [babashka.process :refer [process]]
    [cheshire.core :as json]
    [clojure.java.io :as io]
    [clojure.pprint :refer [pprint]]
@@ -63,15 +62,6 @@
                   (take 1 paths)
                   paths)]
       (vec paths))))
-
-(defn read-trace [file-path]
-  (with-open [rdr (-> (process {:in (io/reader file-path)}
-                               "b3-strace-parser"
-                               #_"bunx b3-strace-parser"
-                               #_"npm exec -y b3-strace-parser")
-                      :out
-                      io/reader)]
-    (doall (json/parsed-seq rdr true))))
 
 (defn read-json-trace [file-path]
   (json/parsed-seq (io/reader file-path) true))
@@ -343,20 +333,11 @@ Example: cat foo.trace | b3-strace-parser | firehelper generate > profile/foo.cl
   (cli/dispatch cli-table args {}))
 
 (comment
-  (def trace-prefix "echo")
-  (def trace-prefix "clojure")
-  (def trace (read-trace (format "tmp/%s-strace" trace-prefix)))
-
-  (def trace (read-trace "test/fixtures/echo-strace"))
+  (def trace (read-json-trace "test/fixtures/echo-strace.jsonl"))
 
   (tap> trace)
 
   (def matchers (make-matchers (sb/*populate-env!* {})))
-
-  (do
-    (def rules (trace->suggest matchers trace))
-    (with-open [writer (io/writer (format "tmp/%s-bindings.clj" trace-prefix))]
-      (write-rules writer rules)))
 
   (do
     (def rules (trace->suggest matchers trace))
@@ -421,17 +402,6 @@ Example: cat foo.trace | b3-strace-parser | firehelper generate > profile/foo.cl
   (->> trace
        (filter #(seq (syscall->file-paths %)))
        (take 10))
-
-  (defn- extract-filepaths! [strace-filepath]
-    (let [out-path (str strace-filepath "-paths")
-          lines (read-trace strace-filepath)]
-      (->> lines
-           (trace->file-syscalls)
-           (map pr-str)
-           ; (distinct)
-           ; (sort)
-           (str/join "\n")
-           (spit out-path))))
 
   (def tree
     (-> (->> trace
