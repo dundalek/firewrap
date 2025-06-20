@@ -274,3 +274,8 @@
               (bind-ro-try ctx (str path "/" cmd)))
             ctx
             paths)))
+
+(defn timezone [ctx]
+  (-> ctx
+      (sb/bind-ro-try "/etc/localtime")
+      (xdg-data-dir "zoneinfo")))

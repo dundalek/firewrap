@@ -219,7 +219,8 @@
    ['system/dev-null system/dev-null]
    ['system/dev-pts system/dev-pts]
    ['system/at-spi system/at-spi]
-   ['system/mime-cache system/mime-cache]])
+   ['system/mime-cache system/mime-cache]
+   ['system/timezone system/timezone]])
 
 (def ^:private dynamic-matcher-specs
   [match-xdg-runtime-dir
