@@ -22,6 +22,11 @@
   {::sb/envs-system {"XDG_RUNTIME_DIR" "/run/user/1000"
                      "PATH" "/usr/bin:/bin:/usr/sbin:/sbin"}})
 
+(defn- test-trace-suggest [trace]
+  (strace/trace->suggest
+   (strace/make-matchers test-ctx)
+   trace))
+
 (deftest bwrap->paths
   (is (= #{"/etc/machine-id" "/var/lib/dbus/machine-id" "/run/user/1000/bus"}
          (strace/bwrap->paths (sb/ctx->args (oldsystem/dbus-unrestricted test-ctx))))))
@@ -109,8 +114,7 @@
             (-> (system/not-exists system/bind-ro-try "./NON_EXISTING_FILE")
                 (system/bind-ro-try "./README.md"))))
 
-         (strace/trace->suggest
-          (strace/make-matchers test-ctx)
+         (test-trace-suggest
           #_(->> (create-trace "sh" "-c" "/usr/bin/cat ./README.md > /dev/null; /usr/bin/cat ./NON_EXISTING_FILE")
                  (filter-paths #{"./README.md" "./NON_EXISTING_FILE"}))
           [{:syscall "openat",
@@ -129,8 +133,7 @@
 
 (deftest ignored-prefixes
   (is (= '(-> (base/base))
-         (strace/trace->suggest
-          (strace/make-matchers test-ctx)
+         (test-trace-suggest
           #_(->> (create-trace "cat" "/tmp/foo")
                  (filter-paths #{"/tmp/foo"}))
           [{:syscall "openat",
@@ -142,8 +145,7 @@
 
 (deftest proc
   (is (= '(-> (base/base) (dumpster/proc))
-         (strace/trace->suggest
-          (strace/make-matchers test-ctx)
+         (test-trace-suggest
           #_(->> (create-trace "cat" "/proc/cpuinfo")
                  (filter-paths #{"/proc/cpuinfo"}))
           [{:syscall "openat",
