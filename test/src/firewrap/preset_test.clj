@@ -5,10 +5,11 @@
    [firewrap.main :as main]
    [firewrap.preset.base :as base]
    [firewrap.preset.dumpster :as dumpster]
+   [firewrap.preset.oldprofiles :as oldprofiles]
    [firewrap.profile :as profile]
+   [firewrap.profile.claude :as claude]
    [firewrap.profile.godmode :as godmode]
    [firewrap.profile.windsurf :as windsurf]
-   [firewrap.preset.oldprofiles :as oldprofiles]
    [firewrap.sandbox :as sb]
    [snap.core :as snap]))
 
@@ -42,6 +43,7 @@
 (deftest profiles
   (snap/match-snapshot ::godmode (test-raw-profile #(godmode/profile "/path/to/GodMode.AppImage")))
   (snap/match-snapshot ::windsurf (test-raw-profile #(windsurf/profile nil)))
+  (snap/match-snapshot ::claude-wide (test-raw-profile #(claude/wide nil)))
 
   (snap/match-snapshot ::ferdium (test-main "ferdium"))
   (snap/match-snapshot ::ferdium-absolute (test-main "/some/path/ferdium"))
