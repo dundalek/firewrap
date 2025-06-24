@@ -3,6 +3,9 @@
    [babashka.fs :as fs]
    [clojure.set :as set]))
 
+(def ^:private all-namespaces
+  #{"user" "ipc" "pid" "net" "uts" "cgroup"})
+
 (defn unsafe-escaped-arg [s]
   {::escaped s})
 
@@ -121,10 +124,28 @@
 (defn new-session-disable [ctx])
 
 (defn unshare-all [ctx]
-  (add-raw-args ctx ["--unshare-all"]))
+  (assoc ctx ::shared-namespaces #{}))
+
+(defn- add-shared-namespace [ctx ns-type]
+  (update ctx ::shared-namespaces (fnil conj #{}) ns-type))
 
 (defn share-net [ctx]
-  (add-raw-args ctx ["--share-net"]))
+  (add-shared-namespace ctx "net"))
+
+(defn share-user [ctx]
+  (add-shared-namespace ctx "user"))
+
+(defn share-ipc [ctx]
+  (add-shared-namespace ctx "ipc"))
+
+(defn share-pid [ctx]
+  (add-shared-namespace ctx "pid"))
+
+(defn share-uts [ctx]
+  (add-shared-namespace ctx "uts"))
+
+(defn share-cgroup [ctx]
+  (add-shared-namespace ctx "cgroup"))
 
 (defn env-set [ctx k v]
   (assoc-in ctx [::envs-sandbox k] v))
@@ -182,8 +203,24 @@
 (defn fx-create-dirs [ctx path]
   (update ctx ::fx (fnil conj []) [::fx-create-dirs path]))
 
+(defn- namespace-args [ctx]
+  (let [shared-namespaces (::shared-namespaces ctx)]
+    (cond
+      (empty? shared-namespaces)
+      [["--unshare-all"]]
+
+      (= shared-namespaces #{"net"})
+      [["--unshare-all"]
+       ["--share-net"]]
+
+      :else
+      (let [unshared-namespaces (sort (set/difference all-namespaces shared-namespaces))]
+        (for [nspace unshared-namespaces]
+          [(str "--unshare-" nspace)])))))
+
 (defn ctx->args [ctx]
   (flatten (concat
+            (namespace-args ctx)
             (::args ctx)
             (env-args ctx)
             (skip-own-symlink (::cmd-args ctx))

@@ -5,16 +5,16 @@
 
 (deftest env
   (let [ctx {::sb/envs-system {"FOO" "123"}}]
-    (is (= ["--unsetenv" "FOO"]
+    (is (= ["--unshare-all" "--unsetenv" "FOO"]
            (-> ctx
                (sb/ctx->args))))
 
-    (is (= []
+    (is (= ["--unshare-all"]
            (-> ctx
                (sb/env-pass-many ["FOO" "BAR"])
                (sb/ctx->args))))
 
-    (is (= ["--setenv" "FOO" "456"]
+    (is (= ["--unshare-all" "--setenv" "FOO" "456"]
            (-> ctx
                (sb/env-set "FOO" "456")
                (sb/ctx->args))))))

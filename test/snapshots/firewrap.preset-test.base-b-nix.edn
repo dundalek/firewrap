@@ -1,6 +1,6 @@
 ("bwrap"
- "--die-with-parent"
  "--unshare-all"
+ "--die-with-parent"
  "--new-session"
  "--dev"
  "/dev"
