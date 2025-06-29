@@ -8,7 +8,11 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "WebFetch(domain:docs.anthropic.com)",
-      "Bash(clojure -M:test --focus:*)"
+      "Bash(clojure -M:test --focus:*)",
+      "mcp__clojure-mcp__grep",
+      "mcp__clojure-mcp__read_file",
+      "mcp__clojure-mcp__clojure_edit",
+      "mcp__clojure-mcp__clojure_eval"
     ],
     "deny": []
   }
