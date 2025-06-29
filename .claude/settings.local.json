@@ -12,7 +12,11 @@
       "mcp__clojure-mcp__grep",
       "mcp__clojure-mcp__read_file",
       "mcp__clojure-mcp__clojure_edit",
-      "mcp__clojure-mcp__clojure_eval"
+      "mcp__clojure-mcp__clojure_eval",
+      "mcp__clojure-mcp__clojure_inspect_project",
+      "mcp__clojure-mcp__clojure_edit_replace_sexp",
+      "mcp__clojure-mcp__LS",
+      "mcp__clojure-mcp__think"
     ],
     "deny": []
   }

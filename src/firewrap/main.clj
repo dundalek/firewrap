@@ -102,12 +102,45 @@
       (::sb/escaped arg)
       arg)))
 
+(def two-arg-opt? #{"--bind" "--ro-bind" "--dev-bind" "--bind-try" "--ro-bind-try" "--dev-bind-try" "--ro-bind-data" "--symlink"})
+(def single-arg-opt? #{"-dev" "--dev" "--proc" "--tmpfs" "--chdir"})
+
+(defn format-bwrap-args-preview [args]
+  (loop [args args
+         current-line []
+         lines []]
+    (if-let [[arg & xs] args]
+      (cond
+        (two-arg-opt? arg)
+        (let [[binding-line remaining] (split-at 3 args)]
+          (recur remaining
+                 []
+                 (cond-> lines
+                   (seq current-line) (conj current-line)
+                   :always (conj binding-line))))
+
+        (single-arg-opt? arg)
+        (let [[binding-line remaining] (split-at 2 args)]
+          (recur remaining
+                 []
+                 (cond-> lines
+                   (seq current-line) (conj current-line)
+                   :always (conj binding-line))))
+
+        :else
+        (recur xs (conj current-line arg) lines))
+
+      (->> (cond-> lines
+             (seq current-line) (conj current-line))
+           (map #(str/join " " %))))))
+
 ;; Workaround to write bwrap command as temporary script because process/exec
 ;; can't pass content via file descriptors.
 (defn run-bwrap-sh-wrapper [args {:keys [dry-run]}]
   (let [script (->> (cons "exec bwrap" (unwrap-escaping args))
                     (str/join " "))]
-    (println "Firewrap sandbox:" script)
+    (binding [*out* *err*]
+      (println "Firewrap sandbox:" script))
     (when-not dry-run
       (let [f (fs/file (fs/create-temp-file {:prefix "firewrap"}))]
         (spit f script)
@@ -117,8 +150,12 @@
   (cons "bwrap" (unwrap-raw args)))
 
 (defn run-bwrap-exec [args {:keys [dry-run]}]
-  (let [params (bwrap-args args)]
-    (println "Firewrap sandbox:" params)
+  (let [params (bwrap-args args)
+        formatted-lines (format-bwrap-args-preview params)]
+    (binding [*out* *err*]
+      (println "Firewrap sandbox:")
+      (doseq [line formatted-lines]
+        (println " " line)))
     (when-not dry-run
       (apply *exec-fn* params))))
 

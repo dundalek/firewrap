@@ -75,3 +75,22 @@
     (is (= help-text (with-out-str (test-main "firewrap" "--help"))))
     (is (= help-text (with-out-str (test-main "firewrap" "--help" "--"))))
     (is (= help-text (with-out-str (test-main "firewrap" "--help" "--" "date"))))))
+
+(deftest main-dry-run-preview
+  (is (= "Firewrap sandbox:
+  bwrap --unshare-all --die-with-parent --new-session
+  --dev /dev
+  --ro-bind /etc /etc
+  --proc /proc
+  --tmpfs /tmp
+  --ro-bind /usr /usr
+  --symlink usr/bin /bin
+  --symlink usr/sbin /sbin
+  --symlink usr/lib /lib
+  --symlink usr/lib64 /lib64
+  --ro-bind-try /lib32 /lib32
+  --tmpfs /home/user
+  echo hello world
+"
+         (with-out-str (binding [*err* *out*]
+                         (test-main "firewrap" "-b" "--dry-run" "--" "echo" "hello" "world"))))))
