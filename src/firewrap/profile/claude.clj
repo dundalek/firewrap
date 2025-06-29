@@ -50,7 +50,11 @@
       (sb/env-pass "LUA_PATH")
       ;; for IDE integration
       (sb/env-pass-many ["CLAUDE_CODE_SSE_PORT" "ENABLE_IDE_INTEGRATION"])
-      (sb/share-pid)))
+      (sb/share-pid)
+      ;; For clojure-mcp
+      (sb/bind-ro-try (dumpster/home ctx ".clojure"))
+      (sb/bind-ro-try (dumpster/home ctx "dotfiles/clojure"))
+      (system/command "clojure-mcp")))
 
 (defn wide [_]
   (-> (base/base4)

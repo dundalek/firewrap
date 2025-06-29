@@ -79,4 +79,10 @@
  "/home/user/.cache/claude-cli-nodejs"
  "--ro-bind-try"
  "/home/user/.gitconfig"
- "/home/user/.gitconfig")
+ "/home/user/.gitconfig"
+ "--ro-bind-try"
+ "/home/user/.clojure"
+ "/home/user/.clojure"
+ "--ro-bind-try"
+ "/home/user/dotfiles/clojure"
+ "/home/user/dotfiles/clojure")
