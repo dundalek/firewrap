@@ -1,9 +1,10 @@
 (ns firewrap.profile.echo
   (:require
    [firewrap.preset.base :as base]
-   [firewrap.preset.oldsystem :as system]))
+   [firewrap.preset.oldsystem :as system]
+   [firewrap.sandbox :as sb]))
 
 (defn profile [_]
-  (-> (base/base)
-      (system/libs)
-      (system/command "echo")))
+  (sb/$-> (base/base)
+          (system/libs)
+          (system/command "echo")))

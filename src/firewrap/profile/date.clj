@@ -1,10 +1,11 @@
 (ns firewrap.profile.date
   (:require
    [firewrap.preset.base :as base]
-   [firewrap.preset.oldsystem :as system]))
+   [firewrap.preset.oldsystem :as system]
+   [firewrap.sandbox :as sb]))
 
 (defn profile [_]
-  (-> (base/base)
+  (sb/$-> (base/base)
       (system/libs)
       (system/bind-ro-try "/etc/localtime")
       (system/command "date")))

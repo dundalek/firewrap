@@ -182,7 +182,8 @@
                                          (= base 5) (base/base5 {:unsafe-session unsafe-session})
                                          gui (base/base-gui)
                                          :else (base/base {:unsafe-session unsafe-session}))))
-            ctx (base/configurable (profile-fn parsed) parsed)
+            ctx (sb/interpret-hiccup (profile-fn parsed))
+            ctx (base/configurable ctx parsed)
             ctx (if (sb/cmd-args ctx)
                   ctx
                   (if (appimage/appimage-command? (first args))

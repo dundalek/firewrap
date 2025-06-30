@@ -28,7 +28,7 @@
       ctx)))
 
 (defn- common [ctx]
-  (-> ctx
+  (sb/$-> ctx
       (base/configurable {:opts {:cwd true
                                  :net true
                                  :home "claude"}})
@@ -57,11 +57,11 @@
       (system/command "clojure-mcp")))
 
 (defn wide [_]
-  (-> (base/base4)
+  (sb/$-> (base/base4)
       (common)))
 
 (defn narrow [_]
-  (-> (base/base)
+  (sb/$-> (base/base)
       (sb/env-pass-many env/allowed)
       (base/bind-system-and-extra-programs)
       (system/dev-null)

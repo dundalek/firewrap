@@ -16,7 +16,10 @@
       "mcp__clojure-mcp__clojure_inspect_project",
       "mcp__clojure-mcp__clojure_edit_replace_sexp",
       "mcp__clojure-mcp__LS",
-      "mcp__clojure-mcp__think"
+      "mcp__clojure-mcp__think",
+      "Bash(grep:*)",
+      "Bash(sed:*)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }

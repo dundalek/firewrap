@@ -12,7 +12,7 @@
 (defn profile [_]
   ;; use --cwd option to run classes from current directory
   (let [ctx (base/base)]
-    (-> ctx
+    (sb/$-> ctx
         (system/libs)
 
         (sb/env-pass "PATH")

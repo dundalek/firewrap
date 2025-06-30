@@ -230,3 +230,28 @@
   (doseq [[fx arg] (::fx ctx)]
     (case fx
       ::fx-create-dirs (fs/create-dirs arg))))
+
+(defn interpret-hiccup
+  ([forms] (interpret-hiccup {} forms))
+  ([ctx forms]
+   (cond
+     (and (sequential? forms) (fn? (first forms)))
+     (let [result (apply (first forms) ctx (rest forms))]
+       (interpret-hiccup ctx result))
+
+     (sequential? forms)
+     (reduce interpret-hiccup ctx forms)
+
+     ;; context
+     (map? forms) forms
+
+     :else (throw (ex-info (str "Invalid hiccup forms: " forms)
+                           {:forms forms})))))
+
+(defmacro $->
+  [& forms]
+  (->> forms
+       (mapv (fn [form]
+               (if (sequential? form)
+                 (vec form)
+                 [form])))))
