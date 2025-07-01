@@ -53,12 +53,13 @@
     (sb/share-pid)
     ;; For clojure-mcp
     ;; can't ro bind whole .clojure, because clojure might want to write to .clojure/.cpcache
-    ; (sb/bind-ro-try (dumpster/home ctx ".clojure/deps.edn"))
+    (sb/bind-ro-try (dumpster/home ctx "dotfiles/clojure/.clojure/deps.edn"))
+    (sb/bind-ro-try (dumpster/home ctx ".clojure/deps.edn"))
     ; (sb/bind-ro-try (dumpster/home ctx ".clojure/tools"))
-    ; (sb/symlink (dumpster/home ctx "dotfiles/clojure/deps.edn") (dumpster/home ctx ".clojure/deps.edn"))
-    ; (sb/symlink (dumpster/home ctx "dotfiles/clojure/tools") (dumpster/home ctx ".clojure/tools"))
-    ; (sb/bind-ro-try (dumpster/home ctx "dotfiles/clojure/deps.edn"))
-    ; (sb/bind-ro-try (dumpster/home ctx "dotfiles/clojure/tools"))
+    ; (sb/bind-ro-try (dumpster/home ctx "dotfiles/clojure/.clojure/deps.edn"))
+    ; (sb/bind-ro-try (dumpster/home ctx "dotfiles/clojure/.clojure/tools"))
+    ; (sb/symlink (dumpster/home ctx "dotfiles/clojure/.clojure/deps.edn") (dumpster/home ctx ".clojure/deps.edn"))
+    ; (sb/symlink (dumpster/home ctx "dotfiles/clojure/.clojure/tools") (dumpster/home ctx ".clojure/tools"))
     (system/command "clojure-mcp")))
 
 (defn wide [_]
