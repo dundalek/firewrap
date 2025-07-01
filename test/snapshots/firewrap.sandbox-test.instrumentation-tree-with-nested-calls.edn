@@ -1,0 +1,12 @@
+[{:symbol sb/unshare-all,
+  :location {:file "firewrap/sandbox_test.clj", :line 19, :column 5},
+  :children []}
+ {:symbol test-preset,
+  :location {:file "firewrap/sandbox_test.clj", :line 20, :column 5},
+  :children
+  [{:symbol sb/new-session,
+    :location {:file "firewrap/sandbox_test.clj", :line 14, :column 5},
+    :children []}
+   {:symbol sb/bind-ro,
+    :location {:file "firewrap/sandbox_test.clj", :line 15, :column 5},
+    :children []}]}]

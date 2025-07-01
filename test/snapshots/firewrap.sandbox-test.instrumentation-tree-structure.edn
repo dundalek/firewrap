@@ -1,0 +1,6 @@
+[{:symbol sb/unshare-all,
+  :location {:file "firewrap/sandbox_test.clj", :line 9, :column 5},
+  :children []}
+ {:symbol sb/new-session,
+  :location {:file "firewrap/sandbox_test.clj", :line 10, :column 5},
+  :children []}]

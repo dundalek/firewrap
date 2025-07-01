@@ -250,8 +250,35 @@
 
 (defmacro $->
   [& forms]
-  (->> forms
-       (mapv (fn [form]
-               (if (sequential? form)
-                 (vec form)
-                 [form])))))
+  (let [file *file*]
+    (->> forms
+         (mapv (fn [form]
+                 (let [vec-form (if (sequential? form) (vec form) [form])
+                       sym `(quote ~(when (sequential? form) (first form)))
+                       {:keys [line column]} (meta form)]
+                   (with-meta vec-form
+                     {::location {:file file :line line :column column}
+                      ::symbol sym})))))))
+
+(defn interpret-instrumenting
+  ([forms] (interpret-instrumenting {} forms))
+  ([ctx forms]
+   (cond
+     (and (sequential? forms) (fn? (first forms)))
+     (let [result (apply (first forms) ctx (rest forms))
+           {::keys [location symbol]} (meta forms)
+           [children new-ctx] (interpret-instrumenting ctx result)
+           node {:symbol symbol
+                 :location location
+                 :children children}]
+       [node new-ctx])
+
+     (sequential? forms)
+     (reduce (fn [[nodes ctx] form]
+               (let [[node ctx] (interpret-instrumenting ctx form)]
+                 [(conj nodes node) ctx]))
+             [[] ctx]
+             forms)
+
+     :else
+     [[] forms])))
