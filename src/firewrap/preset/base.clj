@@ -1,5 +1,6 @@
 (ns firewrap.preset.base
   (:require
+   [clojure.string :as str]
    [firewrap.sandbox :as sb]
    [firewrap.preset.dumpster :as dumpster]
    [firewrap.preset.env :as env]))
@@ -89,9 +90,19 @@
       (sb/bind-dev "/")
       (sb/tmpfs (dumpster/home ctx))))
 
+(defn apply-bindings [ctx bindings]
+  (reduce (fn [ctx [binding-type & args]]
+            (let [bind-fn (case binding-type
+                            :bind-ro sb/bind-ro
+                            :bind-rw sb/bind-rw
+                            :bind-dev sb/bind-dev)]
+              (apply bind-fn ctx args)))
+          ctx
+          bindings))
+
 (defn configurable [ctx params]
   (let [{:keys [opts args]} params
-        {:keys [profile home tmphome cwd net]} opts
+        {:keys [profile home tmphome cwd net bindings]} opts
         appname (or
                  (when (string? home) home)
                  profile
@@ -100,4 +111,5 @@
       home (bind-isolated-home-with-user-programs appname)
       tmphome (bind-isolated-tmphome-with-user-programs)
       cwd (dumpster/bind-cwd-rw)
-      net (dumpster/network))))
+      net (dumpster/network)
+      bindings (apply-bindings bindings))))

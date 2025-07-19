@@ -43,7 +43,15 @@
    :net {:desc ""
          :alias :n}})
 
-(def cli-spec (merge cli-options base-options))
+(def binding-options
+  {:bind-ro {:desc "Read-only bind mount <src>:<dest> or <path>"
+             :ref "<src>:<dest>"}
+   :bind-rw {:desc "Read-write bind mount <src>:<dest> or <path>"
+             :ref "<src>:<dest>"}
+   :bind-dev {:desc "Device bind mount <src>:<dest> or <path>"
+              :ref "<src>:<dest>"}})
+
+(def cli-spec (merge cli-options base-options binding-options))
 
 (defn preprocess-short-options [args]
   (reduce
@@ -59,22 +67,38 @@
          (conj processed arg)))
    [] args))
 
+(defn- parse-bind-spec [binding-type bind-spec]
+  (if (re-find #":" bind-spec)
+    (let [[src dest] (str/split bind-spec #":" 2)]
+      [binding-type src dest])
+    [binding-type bind-spec bind-spec]))
+
 (defn parse-args [args]
-  (let [appname (dumpster/path->appname (first args))
+  (let [bind-collector (atom [])
+        local-cli-spec (reduce (fn [cli-spec binding-type]
+                                 (assoc-in cli-spec [binding-type :collect]
+                                           (fn [_acc path]
+                                             (swap! bind-collector conj (parse-bind-spec binding-type path))
+                                             nil)))
+                               cli-spec
+                               (keys binding-options))
+        appname (dumpster/path->appname (first args))
         firewrap? (#{"firewrap" "frap" "fw"} appname)
         parse (if (some #{"--"} args)
                 (fn [args]
                   (let [[firewrap-args cmd-args] (split-with (complement #{"--"}) args)
                         args (concat (preprocess-short-options firewrap-args) cmd-args)]
-                    (cli/parse-args args {:spec cli-spec})))
+                    (cli/parse-args args {:spec local-cli-spec})))
                 (fn [args] {:args args :opts {}}))
         result (cond-> (parse (rest args))
                  (not firewrap?)
                  (-> (update :opts #(merge {:profile appname} %))
-                     (update :args #(into [(first args)] %))))]
+                     (update :args #(into [(first args)] %))))
+        bindings @bind-collector]
     (if (= result {:opts {} :args ["--help"]})
       {:opts {:help true}}
-      result)))
+      (cond-> result
+        (seq bindings) (assoc-in [:opts :bindings] bindings)))))
 
 (defn print-help []
   (println "Run program in sandbox")
@@ -85,7 +109,10 @@
   (println (cli/format-opts {:spec cli-options}))
   (println)
   (println "Ad-hoc profile options:")
-  (println (cli/format-opts {:spec base-options})))
+  (println (cli/format-opts {:spec base-options}))
+  (println)
+  (println "Binding options:")
+  (println (cli/format-opts {:spec binding-options})))
 
 (defn escape-shell [s]
   (if (re-matches #"^[-_a-zA-Z0-9]+$" s)
