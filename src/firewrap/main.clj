@@ -12,6 +12,8 @@
 
 (def ^:dynamic *exec-fn* process/exec)
 
+(def ^:dynamic *interactive* (some? (System/console)))
+
 (defn load-user-config []
   (let [config-file (fs/xdg-config-home "firewrap/init.clj")]
     (when (fs/exists? config-file)
@@ -134,13 +136,21 @@
              (seq current-line) (conj current-line))
            (map #(str/join " " %))))))
 
+(defn print-sandbox-info [print-fn]
+  (binding [*out* *err*]
+    (when *interactive* (print "\033[90m"))
+    (print-fn)
+    (when *interactive* (print "\033[0m"))
+    (println)))
+
 ;; Workaround to write bwrap command as temporary script because process/exec
 ;; can't pass content via file descriptors.
 (defn run-bwrap-sh-wrapper [args {:keys [dry-run]}]
   (let [script (->> (cons "exec bwrap" (unwrap-escaping args))
                     (str/join " "))]
-    (binding [*out* *err*]
-      (println "Firewrap sandbox:" script))
+    (print-sandbox-info
+     (fn []
+       (println "Firewrap sandbox:" script)))
     (when-not dry-run
       (let [f (fs/file (fs/create-temp-file {:prefix "firewrap"}))]
         (spit f script)
@@ -152,10 +162,11 @@
 (defn run-bwrap-exec [args {:keys [dry-run]}]
   (let [params (bwrap-args args)
         formatted-lines (format-bwrap-args-preview params)]
-    (binding [*out* *err*]
-      (println "Firewrap sandbox:")
-      (doseq [line formatted-lines]
-        (println " " line)))
+    (print-sandbox-info
+     (fn []
+       (println "Firewrap sandbox:")
+       (doseq [line formatted-lines]
+         (println " " line))))
     (when-not dry-run
       (apply *exec-fn* params))))
 

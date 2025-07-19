@@ -93,8 +93,10 @@
   --ro-bind-try /lib32 /lib32
   --tmpfs /home/user
   echo hello world
+
 "
-         (with-out-str (binding [*err* *out*]
+         (with-out-str (binding [*err* *out*
+                                 main/*interactive* false]
                          (test-main "firewrap" "-b" "--dry-run" "--" "echo" "hello" "world"))))))
 
 (defn- my-preset-comp [ctx]
@@ -122,8 +124,8 @@
 
       (is (= example-echo
              (sb/interpret-hiccup (sb/$-> (base/base)
-                                          (system/libs)
-                                          (system/command "echo")))))
+                                    (system/libs)
+                                    (system/command "echo")))))
 
       (is (= example-libs
              (sb/interpret-hiccup (base/base) [[my-preset-hiccup]])))
