@@ -21,12 +21,18 @@ function firewrap_command_wrapper
         or test -z "$cmd"
         # zoxide
         or string match -q "z *" $cmd
+        # using nofw passthrough helper script, so that commands without sandbox are available in history
+        or string match -q "nofw *" $cmd
 
         commandline -r "$cmd"
 
-        # Turn of sandbox sandbox by prependin `nofw`
-    else if string match -q "nofw *" $cmd
-        set -l stripped_cmd (string replace -r "^nofw\s+" "" $cmd)
+        # `nf fish` Shorthand to start unsandboxed subshell
+    else if string match -q "nf fish" $cmd
+        commandline -r "DISABLE_FIREWRAP_COMMAND_WRAPPER=1 fish"
+
+        # Turn of sandbox sandbox by prepending `nf`
+    else if string match -q "nf *" $cmd
+        set -l stripped_cmd (string replace -r "^nf\s+" "" $cmd)
         commandline -r "$stripped_cmd"
 
         # By default sandbox commands run without network, prepend `fwnet` for network
