@@ -218,6 +218,9 @@
                            (constantly (cond
                                          (or (= base 4) (true? base)) (base/base4 {:unsafe-session unsafe-session})
                                          (= base 5) (base/base5 {:unsafe-session unsafe-session})
+                                         (= base 6) (base/base6 {:unsafe-session unsafe-session})
+                                         (= base 8) (base/base8 {:unsafe-session unsafe-session})
+                                         (= base 9) (base/base9 {:unsafe-session unsafe-session})
                                          gui (base/base-gui)
                                          :else (base/base {:unsafe-session unsafe-session}))))
             ctx (sb/interpret-hiccup (profile-fn parsed))

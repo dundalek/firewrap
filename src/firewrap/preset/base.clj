@@ -85,6 +85,27 @@
       ;; would need x11 proxying for better security
       (sb/bind-ro-try "/tmp/.X11-unix/X1")))
 
+(defn base6
+  ([] (base6 {}))
+  ([{:keys [unsafe-session]}]
+   (let [ctx (base5 {:unsafe-session unsafe-session})]
+     (-> ctx
+         ;; would need x11 proxying for better security
+         (sb/bind-ro-try "/tmp/.X11-unix/X1")))))
+
+(defn base8
+  "Lower effort wider sandbox, does not filter env vars and /tmp, should work better for GUI programs"
+  ([] (base8 {}))
+  ([{:keys [unsafe-session]}]
+   (let [ctx (base {:unsafe-session unsafe-session})]
+     (-> ctx
+         ;; passing all env vars
+         (sb/env-pass-many (keys (sb/getenvs ctx)))
+         (sb/bind-dev "/")
+         (sb/tmpfs (dumpster/home ctx))
+         ;(sb/tmpfs "/tmp")
+         (bind-user-programs)))))
+
 (defn base9 [ctx]
   (-> ctx
       (sb/bind-dev "/")
