@@ -23,6 +23,8 @@ function firewrap_command_wrapper
         or string match -q "z *" $cmd
         # using nofw passthrough helper script, so that commands without sandbox are available in history
         or string match -q "nofw *" $cmd
+        # no point trying to sandbox if we want to run command as root
+        or string match -q "sudo *" $cmd
 
         commandline -r "$cmd"
 
