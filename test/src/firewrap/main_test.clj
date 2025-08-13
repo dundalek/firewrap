@@ -70,7 +70,27 @@
 
     "firewrap -cb5 -- cmd -b5"
     {:args ["cmd" "-b5"]
-     :opts {:base 5 :cwd true}}))
+     :opts {:base 5 :cwd true}}
+
+    "firewrap --env-pass VAR1 --env-pass VAR2 -- cmd"
+    {:args ["cmd"]
+     :opts {:env-pass ["VAR1" "VAR2"]}}
+
+    "firewrap --env-pass TEST_VAR -- echo test"
+    {:args ["echo" "test"]
+     :opts {:env-pass ["TEST_VAR"]}}
+
+    "firewrap --env-unset BADVAR -- cmd"
+    {:args ["cmd"]
+     :opts {:env-vars [[:unsetenv "BADVAR"]]}}
+
+    "firewrap --env-set MYVAR value -- cmd"
+    {:args ["cmd"]
+     :opts {:env-vars [[:setenv "MYVAR" "value"]]}}
+
+    "firewrap --env-set VAR1 val1 --env-unset VAR2 -- cmd"
+    {:args ["cmd"]
+     :opts {:env-vars [[:setenv "VAR1" "val1"] [:unsetenv "VAR2"]]}}))
 
 (deftest preprocess-short-options
   (is (= ["--base" "4" "cmd"] (main/preprocess-short-options ["-b4" "cmd"])))

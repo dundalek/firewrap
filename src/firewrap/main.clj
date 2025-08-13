@@ -51,7 +51,18 @@
    :bind-dev {:desc "Device bind mount <src>:<dest> or <path>"
               :ref "<src>:<dest>"}})
 
-(def cli-spec (merge cli-options base-options binding-options))
+(def env-options
+  {:env-pass {:desc "Pass environment variable to sandbox"
+              :ref "<env>"
+              :collect []}
+   :env-set {:desc "Set an environment variable"
+             :ref "<var> <value>"
+             :coerce [str]}
+   :env-unset {:desc "Unset an environment variable"
+               :ref "<var>"
+               :collect []}})
+
+(def cli-spec (merge cli-options base-options binding-options env-options))
 
 (defn preprocess-short-options [args]
   (reduce
@@ -94,11 +105,24 @@
                  (not firewrap?)
                  (-> (update :opts #(merge {:profile appname} %))
                      (update :args #(into [(first args)] %))))
-        bindings @bind-collector]
+        bindings @bind-collector
+        ;; Extract environment variables from the parsed options
+        env-vars (let [{:keys [env-set env-unset]} (:opts result)]
+                   (concat
+                    ;; Process env-set values in pairs: ["VAR1" "value1" "VAR2" "value2"] -> [[:setenv "VAR1" "value1"] [:setenv "VAR2" "value2"]]
+                    (when env-set
+                      (if (even? (count env-set))
+                        (map (fn [[var-name var-value]] [:setenv var-name var-value])
+                             (partition 2 env-set))
+                        (throw (ex-info "Invalid --env-set usage: each variable must have a value" {:args env-set}))))
+                    (map (fn [v] [:unsetenv v]) (if (sequential? env-unset) env-unset (when env-unset [env-unset])))))]
     (if (= result {:opts {} :args ["--help"]})
       {:opts {:help true}}
       (cond-> result
-        (seq bindings) (assoc-in [:opts :bindings] bindings)))))
+        (seq bindings) (assoc-in [:opts :bindings] bindings)
+        (seq env-vars) (assoc-in [:opts :env-vars] env-vars)
+        ;; Remove the raw env-set/env-unset from opts since we've processed them
+        :always (update :opts dissoc :env-set :env-unset)))))
 
 (defn print-help []
   (println "Run program in sandbox")
@@ -111,8 +135,8 @@
   (println "Ad-hoc profile options:")
   (println (cli/format-opts {:spec base-options}))
   (println)
-  (println "Binding options:")
-  (println (cli/format-opts {:spec binding-options})))
+  (println "Sandbox options:")
+  (println (cli/format-opts {:spec (merge binding-options env-options)})))
 
 (defn escape-shell [s]
   (if (re-matches #"^[-_a-zA-Z0-9]+$" s)

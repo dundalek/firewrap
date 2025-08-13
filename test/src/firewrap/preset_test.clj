@@ -17,6 +17,8 @@
 (def test-env
   {"HOME" "/home/user"})
 
+(def default-args ["bwrap" "--unshare-all" "--die-with-parent" "--new-session"])
+
 (def env-ctx {::sb/envs-system test-env
               ::sb/system-cwd "/home/user/somedir"})
 
@@ -135,38 +137,65 @@
              (sb/interpret-hiccup (base/base) [[my-preset-threaded-hiccup]]))))))
 
 (deftest bind-arguments
-  (let [default-args ["bwrap" "--unshare-all" "--die-with-parent" "--new-session"]]
-    (with-redefs [env-ctx (assoc env-ctx ::sb/envs-system {})]
-      (is (= (concat default-args ["--ro-bind" "/tmp" "/tmp"
+  (with-redefs [env-ctx (assoc env-ctx ::sb/envs-system {})]
+    (is (= (concat default-args ["--ro-bind" "/tmp" "/tmp"
+                                 "date"])
+           (test-main "firewrap" "--bind-ro" "/tmp" "--" "date")))
+    (testing "order of bind arguments is significant"
+      (is (= (concat default-args ["--ro-bind" "/a" "/a"
+                                   "--bind" "/b" "/b"
+                                   "--ro-bind" "/c" "/c"
                                    "date"])
-             (test-main "firewrap" "--bind-ro" "/tmp" "--" "date")))
-      (testing "order of bind arguments is significant"
-        (is (= (concat default-args ["--ro-bind" "/a" "/a"
-                                     "--bind" "/b" "/b"
-                                     "--ro-bind" "/c" "/c"
-                                     "date"])
-               (test-main "firewrap" "--bind-ro" "/a" "--bind-rw" "/b" "--bind-ro" "/c" "--" "date"))))
+             (test-main "firewrap" "--bind-ro" "/a" "--bind-rw" "/b" "--bind-ro" "/c" "--" "date"))))
 
-      (is (= (concat default-args ["--ro-bind" "/tmp" "/tmp"
-                                   "date"])
-             (test-main "firewrap" "--bind-ro" "/tmp" "--" "date")))
+    (is (= (concat default-args ["--ro-bind" "/tmp" "/tmp"
+                                 "date"])
+           (test-main "firewrap" "--bind-ro" "/tmp" "--" "date")))
 
-      (is (= (concat default-args ["--ro-bind" "/etc" "/config"
-                                   "date"])
-             (test-main "firewrap" "--bind-ro" "/etc:/config" "--" "date")))
+    (is (= (concat default-args ["--ro-bind" "/etc" "/config"
+                                 "date"])
+           (test-main "firewrap" "--bind-ro" "/etc:/config" "--" "date")))
 
-      (is (= (concat default-args ["--ro-bind" "/tmp" "/tmp"
-                                   "--ro-bind" "/var" "/var"
-                                   "date"])
-             (test-main "firewrap" "--bind-ro" "/tmp" "--bind-ro" "/var:/var" "--" "date")))
+    (is (= (concat default-args ["--ro-bind" "/tmp" "/tmp"
+                                 "--ro-bind" "/var" "/var"
+                                 "date"])
+           (test-main "firewrap" "--bind-ro" "/tmp" "--bind-ro" "/var:/var" "--" "date")))
 
-      (is (= (concat default-args ["--ro-bind" "/tmp" "/tmp"
-                                   "--bind" "/home/user/work" "/home/user/work"
-                                   "--dev-bind" "/dev/null" "/dev/null"
-                                   "date"])
-             (test-main "firewrap" "--bind-ro" "/tmp" "--bind-rw" "/home/user/work" "--bind-dev" "/dev/null" "--" "date")))
+    (is (= (concat default-args ["--ro-bind" "/tmp" "/tmp"
+                                 "--bind" "/home/user/work" "/home/user/work"
+                                 "--dev-bind" "/dev/null" "/dev/null"
+                                 "date"])
+           (test-main "firewrap" "--bind-ro" "/tmp" "--bind-rw" "/home/user/work" "--bind-dev" "/dev/null" "--" "date")))
 
-      (is (= (concat default-args ["--ro-bind" "/usr/local/bin" "/usr/bin"
-                                   "--ro-bind" "/opt/app" "/opt/app"
-                                   "date"])
-             (test-main "firewrap" "--bind-ro" "/usr/local/bin:/usr/bin" "--bind-ro" "/opt/app" "--" "date"))))))
+    (is (= (concat default-args ["--ro-bind" "/usr/local/bin" "/usr/bin"
+                                 "--ro-bind" "/opt/app" "/opt/app"
+                                 "date"])
+           (test-main "firewrap" "--bind-ro" "/usr/local/bin:/usr/bin" "--bind-ro" "/opt/app" "--" "date")))))
+
+(deftest env-pass-arguments
+  (with-redefs [env-ctx (assoc env-ctx ::sb/envs-system {"TEST_VAR1" "value1" "TEST_VAR2" "value2" "OTHER_VAR" "other"})]
+    (is (= (concat default-args ["--unsetenv" "OTHER_VAR"
+                                 "date"])
+           (test-main "firewrap" "--env-pass" "TEST_VAR1" "--env-pass" "TEST_VAR2" "--" "date")))))
+
+(deftest env-set-arguments
+  (with-redefs [env-ctx (assoc env-ctx ::sb/envs-system {})]
+    (is (= (concat default-args ["--setenv" "MYVAR" "myvalue"
+                                 "date"])
+           (test-main "firewrap" "--env-set" "MYVAR" "myvalue" "--" "date")))
+
+    (is (= (concat default-args ["--setenv" "VAR1" "value1" "--setenv" "VAR2" "value2"
+                                 "date"])
+           (test-main "firewrap" "--env-set" "VAR1" "value1" "--env-set" "VAR2" "value2" "--" "date")))))
+
+(deftest env-unset-arguments
+  (with-redefs [env-ctx (assoc env-ctx ::sb/envs-system {"VAR1" "existing"})]
+    (is (= (concat default-args ["--unsetenv" "VAR1"
+                                 "date"])
+           (test-main "firewrap" "--env-unset" "VAR1" "--" "date")))))
+
+(deftest mixed-env-set-env-unset-arguments
+  (with-redefs [env-ctx (assoc env-ctx ::sb/envs-system {"UNSET" "value"})]
+    (is (= (concat default-args ["--unsetenv" "UNSET" "--setenv" "KEEP" "value"
+                                 "date"])
+           (test-main "firewrap" "--env-set" "KEEP" "value" "--env-unset" "UNSET" "--" "date")))))

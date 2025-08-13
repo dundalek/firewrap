@@ -121,9 +121,19 @@
           ctx
           bindings))
 
+(defn- apply-env-vars [ctx env-vars]
+  (reduce (fn [ctx [env-op & args]]
+            (case env-op
+              :setenv (let [[var-name var-value] args]
+                        (sb/env-set ctx var-name var-value))
+              :unsetenv (let [[var-name] args]
+                          (update ctx ::sb/envs-sandbox dissoc var-name))))
+          ctx
+          env-vars))
+
 (defn configurable [ctx params]
   (let [{:keys [opts args]} params
-        {:keys [profile home tmphome cwd net bindings]} opts
+        {:keys [profile home tmphome cwd net bindings env-pass env-vars]} opts
         appname (or
                  (when (string? home) home)
                  profile
@@ -133,4 +143,6 @@
       tmphome (bind-isolated-tmphome-with-user-programs)
       cwd (dumpster/bind-cwd-rw)
       net (dumpster/network)
-      bindings (apply-bindings bindings))))
+      bindings (apply-bindings bindings)
+      env-pass (sb/env-pass-many env-pass)
+      env-vars (apply-env-vars env-vars))))
