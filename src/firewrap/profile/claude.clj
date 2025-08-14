@@ -60,6 +60,9 @@
     ; (sb/bind-ro-try (dumpster/home ctx "dotfiles/clojure/.clojure/tools"))
     ; (sb/symlink (dumpster/home ctx "dotfiles/clojure/.clojure/deps.edn") (dumpster/home ctx ".clojure/deps.edn"))
     ; (sb/symlink (dumpster/home ctx "dotfiles/clojure/.clojure/tools") (dumpster/home ctx ".clojure/tools"))
+    (sb/env-pass "CODEHERD_SESSION_ID")
+    ;; for sending notification, note that without dbus proxy implementation this is too broad
+    (system/dbus-talk "org.freedesktop.Notifications")
     (system/command "clojure-mcp")))
 
 (defn wide [_]
