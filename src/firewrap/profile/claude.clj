@@ -37,7 +37,6 @@
     (sb/bind-rw-try (dumpster/home ctx ".claude"))
     (sb/bind-rw-try (dumpster/home ctx ".claude.json"))
     (sb/bind-rw-try (dumpster/home ctx ".config/claude"))
-    (sb/bind-rw-try (dumpster/home ctx ".cache/claude-cli-nodejs"))
     ;; Installed via Bun
     ;; have its own packages, install inside sandbox with:
     ;; fw --profile claude -- bun install -g @anthropic-ai/claude-code
