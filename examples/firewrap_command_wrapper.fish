@@ -3,13 +3,23 @@
 # Use by moving this file to ~/.config/fish/functions and adding following to ~/.config/fish/config.fish to bind to return key:
 #
 #  bind \r firewrap_command_wrapper
+#
+# Environment Variables:
+#  FIREWRAP_ARGS
+#      Custom firewrap arguments to use instead of defaults
+#      If not set, defaults to "-bc" (base + current dir) or "-b" (base only in $HOME)
+#      For example:
+#         set -gx FIREWRAP_ARGS "--profile foo"
+#         export FIREWRAP_ARGS="--profile foo"
+#      Using set -gx in fish has the advantage that it is detected as a builtin, so it won't be prefixed with fw
+#  DISABLE_FIREWRAP_COMMAND_WRAPPER
+#      Ability start shell with disabled wrapper with DISABLE_FIREWRAP_COMMAND_WRAPPER=1 fish
 
 function firewrap_command_wrapper
     set -l cmd (commandline)
     set -l first_word (string split -m 1 " " $cmd)[1]
 
     # First conditions to disable sandbox wrapping
-    # Ability start shell with disabled wrapper with DISABLE_FIREWRAP_COMMAND_WRAPPER=1 fish
     if set -q DISABLE_FIREWRAP_COMMAND_WRAPPER
         # Disable wrapper for commands that start with DISABLE_FIREWRAP_COMMAND_WRAPPER= so that we can start non-sandboxed shell
         or string match -q "DISABLE_FIREWRAP_COMMAND_WRAPPER=*" $cmd
@@ -44,11 +54,13 @@ function firewrap_command_wrapper
 
         # Running in home directory could accidentaly leak it since it is default, use strictes sandbox just with base without sharing current directory
     else if test (pwd) = $HOME
-        commandline -r "fw -b -- $cmd"
+        set -l fw_args (if set -q FIREWRAP_ARGS; echo $FIREWRAP_ARGS; else; echo "-b"; end)
+        commandline -r "fw $fw_args -- $cmd"
 
         # Default prepend sandbox with base and current directory access
     else
-        commandline -r "fw -bc -- $cmd"
+        set -l fw_args (if set -q FIREWRAP_ARGS; echo $FIREWRAP_ARGS; else; echo "-bc"; end)
+        commandline -r "fw $fw_args -- $cmd"
     end
 
     commandline -f execute
