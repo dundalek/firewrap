@@ -6,24 +6,21 @@
 #
 # Environment Variables:
 #  FIREWRAP_ARGS
-#      Custom firewrap arguments to use instead of defaults
-#      If not set, defaults to "-bc" (base + current dir) or "-b" (base only in $HOME)
+#      Custom firewrap arguments to use. If not set or empty, wrapper is disabled.
+#      If set, overrides defaults of "-bc" (base + current dir) or "-b" (base only in $HOME)
 #      For example:
 #         set -gx FIREWRAP_ARGS "--profile foo"
 #         export FIREWRAP_ARGS="--profile foo"
 #      Using set -gx in fish has the advantage that it is detected as a builtin, so it won't be prefixed with fw
-#  DISABLE_FIREWRAP_COMMAND_WRAPPER
-#      Ability start shell with disabled wrapper with DISABLE_FIREWRAP_COMMAND_WRAPPER=1 fish
+#      To disable wrapper: set -e FIREWRAP_ARGS
 
 function firewrap_command_wrapper
     set -l cmd (commandline)
     set -l first_word (string split -m 1 " " $cmd)[1]
 
     # First conditions to disable sandbox wrapping
-    if set -q DISABLE_FIREWRAP_COMMAND_WRAPPER
-        # Disable wrapper for commands that start with DISABLE_FIREWRAP_COMMAND_WRAPPER= so that we can start non-sandboxed shell
-        or string match -q "DISABLE_FIREWRAP_COMMAND_WRAPPER=*" $cmd
-        # If commands already specifies firewrap sandbox, just use pass the original command
+    if not set -q FIREWRAP_ARGS; or test -z "$FIREWRAP_ARGS"
+        # Wrapper disabled when FIREWRAP_ARGS is not set or empty
         or string match -q "fw *" $cmd; or string match -q "firewrap *" $cmd
         # Detect fish builtins and disable sandbox, so that `cd` and others work
         or builtin -q $first_word
@@ -38,29 +35,18 @@ function firewrap_command_wrapper
 
         commandline -r "$cmd"
 
-        # `nf fish` Shorthand to start unsandboxed subshell
-    else if string match -q "nf fish" $cmd
-        commandline -r "DISABLE_FIREWRAP_COMMAND_WRAPPER=1 fish"
-
         # Turn of sandbox sandbox by prepending `nf`
     else if string match -q "nf *" $cmd
         set -l stripped_cmd (string replace -r "^nf\s+" "" $cmd)
         commandline -r "$stripped_cmd"
 
-        # By default sandbox commands run without network, prepend `fwnet` for network
-    else if string match -q "fwnet *" $cmd
-        set -l stripped_cmd (string replace -r "^fwnet\s+" "" $cmd)
-        commandline -r "fw -bcn -- $stripped_cmd"
-
         # Running in home directory could accidentaly leak it since it is default, use strictes sandbox just with base without sharing current directory
     else if test (pwd) = $HOME
-        set -l fw_args (if set -q FIREWRAP_ARGS; echo $FIREWRAP_ARGS; else; echo "-b"; end)
-        commandline -r "fw $fw_args -- $cmd"
+        commandline -r "fw -b -- $cmd"
 
         # Default prepend sandbox with base and current directory access
     else
-        set -l fw_args (if set -q FIREWRAP_ARGS; echo $FIREWRAP_ARGS; else; echo "-bc"; end)
-        commandline -r "fw $fw_args -- $cmd"
+        commandline -r "fw $FIREWRAP_ARGS -- $cmd"
     end
 
     commandline -f execute
