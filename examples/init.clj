@@ -60,7 +60,27 @@
                                   :home "wscribe"}})
        (sb/env-set "WSCRIBE_MODELS_DIR" "wscribe_models"))))
 
-(profile/register! "claude" claude/wide)
+(defn jank [ctx]
+  (let [ctx-map (sb/interpret-hiccup ctx)
+        jank-dir (dumpster/home ctx-map "Downloads/git/jank")]
+    (sb/$-> ctx
+      (sb/bind-ro jank-dir)
+      (sb/env-set "PATH" (str jank-dir "/compiler+runtime/build:" (sb/getenv ctx-map "PATH"))))))
+
+(defn claude [opts]
+  (sb/$-> opts
+    (claude/wide)
+    (jank)))
+
+(profile/register! "claude" claude)
 ;; Babashka does not work in narrow sandbox, bb fails with:
 ;; Fatal error: Failed to create the main Isolate. (code 32)
 ; (profile/register! "claude" claude/narrow)
+
+(profile/register!
+ "cljdev"
+ (fn [opts]
+   (sb/$-> opts
+     (claude)
+     ;; claude profile shares pid namespace which causes issue with Ctrl+C, unsharing all back as a workaround
+     (sb/unshare-all))))
