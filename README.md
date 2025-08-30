@@ -116,6 +116,14 @@ Ad-hoc profile options:
   -t, --tmphome
   -c, --cwd
   -n, --net
+
+Sandbox options:
+  --bind-ro   <src>:<dest>  Read-only bind mount <src>:<dest> or <path>
+  --bind-rw   <src>:<dest>  Read-write bind mount <src>:<dest> or <path>
+  --bind-dev  <src>:<dest>  Device bind mount <src>:<dest> or <path>
+  --env-pass  <env>         Pass environment variable to sandbox
+  --env-set   <var> <value> Set an environment variable
+  --env-unset <var>         Unset an environment variable
 ```
 <!-- /FIREWRAP_HELP_END -->
 
