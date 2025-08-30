@@ -4,7 +4,6 @@
 .clj-kondo
 !.clj-kondo/config.edn
 .calva
-/target/coverage
 .lsp/.cache
 node_modules
-/target/bin
+/target
