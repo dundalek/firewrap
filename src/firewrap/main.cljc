@@ -22,14 +22,14 @@
         (catch Exception e
           (throw (ex-info "Warning: Failed to load user config" {:path (str config-file)} e)))))))
 
-(def cli-options
+(def ^:private cli-options
   {:profile {:desc ""
              :ref "<profile>"}
    :dry-run {:desc "Only print bubblewrap arguments but don't execute"}
    :unsafe-session {:desc "Don't use --new-session option for bubblewrap (less secure)"}
    :help {:desc "Show help"}})
 
-(def base-options
+(def ^:private base-options
   {:base {:desc ""
           :alias :b}
    :gui {:desc ""
@@ -43,7 +43,7 @@
    :net {:desc ""
          :alias :n}})
 
-(def binding-options
+(def ^:private binding-options
   {:bind-ro {:desc "Read-only bind mount <src>:<dest> or <path>"
              :ref "<src>:<dest>"}
    :bind-rw {:desc "Read-write bind mount <src>:<dest> or <path>"
@@ -51,7 +51,7 @@
    :bind-dev {:desc "Device bind mount <src>:<dest> or <path>"
               :ref "<src>:<dest>"}})
 
-(def env-options
+(def ^:private env-options
   {:env-pass {:desc "Pass environment variable to sandbox"
               :ref "<env>"
               :collect []}
@@ -62,7 +62,8 @@
                :ref "<var>"
                :collect []}})
 
-(def cli-spec (merge cli-options base-options binding-options env-options))
+(def ^:private cli-spec
+  (merge cli-options base-options binding-options env-options))
 
 (defn preprocess-short-options [args]
   (reduce
@@ -138,12 +139,12 @@
   (println "Sandbox options:")
   (println (cli/format-opts {:spec (merge binding-options env-options)})))
 
-(defn escape-shell [s]
+(defn- escape-shell [s]
   (if (re-matches #"^[-_a-zA-Z0-9]+$" s)
     s
     (str "'" (str/replace s "'" "'\\''") "'")))
 
-(defn unwrap-escaping [args]
+(defn- unwrap-escaping [args]
   (for [arg args]
     (if (map? arg)
       (::sb/escaped arg)
@@ -155,8 +156,11 @@
       (::sb/escaped arg)
       arg)))
 
-(def two-arg-opt? #{"--bind" "--ro-bind" "--dev-bind" "--bind-try" "--ro-bind-try" "--dev-bind-try" "--ro-bind-data" "--symlink"})
-(def single-arg-opt? #{"-dev" "--dev" "--proc" "--tmpfs" "--chdir"})
+(def ^:private two-arg-opt?
+  #{"--bind" "--ro-bind" "--dev-bind" "--bind-try" "--ro-bind-try" "--dev-bind-try" "--ro-bind-data" "--symlink"})
+
+(def ^:private single-arg-opt?
+  #{"-dev" "--dev" "--proc" "--tmpfs" "--chdir"})
 
 (defn format-bwrap-args-preview [args]
   (loop [args args
@@ -196,7 +200,7 @@
 
 ;; Workaround to write bwrap command as temporary script because process/exec
 ;; can't pass content via file descriptors.
-(defn run-bwrap-sh-wrapper [args {:keys [dry-run]}]
+(defn- run-bwrap-sh-wrapper [args {:keys [dry-run]}]
   (let [script (->> (cons "exec bwrap" (unwrap-escaping args))
                     (str/join " "))]
     (print-sandbox-info
@@ -210,7 +214,7 @@
 (defn bwrap-args [args]
   (cons "bwrap" (unwrap-raw args)))
 
-(defn run-bwrap-exec [args {:keys [dry-run]}]
+(defn- run-bwrap-exec [args {:keys [dry-run]}]
   (let [params (bwrap-args args)
         formatted-lines (format-bwrap-args-preview params)]
     (print-sandbox-info
@@ -221,7 +225,7 @@
     (when-not dry-run
       (apply *exec-fn* params))))
 
-(defn needs-bwrap-sh-wrapper? [args]
+(defn- needs-bwrap-sh-wrapper? [args]
   (->> args
        (some (fn [s] (when (string? s)
                        (str/includes? s "--ro-bind-data"))))))
