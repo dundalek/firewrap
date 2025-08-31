@@ -10,6 +10,7 @@ In the end AIs will just execute commands and call APIs with given authority.
 
 > ⚠️ **Disclaimer**:  
 This is an experimental and incomplete project.  
+There are many security mechanisms that are [not yet implemented](#implemented-mechanisms).  
 Always verify the source before running anything.
 
 ## Install
@@ -210,9 +211,61 @@ When a command ends with `.appimage` (case insensitive comparison) it will be ex
 fw -b -- SomeApp.AppImage
 ```
 
+#### Auto-sandboxing using shell wrapper
+
+When working on a project or trying out scripts from the internet,
+we might want to run commands in a sandbox with reduced set of only necessary privileges.
+
+One option is to run a shell in a sandbox and execute commands from it.
+However, there are [limitations](#limitations) when running sandboxed shell.
+
+Another experimental approach is a shell wrapper, that prefixes invoked commands with `firewrap` command to run them in sandbox. There is an experimental implementation [shell wrapper](./examples/firewrap_command_wrapper.fish) for fish that works in following way:
+
+- If we type a command without prefix like `ls`, it will get prefixed like `fw -bc -- ls`. The default arguments are set using FIREWRAP_ARGS env variable.
+- When a command already includes firewrap prefix, it will be passed as is. For example running in a sandbox with network `fw -bn -- ping 8.8.8.8` will execute it as is.
+
+The challenge is security vs user experience, as different tasks need different priviledges.
+It can be annoying to switch sandbox options, and tempting to just always run wide sandbox or disable sandbox completely.
+
+An idea is to add shorthands for common uses in shell config. Here are some aliases/abbreviations for inspiration:
+
+```fish
+abbr -a fwe "set -gx FIREWRAP_ARGS -bc" # e - enable
+abbr -a fwd "set -gx FIREWRAP_ARGS ''" # d - disable
+abbr -a fwn "set -gx -bcn" # n - network
+abbr -a fwc "set -gx FIREWRAP_ARGS '--profile cljdev'" # c - cljdev
+```
+
+It is also possible to use [direnv](https://direnv.net) to set custom FIREWRAP_ARGS to configure different sandboxes based on project directories.
+
 #### User config
 
-TODO
+Config file is loaded from `firewrap/init.clj` in `$XDG_CONFIG_HOME` (by default `~/.confg/firewrap/init.clj`).
+See the example [init.clj](./examples/init.clj).
+
+Main uses are to register a custom profile function with `profile/register!` and hooking overrides using `alter-var-root`.
+
+```clj
+(ns init
+  (:require
+   [firewrap.preset.base :as base]
+   [firewrap.profile :as profile]
+   [firewrap.sandbox :as sb]))
+
+;; Registering a custom profile function
+(defn my-appname-profile [opts]
+  (base/base5))
+
+(profile/register! "appname" my-appname-profile)
+
+;; Overriding existing functions as a hook
+(defn my-bind-user-programs [ctx]
+  (-> ctx
+      (sb/bind-ro "/some/path/bin")))
+
+(alter-var-root #'base/bind-user-programs
+                (constantly my-bind-user-programs))
+```
 
 #### Two-step execution
 
