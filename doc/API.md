@@ -21,9 +21,9 @@
     -  [`base-gui`](#firewrap.preset.base/base-gui)
     -  [`base4`](#firewrap.preset.base/base4) - More granular base with system files.
     -  [`base5`](#firewrap.preset.base/base5) - Low effort sandbox, includes system files with temporary home and empty tmp.
-    -  [`base6`](#firewrap.preset.base/base6)
+    -  [`base6`](#firewrap.preset.base/base6) - Low effort sandbox with GUI support, includes X11 display binding.
     -  [`base8`](#firewrap.preset.base/base8) - Lower effort wider sandbox, does not filter env vars and /tmp, should work better for GUI programs.
-    -  [`base9`](#firewrap.preset.base/base9)
+    -  [`base9`](#firewrap.preset.base/base9) - Simplest wide sandbox with device bind mount and temporary home.
     -  [`bind-extra-system-programs`](#firewrap.preset.base/bind-extra-system-programs)
     -  [`bind-isolated-home-with-user-programs`](#firewrap.preset.base/bind-isolated-home-with-user-programs)
     -  [`bind-isolated-tmphome-with-user-programs`](#firewrap.preset.base/bind-isolated-tmphome-with-user-programs)
@@ -252,7 +252,7 @@
 (bwrap-args args)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.cljc#L214-L215">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.cljc#L232-L233">Source</a></sub></p>
 
 ## <a name="firewrap.main/format-bwrap-args-preview">`format-bwrap-args-preview`</a>
 ``` clojure
@@ -260,7 +260,7 @@ Function.
 (format-bwrap-args-preview args)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.cljc#L165-L192">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.cljc#L183-L210">Source</a></sub></p>
 
 ## <a name="firewrap.main/load-user-config">`load-user-config`</a>
 ``` clojure
@@ -276,7 +276,7 @@ Function.
 (main & root-args)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.cljc#L240-L262">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.cljc#L271-L286">Source</a></sub></p>
 
 ## <a name="firewrap.main/parse-args">`parse-args`</a>
 ``` clojure
@@ -300,7 +300,7 @@ Function.
 (print-help)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.cljc#L128-L140">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.cljc#L143-L158">Source</a></sub></p>
 
 ## <a name="firewrap.main/print-sandbox-info">`print-sandbox-info`</a>
 ``` clojure
@@ -308,7 +308,7 @@ Function.
 (print-sandbox-info print-fn)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.cljc#L194-L199">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.cljc#L212-L217">Source</a></sub></p>
 
 ## <a name="firewrap.main/run-bwrap">`run-bwrap`</a>
 ``` clojure
@@ -316,7 +316,7 @@ Function.
 (run-bwrap ctx opts)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.cljc#L233-L238">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.cljc#L251-L256">Source</a></sub></p>
 
 ## <a name="firewrap.main/unwrap-raw">`unwrap-raw`</a>
 ``` clojure
@@ -324,7 +324,7 @@ Function.
 (unwrap-raw args)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.cljc#L153-L157">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/main.cljc#L171-L175">Source</a></sub></p>
 
 -----
 # <a name="firewrap.preset.appimage">firewrap.preset.appimage</a>
@@ -364,7 +364,7 @@ Function.
 (apply-bindings ctx bindings)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.cljc#L114-L122">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.cljc#L119-L127">Source</a></sub></p>
 
 ## <a name="firewrap.preset.base/base">`base`</a>
 ``` clojure
@@ -374,7 +374,7 @@ Function.
 ```
 Function.
 
-Base with basic bubblewrap flags, does not grant any resources.
+Base with basic bubblewrap flags, does not grant any resources
 <p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.cljc#L40-L53">Source</a></sub></p>
 
 ## <a name="firewrap.preset.base/base-gui">`base-gui`</a>
@@ -414,7 +414,9 @@ Low effort sandbox, includes system files with temporary home and empty tmp
 (base6 {:keys [unsafe-session]})
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.cljc#L88-L94">Source</a></sub></p>
+
+Low effort sandbox with GUI support, includes X11 display binding
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.cljc#L88-L95">Source</a></sub></p>
 
 ## <a name="firewrap.preset.base/base8">`base8`</a>
 ``` clojure
@@ -425,15 +427,18 @@ Function.
 Function.
 
 Lower effort wider sandbox, does not filter env vars and /tmp, should work better for GUI programs
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.cljc#L96-L107">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.cljc#L97-L108">Source</a></sub></p>
 
 ## <a name="firewrap.preset.base/base9">`base9`</a>
 ``` clojure
 
-(base9 ctx)
+(base9)
+(base9 {:keys [unsafe-session]})
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.cljc#L109-L112">Source</a></sub></p>
+
+Simplest wide sandbox with device bind mount and temporary home
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.cljc#L110-L117">Source</a></sub></p>
 
 ## <a name="firewrap.preset.base/bind-extra-system-programs">`bind-extra-system-programs`</a>
 ``` clojure
@@ -489,7 +494,7 @@ Function.
 (configurable ctx params)
 ```
 Function.
-<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.cljc#L134-L148">Source</a></sub></p>
+<p><sub><a href="https://github.com/dundalek/firewrap/blob/master/src/firewrap/preset/base.cljc#L139-L153">Source</a></sub></p>
 
 -----
 # <a name="firewrap.preset.dumpster">firewrap.preset.dumpster</a>

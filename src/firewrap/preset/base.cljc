@@ -38,7 +38,7 @@
       (bind-user-programs)))
 
 (defn base
-  "Base with basic bubblewrap flags, does not grant any resources."
+  "Base with basic bubblewrap flags, does not grant any resources"
   ([] (base {}))
   ([{:keys [unsafe-session]}]
    (-> {}
@@ -86,6 +86,7 @@
       (sb/bind-ro-try "/tmp/.X11-unix/X1")))
 
 (defn base6
+  "Low effort sandbox with GUI support, includes X11 display binding"
   ([] (base6 {}))
   ([{:keys [unsafe-session]}]
    (let [ctx (base5 {:unsafe-session unsafe-session})]
@@ -106,10 +107,14 @@
          ;(sb/tmpfs "/tmp")
          (bind-user-programs)))))
 
-(defn base9 [ctx]
-  (-> ctx
-      (sb/bind-dev "/")
-      (sb/tmpfs (dumpster/home ctx))))
+(defn base9
+  "Simplest wide sandbox with device bind mount and temporary home"
+  ([] (base9 {}))
+  ([{:keys [unsafe-session]}]
+   (let [ctx (base {:unsafe-session unsafe-session})]
+     (-> ctx
+         (sb/bind-dev "/")
+         (sb/tmpfs (dumpster/home ctx))))))
 
 (defn apply-bindings [ctx bindings]
   (reduce (fn [ctx [binding-type & args]]

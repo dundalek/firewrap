@@ -20,3 +20,5 @@ Run tests using `bb test:once`
 Run test coverage report with `bb test:coverage`
 
 Run a single test using `clojure -M:test --focus some.namespace/some-test`
+
+Run firewrap CLI with `bin/firewrap`

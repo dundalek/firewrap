@@ -89,8 +89,8 @@ Worfklow to create a profile is an iteration loop of:
 
 - [Presets](src/firewrap/preset) - Are reusable pieces that define security policy.
 - [Profiles](src/firewrap/preset) - Define sandbox environment for an application and are automatically used if application name matches, usually use one or more presets.
-- Levels (idea) - It is usually hard to create minimal profile that does not break any functionality.
-  - The idea is to have common levels that add privileges.
+- Levels - It is usually hard to create minimal profile that does not break any functionality.
+  - The idea is to have common levels that add privileges, from tightest `-b0` to widest `-b9`.  
   Then based on risk one can:
     - Start with tightest profile, observe broken program and increase level by trial-and-error until the program works.
     - Or start with a wider profile and working program, and tighten level just until before the program stops working.
@@ -117,6 +117,14 @@ Ad-hoc profile options:
   -t, --tmphome
   -c, --cwd
   -n, --net
+
+Base levels (-b or --base is same as -b4):
+  -b0  Base with basic bubblewrap flags, does not grant any resources
+  -b4  More granular base with system files
+  -b5  Low effort sandbox, includes system files with temporary home and empty tmp
+  -b6  Low effort sandbox with GUI support, includes X11 display binding
+  -b8  Lower effort wider sandbox, does not filter env vars and /tmp, should work better for GUI programs
+  -b9  Simplest wide sandbox with device bind mount and temporary home
 
 Sandbox options:
   --bind-ro   <src>:<dest>  Read-only bind mount <src>:<dest> or <path>

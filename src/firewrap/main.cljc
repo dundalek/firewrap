@@ -125,6 +125,21 @@
         ;; Remove the raw env-set/env-unset from opts since we've processed them
         :always (update :opts dissoc :env-set :env-unset)))))
 
+(def ^:private base-levels
+  [{:level 0 :profile #'base/base}
+   {:level 4 :profile #'base/base4}
+   {:level 5 :profile #'base/base5}
+   {:level 6 :profile #'base/base6}
+   {:level 8 :profile #'base/base8}
+   {:level 9 :profile #'base/base9}])
+
+(defn- format-base-levels []
+  (->> base-levels
+       (map (fn [{:keys [level profile]}]
+              (let [desc (:doc (meta profile))]
+                (str "  -b" level "  " desc))))
+       (str/join "\n")))
+
 (defn print-help []
   (println "Run program in sandbox")
   (println)
@@ -135,6 +150,9 @@
   (println)
   (println "Ad-hoc profile options:")
   (println (cli/format-opts {:spec base-options}))
+  (println)
+  (println "Base levels (-b or --base is same as -b4):")
+  (println (format-base-levels))
   (println)
   (println "Sandbox options:")
   (println (cli/format-opts {:spec (merge binding-options env-options)})))
@@ -237,20 +255,26 @@
       (run-bwrap-sh-wrapper args opts)
       (run-bwrap-exec args opts))))
 
+(defn- resolve-base-profile [{:keys [opts]}]
+  (let [{:keys [base gui unsafe-session]} opts
+        base (if (true? base) 4 base)
+        profile-fn (->> base-levels
+                        (filter #(= (:level %) base))
+                        first
+                        :profile)]
+    (cond
+      profile-fn (profile-fn {:unsafe-session unsafe-session})
+      gui (base/base-gui)
+      ;; Print warning if no base?
+      :else (base/base {:unsafe-session unsafe-session}))))
+
 (defn main [& root-args]
   (let [{:keys [opts args] :as parsed} (parse-args root-args)
-        {:keys [profile base gui dry-run help unsafe-session]} opts]
+        {:keys [profile dry-run help]} opts]
     (if (or help (empty? args))
       (print-help)
       (let [profile-fn (or (profile/resolve profile)
-                           (constantly (cond
-                                         (or (= base 4) (true? base)) (base/base4 {:unsafe-session unsafe-session})
-                                         (= base 5) (base/base5 {:unsafe-session unsafe-session})
-                                         (= base 6) (base/base6 {:unsafe-session unsafe-session})
-                                         (= base 8) (base/base8 {:unsafe-session unsafe-session})
-                                         (= base 9) (base/base9 {:unsafe-session unsafe-session})
-                                         gui (base/base-gui)
-                                         :else (base/base {:unsafe-session unsafe-session}))))
+                           resolve-base-profile)
             ctx (sb/interpret-hiccup (profile-fn parsed))
             ctx (base/configurable ctx parsed)
             ctx (if (sb/cmd-args ctx)
