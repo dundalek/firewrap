@@ -14,6 +14,10 @@
 
 (def bind-ro sb/bind-ro)
 (def bind-ro-try sb/bind-ro-try)
+(def bind-rw sb/bind-rw)
+(def bind-rw-try sb/bind-rw-try)
+(def bind-dev sb/bind-dev)
+(def bind-dev-try sb/bind-dev-try)
 
 ;; might need helpers like this since ctx would be in wrong position using `->`
 ;; alternative that comes to mind is `(-> ctx ((partial reduce bind-ro-try) paths))`
@@ -21,10 +25,8 @@
 (defn bind-ro-try-many [ctx paths]
   (reduce bind-ro-try ctx paths))
 
-(def bind-rw sb/bind-rw)
-(def bind-rw-try sb/bind-rw-try)
-(def bind-dev sb/bind-dev)
-(def bind-dev-try sb/bind-dev-try)
+(defn bind-rw-try-many [ctx paths]
+  (reduce bind-rw-try ctx paths))
 
 (def isolated-home dumpster/bind-isolated-home)
 

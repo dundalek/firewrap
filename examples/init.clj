@@ -3,6 +3,7 @@
    [firewrap.preset.appimage :as appimage]
    [firewrap.preset.base :as base]
    [firewrap.preset.dumpster :as dumpster]
+   [firewrap.preset.oldsystem :as system]
    [firewrap.profile :as profile]
    [firewrap.profile.claude :as claude]
    [firewrap.profile.cursor :as cursor]
@@ -84,3 +85,21 @@
      (claude)
      ;; claude profile shares pid namespace which causes issue with Ctrl+C, unsharing all back as a workaround
      (sb/unshare-all))))
+
+(defn lazygit-wide [opts]
+  ;; base5 to get /dev/pty etc.
+  (let [ctx (base/base5 {:unsafe-session true})]
+    (sb/$->
+      ctx
+      ;; override to always include CWD to be able to change local sources and .git
+      (base/configurable (assoc-in opts [:opts :cwd] true))
+      ;; needs RW access because tries to store state.yml in config dir
+      (system/bind-rw-try-many (system/xdg-config-home-paths ctx "jesseduffield/lazygit"))
+      (system/bind-rw-try-many (system/xdg-config-home-paths ctx "lazygit"))
+      ;; target where configs are symlinked using stow
+      (sb/bind-rw-try (dumpster/home ctx "dotfiles/git"))
+
+      ;; Consider extract to a separate git profile and compose
+      (sb/bind-ro-try (dumpster/home ctx ".gitconfig")))))
+
+(profile/register! "lazygit" lazygit-wide)
