@@ -61,7 +61,7 @@
  "--ro-bind"
  "/bus"
  "/bus"
- "--dev-bind"
+ "--dev-bind-try"
  "/dev/dri"
  "/dev/dri"
  "--ro-bind-try"
