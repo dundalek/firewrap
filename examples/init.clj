@@ -71,7 +71,9 @@
 (defn claude [opts]
   (sb/$-> opts
     (claude/wide)
-    (jank)))
+    (jank)
+    ;; temporary for testing D-BUS implementation
+    (system/dbus-system-bus)))
 
 (profile/register! "claude" claude)
 ;; Babashka does not work in narrow sandbox, bb fails with:
@@ -103,3 +105,15 @@
       (sb/bind-ro-try (dumpster/home ctx ".gitconfig")))))
 
 (profile/register! "lazygit" lazygit-wide)
+
+(defn gemini-wide [opts]
+  (let [ctx (base/base4)]
+    (sb/$->
+      ctx
+      ;; override to always include CWD to be able to change local sources and .git
+      (base/configurable (update opts :opts assoc
+                                 :cwd true
+                                 :net true
+                                 :home "gemini")))))
+
+(profile/register! "gemini" gemini-wide)
