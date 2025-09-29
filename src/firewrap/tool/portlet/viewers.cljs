@@ -19,7 +19,7 @@
 
 (defn tree-node-view [{:keys [node selected-node on-select expanded-nodes on-toggle level]}]
   (let [has-children? (seq (:children node))
-        node-id (str (:symbol node) "-" (hash node))
+        node-id (str (:form node) "-" (hash node))
         is-expanded? (contains? @expanded-nodes node-id)
         is-selected? (= @selected-node node)
         children-count (count-children node)
@@ -42,7 +42,7 @@
          [:span {:style {:width "12px" :text-align "center"}}
           (if is-expanded? "▼" "▶")])
        [:span {:style {:font-weight "bold"}}
-        (str (:symbol node))]
+        (str (:form node))]
        (when (> children-count 0)
          [:span {:style {:color "#666" :font-size "0.9em"}}
           (str "(" children-count " children)")])]
@@ -52,7 +52,7 @@
      (when (and has-children? is-expanded?)
        [:div {:style {:margin-left "20px"}}
         (for [child (:children node)]
-          ^{:key (str (:symbol child) "-" (hash child))}
+          ^{:key (str (:form child) "-" (hash child))}
           [tree-node-view {:node child
                            :selected-node selected-node
                            :on-select on-select
@@ -67,9 +67,9 @@
    (if selected-node
      [:div
       [:div {:style {:margin-bottom "16px"}}
-       [:h4 "Symbol"]
+       [:h4 "Form"]
        [:div {:style {:font-family "monospace" :background-color "#f5f5f5" :padding "8px" :border-radius "4px"}}
-        (str (:symbol selected-node))]]
+        (str (:form selected-node))]]
 
       (when (:location selected-node)
         [:div {:style {:margin-bottom "16px"}}
@@ -96,7 +96,7 @@
           (for [[idx child] (map-indexed vector (:children selected-node))]
             ^{:key idx}
             [:div {:style {:padding "2px 0" :border-bottom "1px solid #eee"}}
-             (str (:symbol child))])]])]
+             (str (:form child))])]])]
 
      [:div {:style {:color "#888" :font-style "italic"}}
       "Select a node to view its details"])])

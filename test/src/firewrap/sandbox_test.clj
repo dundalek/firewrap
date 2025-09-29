@@ -2,20 +2,21 @@
   (:require
    [clojure.test :refer [deftest is]]
    [firewrap.sandbox :as sb]
+   [firewrap.tracer :as tracer]
    [snap.core :as snap]))
 
 (defn- test-profile-simple [_]
-  (sb/$->
+  (sb/$-> {}
     (sb/unshare-all)
     (sb/new-session)))
 
 (defn- test-preset [ctx arg]
-  (sb/$->
+  (sb/$-> ctx
     (sb/new-session)
-    (sb/bind-ro ctx arg arg)))
+    (sb/bind-ro arg arg)))
 
 (defn- test-profile-nested [_]
-  (sb/$->
+  (sb/$-> {}
     (sb/unshare-all)
     (test-preset "/path")))
 
@@ -36,15 +37,13 @@
                (sb/ctx->args))))))
 
 (deftest instrumentation-tree-structure
-  (let [profile [test-profile-simple]
-        [node ctx] (sb/interpret-instrumenting profile)]
+  (let [[ctx node] (tracer/with-trace (test-profile-simple {}))]
     (snap/match-snapshot ::instrumentation-tree-structure
-                         (:children node))
-    (is (= (sb/interpret-hiccup profile) ctx))))
+                         node)
+    (is (= (test-profile-simple {}) ctx))))
 
 (deftest instrumentation-tree-with-nested-calls
-  (let [profile [test-profile-nested]
-        [node ctx] (sb/interpret-instrumenting profile)]
+  (let [[ctx node] (tracer/with-trace (test-profile-nested {}))]
     (snap/match-snapshot ::instrumentation-tree-with-nested-calls
-                         (:children node))
-    (is (= (sb/interpret-hiccup profile) ctx))))
+                         node)
+    (is (= (test-profile-nested {}) ctx))))

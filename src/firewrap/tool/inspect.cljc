@@ -4,6 +4,7 @@
    [firewrap.main :as main]
    [firewrap.sandbox :as sb]
    [firewrap.tool.portlet.viewers :as-alias viewers]
+   [firewrap.tracer :as tracer]
    [portal.api :as p]
    [portal.viewer :as pv]))
 
@@ -13,7 +14,7 @@
 (defn args->tree [args]
   (let [parsed (main/parse-args args)
         profile-fn (main/resolve-profile-fn parsed)
-        [tree-data _ctx] (sb/interpret-instrumenting parsed [profile-fn])]
+        [_ctx tree-data] (tracer/with-trace (profile-fn parsed))]
     tree-data))
 
 (defn inspect-sandbox [{:keys [args]}]
@@ -34,23 +35,23 @@
     (defn compact-tree [tree-data]
       (walk/postwalk
        (fn [x] (if (map? x)
-                 (let [{:keys [symbol children]} x]
+                 (let [{:keys [form children]} x]
                    (cond-> {}
-                     symbol (assoc :symbol symbol)
+                     form (assoc :form form)
                      (seq children) (assoc :children children)))
                  x))
        tree-data))
 
-    (defn test-interpret [forms]
+    (defn test-interpret [f]
       (compact-tree
-       (first (sb/interpret-instrumenting forms)))))
+       (second (tracer/with-trace (f {}))))))
 
-  (test-interpret [firewrap.profile.claude/wide])
-  (test-interpret [firewrap.profile.date/profile])
-  (test-interpret [(firewrap.profile/resolve "date")])
+  (test-interpret firewrap.profile.claude/wide)
+  (test-interpret firewrap.profile.date/profile)
+  (test-interpret (firewrap.profile/resolve "date"))
 
-  (test-interpret [firewrap.preset.base/base4])
-  (test-interpret [firewrap.preset.base/base5])
+  (test-interpret firewrap.preset.base/base4)
+  (test-interpret firewrap.preset.base/base5)
 
   (compact-tree (args->tree ["firewrap" "--profile" "date" "--" "date"]))
 

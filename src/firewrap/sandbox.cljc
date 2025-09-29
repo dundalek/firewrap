@@ -1,7 +1,8 @@
 (ns firewrap.sandbox
   (:require
    [babashka.fs :as fs]
-   [clojure.set :as set]))
+   [clojure.set :as set]
+   [firewrap.tracer :as tracer]))
 
 (def ^:private all-namespaces
   #{"user" "ipc" "pid" "net" "uts" "cgroup"})
@@ -231,56 +232,6 @@
     (case fx
       ::fx-create-dirs (fs/create-dirs arg))))
 
-(defn interpret-hiccup
-  ([forms] (interpret-hiccup {} forms))
-  ([ctx forms]
-   (cond
-     (and (sequential? forms) (fn? (first forms)))
-     (let [result (apply (first forms) ctx (rest forms))]
-       (interpret-hiccup ctx result))
-
-     (sequential? forms)
-     (reduce interpret-hiccup ctx forms)
-
-     ;; context
-     (map? forms) forms
-
-     :else (throw (ex-info (str "Invalid hiccup forms: " forms)
-                           {:forms forms})))))
-
 (defmacro $->
   [& forms]
-  (let [file *file*]
-    (->> forms
-         (mapv (fn [form]
-                 (let [vec-form (if (sequential? form) (vec form) [form])
-                       sym `(quote ~(when (sequential? form) (first form)))
-                       {:keys [line column]} (meta form)]
-                   (with-meta vec-form
-                     {::location {:file file :line line :column column}
-                      ::symbol sym})))))))
-
-(defn interpret-instrumenting
-  ([forms] (interpret-instrumenting {} forms))
-  ([ctx forms]
-   (cond
-     (and (sequential? forms) (fn? (first forms)))
-     (let [result (apply (first forms) ctx (rest forms))
-           {::keys [location symbol]} (meta forms)
-           [children new-ctx] (interpret-instrumenting ctx result)
-           node {:symbol symbol
-                 :location location
-                 :children children
-                 :ctx-prev ctx
-                 :ctx-next new-ctx}]
-       [node new-ctx])
-
-     (sequential? forms)
-     (reduce (fn [[nodes ctx] form]
-               (let [[node new-ctx] (interpret-instrumenting ctx form)]
-                 [(conj nodes node) new-ctx]))
-             [[] ctx]
-             forms)
-
-     :else
-     [[] forms])))
+  `(tracer/span-> ~@forms))

@@ -1,0 +1,3 @@
+{:lint-as
+ {firewrap.sandbox/$-> clojure.core/->
+  firewrap.tracer/span-> clojure.core/->}}

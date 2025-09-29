@@ -258,7 +258,7 @@
 (defn make-matchers [ctx]
   (let [static-matchers (->> static-matcher-specs
                              (map (fn [[sym f]]
-                                    (let [prefixes (bwrap->paths (sb/ctx->args (sb/interpret-hiccup (f ctx))))
+                                    (let [prefixes (bwrap->paths (sb/ctx->args (f ctx)))
                                           matcher-key (vector sym)]
                                       (fn [path]
                                         (when-some [match (->> prefixes
@@ -337,7 +337,6 @@
         matchers (make-matchers ctx)
         rules (trace->suggest matchers trace)]
     (write-rules *out* rules)))
-
 
 (comment
   (def trace (read-json-trace "test/fixtures/echo-strace.jsonl"))

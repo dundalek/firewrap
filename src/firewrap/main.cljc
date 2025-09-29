@@ -280,7 +280,7 @@
     (if (or help (empty? args))
       (print-help)
       (let [profile-fn (resolve-profile-fn parsed)
-            ctx (sb/interpret-hiccup (profile-fn parsed))
+            ctx (profile-fn parsed)
             ctx (base/configurable ctx parsed)
             ctx (if (sb/cmd-args ctx)
                   ctx

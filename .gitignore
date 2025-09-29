@@ -1,7 +1,7 @@
 /tmp
 .nrepl-port
 .cpcache
-.clj-kondo
+.clj-kondo/*
 !.clj-kondo/config.edn
 .calva
 .lsp/.cache

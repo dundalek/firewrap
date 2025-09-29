@@ -1,36 +1,35 @@
-[{:symbol sb/unshare-all,
-  :location {:file "firewrap/sandbox_test.clj", :line 19, :column 5},
-  :children [],
-  :ctx-prev {},
-  :ctx-next #:firewrap.sandbox{:shared-namespaces #{}}}
- {:symbol test-preset,
-  :location {:file "firewrap/sandbox_test.clj", :line 20, :column 5},
-  :children
-  [{:symbol sb/new-session,
-    :location {:file "firewrap/sandbox_test.clj", :line 14, :column 5},
-    :children [],
-    :ctx-prev #:firewrap.sandbox{:shared-namespaces #{}},
-    :ctx-next
-    #:firewrap.sandbox{:shared-namespaces #{},
-                       :args [["--new-session"]]}}
-   {:symbol sb/bind-ro,
-    :location {:file "firewrap/sandbox_test.clj", :line 15, :column 5},
-    :children [],
-    :ctx-prev
-    #:firewrap.sandbox{:shared-namespaces #{},
-                       :args [["--new-session"]]},
-    :ctx-next
-    #:firewrap.sandbox{:shared-namespaces #{},
-                       :args
-                       [["--new-session"]
-                        ["--ro-bind"
-                         #:firewrap.sandbox{:shared-namespaces #{}}
-                         "/path"]]}}],
-  :ctx-prev #:firewrap.sandbox{:shared-namespaces #{}},
-  :ctx-next
-  #:firewrap.sandbox{:shared-namespaces #{},
-                     :args
-                     [["--new-session"]
-                      ["--ro-bind"
-                       #:firewrap.sandbox{:shared-namespaces #{}}
-                       "/path"]]}}]
+{:children
+ [{:form (sb/unshare-all),
+   :location {:file "firewrap/sandbox_test.clj", :line 20, :column 5},
+   :children [],
+   :ctx-prev {},
+   :ctx-next #:firewrap.sandbox{:shared-namespaces #{}}}
+  {:form (test-preset "/path"),
+   :location {:file "firewrap/sandbox_test.clj", :line 21, :column 5},
+   :children
+   [{:form (sb/new-session),
+     :location
+     {:file "firewrap/sandbox_test.clj", :line 15, :column 5},
+     :children [],
+     :ctx-prev #:firewrap.sandbox{:shared-namespaces #{}},
+     :ctx-next
+     #:firewrap.sandbox{:shared-namespaces #{},
+                        :args [["--new-session"]]}}
+    {:form (sb/bind-ro arg arg),
+     :location
+     {:file "firewrap/sandbox_test.clj", :line 16, :column 5},
+     :children [],
+     :ctx-prev
+     #:firewrap.sandbox{:shared-namespaces #{},
+                        :args [["--new-session"]]},
+     :ctx-next
+     #:firewrap.sandbox{:shared-namespaces #{},
+                        :args
+                        [["--new-session"]
+                         ["--ro-bind" "/path" "/path"]]}}],
+   :ctx-prev #:firewrap.sandbox{:shared-namespaces #{}},
+   :ctx-next
+   #:firewrap.sandbox{:shared-namespaces #{},
+                      :args
+                      [["--new-session"]
+                       ["--ro-bind" "/path" "/path"]]}}]}

@@ -27,9 +27,9 @@
   ctx)
 
 (defn bind-isolated-home-with-user-programs [ctx appname]
-  (-> ctx
-      (dumpster/bind-isolated-home appname)
-      (bind-user-programs)))
+  (sb/$-> ctx
+    (dumpster/bind-isolated-home appname)
+    (bind-user-programs)))
 
 (defn bind-isolated-tmphome-with-user-programs [ctx]
   (sb/$-> ctx
@@ -40,16 +40,16 @@
   "Base with basic bubblewrap flags, does not grant any resources"
   ([] (base {}))
   ([{:keys [unsafe-session]}]
-   (-> {}
-       (sb/*populate-env!*)
-       (sb/die-with-parent)
-       (sb/unshare-all)
+   (sb/$-> {}
+     (sb/*populate-env!*)
+     (sb/die-with-parent)
+     (sb/unshare-all)
        ;; Create a new session to prevent using the TIOCSTI ioctl to push
        ;; characters into the terminal's input buffer, allowing an attacker to
        ;; escape the sandbox.
        ;; See https://github.com/containers/bubblewrap/issues/555
-       (cond->
-        (not unsafe-session) (sb/new-session)))))
+     (cond->
+      (not unsafe-session) (sb/new-session)))))
 
 (defn base4
   "More granular base with system files"

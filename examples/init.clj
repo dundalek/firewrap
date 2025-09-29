@@ -62,11 +62,10 @@
        (sb/env-set "WSCRIBE_MODELS_DIR" "wscribe_models"))))
 
 (defn jank [ctx]
-  (let [ctx-map (sb/interpret-hiccup ctx)
-        jank-dir (dumpster/home ctx-map "Downloads/git/jank")]
+  (let [jank-dir (dumpster/home ctx "Downloads/git/jank")]
     (sb/$-> ctx
       (sb/bind-ro jank-dir)
-      (sb/env-set "PATH" (str jank-dir "/compiler+runtime/build:" (sb/getenv ctx-map "PATH"))))))
+      (sb/env-set "PATH" (str jank-dir "/compiler+runtime/build:" (sb/getenv ctx "PATH"))))))
 
 (defn claude [opts]
   (sb/$-> opts

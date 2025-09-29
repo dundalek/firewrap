@@ -6,7 +6,6 @@
    [firewrap.preset.base :as base]
    [firewrap.preset.dumpster :as dumpster]
    [firewrap.preset.oldprofiles :as oldprofiles]
-   [firewrap.preset.oldsystem :as system]
    [firewrap.profile :as profile]
    [firewrap.profile.claude :as claude]
    [firewrap.profile.godmode :as godmode]
@@ -30,7 +29,7 @@
 
 (defn test-raw-profile [profile-fn]
   (binding [sb/*populate-env!* (constantly env-ctx)]
-    (main/unwrap-raw (sb/ctx->args (sb/interpret-hiccup (profile-fn))))))
+    (main/unwrap-raw (sb/ctx->args (profile-fn)))))
 
 (deftest base
   (snap/match-snapshot ::no-base (test-main "firewrap" "date"))
@@ -55,7 +54,6 @@
 (deftest profiles
   (snap/match-snapshot ::godmode (test-raw-profile #(godmode/profile "/path/to/GodMode.AppImage")))
   (snap/match-snapshot ::claude-wide (test-raw-profile #(claude/wide nil)))
-  (snap/match-snapshot ::claude-wide (test-raw-profile (fn [] [[claude/wide]])))
 
   (snap/match-snapshot ::ferdium (test-main "ferdium"))
   (snap/match-snapshot ::ferdium-absolute (test-main "/some/path/ferdium"))
@@ -103,42 +101,6 @@
          (with-out-str (binding [*err* *out*
                                  main/*interactive* false]
                          (test-main "firewrap" "-b" "--dry-run" "--" "echo" "hello" "world"))))))
-
-(defn- my-preset-comp [ctx]
-  (-> ctx
-      (system/libs)))
-
-(defn- my-preset-hiccup [_ctx]
-  [system/libs])
-
-(defn- my-preset-threaded-hiccup [ctx]
-  [[ctx]
-   [system/libs]])
-
-(deftest hiccup
-  (binding [sb/*populate-env!* (constantly env-ctx)]
-    (let [example-echo (-> (base/base)
-                           (system/libs)
-                           (system/command "echo"))
-          example-libs (-> (base/base)
-                           (system/libs))]
-      (is (= example-echo
-             (sb/interpret-hiccup [[base/base]
-                                   [system/libs]
-                                   [system/command "echo"]])))
-
-      (is (= example-echo
-             (sb/interpret-hiccup (sb/$-> (base/base)
-                                    (system/libs)
-                                    (system/command "echo")))))
-
-      (is (= example-libs
-             (sb/interpret-hiccup (base/base) [[my-preset-hiccup]])))
-      (is (= example-libs
-             (sb/interpret-hiccup (base/base) [[my-preset-comp]])))
-      (is (= example-libs
-             (sb/interpret-hiccup (base/base) [[my-preset-threaded-hiccup]]))))))
-
 (deftest bind-arguments
   (with-redefs [env-ctx (assoc env-ctx ::sb/envs-system {})]
     (is (= (concat default-args ["--ro-bind" "/tmp" "/tmp"
