@@ -1,6 +1,5 @@
 (ns firewrap.tool.strace
   (:require
-   [babashka.cli :as cli]
    [babashka.fs :as fs]
    [cheshire.core :as json]
    [clojure.java.io :as io]
@@ -339,26 +338,6 @@
         rules (trace->suggest matchers trace)]
     (write-rules *out* rules)))
 
-(declare cli-table)
-
-(defn print-help [_]
-  (println "Generate suggested rules from a trace
-
-Usage: firewrap generate
-
-Reads JSON trace from stdin, prints result to stdout.
-
-Example: cat foo.trace | b3-strace-parser | firehelper generate > profile/foo.clj"))
-
-(def cli-table
-  [{:cmds ["generate"]
-    :fn generate-rules
-    :args->opts [:file]}
-   {:cmds []
-    :fn print-help}])
-
-(defn -main [& args]
-  (cli/dispatch cli-table args {}))
 
 (comment
   (def trace (read-json-trace "test/fixtures/echo-strace.jsonl"))

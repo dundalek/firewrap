@@ -9,6 +9,6 @@
 (add-classpath (-> (io/file (str *file* "/../../src"))
                    (.getCanonicalPath)))
 
-(require '[firewrap.tool.strace :as strace])
+(require '[firewrap.tool.main :as tool-main])
 
-(apply strace/-main *command-line-args*)
+(apply tool-main/-main *command-line-args*)
