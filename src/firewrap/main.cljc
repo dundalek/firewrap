@@ -268,13 +268,18 @@
       ;; Print warning if no base?
       :else (base/base {:unsafe-session unsafe-session}))))
 
+(defn resolve-profile-fn [parsed]
+  (let [profile (get-in parsed [:opts :profile])
+        profile-fn (or (profile/resolve profile)
+                       resolve-base-profile)]
+    profile-fn))
+
 (defn main [& root-args]
   (let [{:keys [opts args] :as parsed} (parse-args root-args)
-        {:keys [profile dry-run help]} opts]
+        {:keys [dry-run help]} opts]
     (if (or help (empty? args))
       (print-help)
-      (let [profile-fn (or (profile/resolve profile)
-                           resolve-base-profile)
+      (let [profile-fn (resolve-profile-fn parsed)
             ctx (sb/interpret-hiccup (profile-fn parsed))
             ctx (base/configurable ctx parsed)
             ctx (if (sb/cmd-args ctx)

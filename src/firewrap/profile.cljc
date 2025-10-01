@@ -5,7 +5,7 @@
 
 (defn resolve-builtin-profile [appname]
   (try
-    (requiring-resolve (symbol (str "firewrap.profile." appname) "profile"))
+    @(requiring-resolve (symbol (str "firewrap.profile." appname) "profile"))
     (catch Exception _)))
 
 (defn resolve [name]
