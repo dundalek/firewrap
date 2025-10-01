@@ -83,6 +83,12 @@
        [:h4 "Children Count"]
        [:div (str (count (:children selected-node [])) " direct children")]]
 
+      [:div {:style {:margin-bottom "16px"}}
+       [:h4 "Context Change"]
+       [ins/inspector
+        {::pv/default ::pv/diff}
+        [(:ctx-prev selected-node) (:ctx-next selected-node)]]]
+
       (when (seq (:children selected-node))
         [:div {:style {:margin-bottom "16px"}}
          [:h4 "Direct Children"]

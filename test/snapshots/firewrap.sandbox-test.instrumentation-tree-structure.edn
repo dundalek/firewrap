@@ -1,6 +1,12 @@
 [{:symbol sb/unshare-all,
   :location {:file "firewrap/sandbox_test.clj", :line 9, :column 5},
-  :children []}
+  :children [],
+  :ctx-prev {},
+  :ctx-next #:firewrap.sandbox{:shared-namespaces #{}}}
  {:symbol sb/new-session,
   :location {:file "firewrap/sandbox_test.clj", :line 10, :column 5},
-  :children []}]
+  :children [],
+  :ctx-prev #:firewrap.sandbox{:shared-namespaces #{}},
+  :ctx-next
+  #:firewrap.sandbox{:shared-namespaces #{},
+                     :args [["--new-session"]]}}]

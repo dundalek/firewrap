@@ -270,13 +270,15 @@
            [children new-ctx] (interpret-instrumenting ctx result)
            node {:symbol symbol
                  :location location
-                 :children children}]
+                 :children children
+                 :ctx-prev ctx
+                 :ctx-next new-ctx}]
        [node new-ctx])
 
      (sequential? forms)
      (reduce (fn [[nodes ctx] form]
-               (let [[node ctx] (interpret-instrumenting ctx form)]
-                 [(conj nodes node) ctx]))
+               (let [[node new-ctx] (interpret-instrumenting ctx form)]
+                 [(conj nodes node) new-ctx]))
              [[] ctx]
              forms)
 

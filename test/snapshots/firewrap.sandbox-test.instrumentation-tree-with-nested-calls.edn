@@ -1,12 +1,36 @@
 [{:symbol sb/unshare-all,
   :location {:file "firewrap/sandbox_test.clj", :line 19, :column 5},
-  :children []}
+  :children [],
+  :ctx-prev {},
+  :ctx-next #:firewrap.sandbox{:shared-namespaces #{}}}
  {:symbol test-preset,
   :location {:file "firewrap/sandbox_test.clj", :line 20, :column 5},
   :children
   [{:symbol sb/new-session,
     :location {:file "firewrap/sandbox_test.clj", :line 14, :column 5},
-    :children []}
+    :children [],
+    :ctx-prev #:firewrap.sandbox{:shared-namespaces #{}},
+    :ctx-next
+    #:firewrap.sandbox{:shared-namespaces #{},
+                       :args [["--new-session"]]}}
    {:symbol sb/bind-ro,
     :location {:file "firewrap/sandbox_test.clj", :line 15, :column 5},
-    :children []}]}]
+    :children [],
+    :ctx-prev
+    #:firewrap.sandbox{:shared-namespaces #{},
+                       :args [["--new-session"]]},
+    :ctx-next
+    #:firewrap.sandbox{:shared-namespaces #{},
+                       :args
+                       [["--new-session"]
+                        ["--ro-bind"
+                         #:firewrap.sandbox{:shared-namespaces #{}}
+                         "/path"]]}}],
+  :ctx-prev #:firewrap.sandbox{:shared-namespaces #{}},
+  :ctx-next
+  #:firewrap.sandbox{:shared-namespaces #{},
+                     :args
+                     [["--new-session"]
+                      ["--ro-bind"
+                       #:firewrap.sandbox{:shared-namespaces #{}}
+                       "/path"]]}}]
