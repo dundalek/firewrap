@@ -6,10 +6,10 @@
    [firewrap.sandbox :as sb]))
 
 (defn profile [_]
-  (-> (base/base5)
-      (base/bind-isolated-home-with-user-programs "windsurf")
-      (dumpster/network)
-      (vscode/vscode-nvim)))
+  (sb/$-> (base/base5)
+    (base/bind-isolated-home-with-user-programs "windsurf")
+    (dumpster/network)
+    (vscode/vscode-nvim)))
 
 ;; distributed as tarball
 (defn profile-with-options [{:keys [windsurf-dir]} {:keys [args opts]}]
@@ -19,6 +19,7 @@
                                ;; or specify different --user-data-dir ?
                               (when (:cwd opts) ["--new-window"])
                               (rest args))]
-    (-> (profile nil)
-        (sb/bind-ro windsurf-dir)
-        (sb/set-cmd-args windsurf-args))))
+    (sb/$-> {}
+      (profile)
+      (sb/bind-ro windsurf-dir)
+      (sb/set-cmd-args windsurf-args))))

@@ -1,27 +1,26 @@
 (ns firewrap.preset.base
   (:require
-   [clojure.string :as str]
    [firewrap.sandbox :as sb]
    [firewrap.preset.dumpster :as dumpster]
    [firewrap.preset.env :as env]))
 
 (defn bind-system-programs [ctx]
-  (-> ctx
-      (sb/bind-ro "/usr")
-      (sb/symlink "usr/bin" "/bin")
-      (sb/symlink "usr/sbin" "/sbin")
-      (sb/symlink "usr/lib" "/lib")
-      (sb/symlink "usr/lib64" "/lib64")
-      (sb/bind-ro-try "/lib32")))
+  (sb/$-> ctx
+    (sb/bind-ro "/usr")
+    (sb/symlink "usr/bin" "/bin")
+    (sb/symlink "usr/sbin" "/sbin")
+    (sb/symlink "usr/lib" "/lib")
+    (sb/symlink "usr/lib64" "/lib64")
+    (sb/bind-ro-try "/lib32")))
 
 (defn bind-extra-system-programs [ctx]
   ;; no-op as a placeholder for extenion point
   ctx)
 
 (defn bind-system-and-extra-programs [ctx]
-  (-> ctx
-      (bind-system-programs)
-      (bind-extra-system-programs)))
+  (sb/$-> ctx
+    (bind-system-programs)
+    (bind-extra-system-programs)))
 
 (defn bind-user-programs [ctx]
   ;; no-op as a placeholder for extenion point
@@ -33,9 +32,9 @@
       (bind-user-programs)))
 
 (defn bind-isolated-tmphome-with-user-programs [ctx]
-  (-> ctx
-      (dumpster/bind-isolated-tmphome)
-      (bind-user-programs)))
+  (sb/$-> ctx
+    (dumpster/bind-isolated-tmphome)
+    (bind-user-programs)))
 
 (defn base
   "Base with basic bubblewrap flags, does not grant any resources"
@@ -57,15 +56,15 @@
   ([] (base4 {}))
   ([{:keys [unsafe-session]}]
    (let [ctx (base {:unsafe-session unsafe-session})]
-     (-> ctx
-         (sb/env-pass-many env/allowed)
-         (sb/dev "/dev")
-         (sb/bind-ro "/etc")
-         (sb/proc "/proc")
-         (sb/tmpfs "/tmp")
-         (bind-system-and-extra-programs)
-         (sb/tmpfs (dumpster/home ctx))
-         (bind-user-programs)))))
+     (sb/$-> ctx
+       (sb/env-pass-many env/allowed)
+       (sb/dev "/dev")
+       (sb/bind-ro "/etc")
+       (sb/proc "/proc")
+       (sb/tmpfs "/tmp")
+       (bind-system-and-extra-programs)
+       (sb/tmpfs (dumpster/home ctx))
+       (bind-user-programs)))))
      ;; media, mnt, opt, root, run, srv, sys, var?
 
 (defn base5
@@ -73,48 +72,48 @@
   ([] (base5 {}))
   ([{:keys [unsafe-session]}]
    (let [ctx (base {:unsafe-session unsafe-session})]
-     (-> ctx
-         (sb/env-pass-many env/allowed)
-         (sb/bind-dev "/")
-         (sb/tmpfs (dumpster/home ctx))
-         (sb/tmpfs "/tmp")
-         (bind-user-programs)))))
+     (sb/$-> ctx
+       (sb/env-pass-many env/allowed)
+       (sb/bind-dev "/")
+       (sb/tmpfs (dumpster/home ctx))
+       (sb/tmpfs "/tmp")
+       (bind-user-programs)))))
 
 (defn base-gui []
-  (-> (base5)
+  (sb/$-> (base5)
       ;; would need x11 proxying for better security
-      (sb/bind-ro-try "/tmp/.X11-unix/X1")))
+    (sb/bind-ro-try "/tmp/.X11-unix/X1")))
 
 (defn base6
   "Low effort sandbox with GUI support, includes X11 display binding"
   ([] (base6 {}))
   ([{:keys [unsafe-session]}]
    (let [ctx (base5 {:unsafe-session unsafe-session})]
-     (-> ctx
+     (sb/$-> ctx
          ;; would need x11 proxying for better security
-         (sb/bind-ro-try "/tmp/.X11-unix/X1")))))
+       (sb/bind-ro-try "/tmp/.X11-unix/X1")))))
 
 (defn base8
   "Lower effort wider sandbox, does not filter env vars and /tmp, should work better for GUI programs"
   ([] (base8 {}))
   ([{:keys [unsafe-session]}]
    (let [ctx (base {:unsafe-session unsafe-session})]
-     (-> ctx
+     (sb/$-> ctx
          ;; passing all env vars
-         (sb/env-pass-many (keys (sb/getenvs ctx)))
-         (sb/bind-dev "/")
-         (sb/tmpfs (dumpster/home ctx))
+       (sb/env-pass-many (keys (sb/getenvs ctx)))
+       (sb/bind-dev "/")
+       (sb/tmpfs (dumpster/home ctx))
          ;(sb/tmpfs "/tmp")
-         (bind-user-programs)))))
+       (bind-user-programs)))))
 
 (defn base9
   "Simplest wide sandbox with device bind mount and temporary home"
   ([] (base9 {}))
   ([{:keys [unsafe-session]}]
    (let [ctx (base {:unsafe-session unsafe-session})]
-     (-> ctx
-         (sb/bind-dev "/")
-         (sb/tmpfs (dumpster/home ctx))))))
+     (sb/$-> ctx
+       (sb/bind-dev "/")
+       (sb/tmpfs (dumpster/home ctx))))))
 
 (defn apply-bindings [ctx bindings]
   (reduce (fn [ctx [binding-type & args]]
