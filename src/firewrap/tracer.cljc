@@ -7,27 +7,25 @@
      (let [result# (do ~@body)]
        [result# {:children @*trace*}])))
 
-(defn thread-with-trace* [init forms]
-  (reduce (fn [acc form]
-            (let [nested-trace (atom [])
-                  result (binding [*trace* nested-trace]
-                           (form acc))
-                  children @nested-trace]
-              (when *trace*
-                (swap! *trace* conj (assoc (meta form)
-                                           :children children
-                                           :ctx-prev acc
-                                           :ctx-next result)))
-              result))
-          init
-          forms))
+(defmacro span [ctx form]
+  (let [{:keys [line column]} (meta form)
+        location {:file *file*
+                  :line line
+                  :column column}]
+    `(let [ctx# ~ctx
+           nested-trace# (when *trace* (atom []))
+           result# (binding [*trace* nested-trace#]
+                     (-> ctx# ~form))]
+       (when *trace*
+         (swap! *trace* conj {:location ~location
+                              :form '~form
+                              :children @nested-trace#
+                              :ctx-prev ctx#
+                              :ctx-next result#}))
+       result#)))
 
 (defmacro span-> [ctx & forms]
-  `(thread-with-trace* ~ctx ~(mapv (fn [form]
-                                     (let [{:keys [line column]} (meta form)
-                                           location {:file *file*
-                                                     :line line
-                                                     :column column}]
-                                       `(with-meta (fn [x#] (-> x# ~form)) {:location ~location
-                                                                            :form '~form})))
-                                   forms)))
+  (reduce (fn [acc form]
+            `(span ~acc ~form))
+          ctx
+          forms))
