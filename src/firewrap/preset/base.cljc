@@ -81,8 +81,8 @@
 
 (defn base-gui []
   (sb/$-> (base5)
-      ;; would need x11 proxying for better security
-    (sb/bind-ro-try "/tmp/.X11-unix/X1")))
+    (sb/warning "would need x11 proxying for better security"
+                (sb/bind-ro-try "/tmp/.X11-unix/X1"))))
 
 (defn base6
   "Low effort sandbox with GUI support, includes X11 display binding"
@@ -99,8 +99,9 @@
   ([{:keys [unsafe-session]}]
    (let [ctx (base {:unsafe-session unsafe-session})]
      (sb/$-> ctx
-         ;; passing all env vars
-       (sb/env-pass-many (keys (sb/getenvs ctx)))
+       (sb/warning
+        "passing all env vars"
+        (sb/env-pass-many (keys (sb/getenvs ctx))))
        (sb/bind-dev "/")
        (sb/tmpfs (dumpster/home ctx))
          ;(sb/tmpfs "/tmp")

@@ -185,8 +185,9 @@
       (sb/symlink "usr/lib64" "/lib64")))
 
 (defn processes [ctx]
-  ;; Should restrict /proc but how to whitelist individual pids?
-  (add-bwrap-args ctx "--proc /proc"))
+  (sb/warning ctx
+              "Should restrict /proc but how to whitelist individual pids?"
+              (add-bwrap-args "--proc /proc")))
   ; (ro-bind "/proc/self")
 
 (defn tmpfs [ctx path]
@@ -228,11 +229,12 @@
 #_(defn dbus-see [])
 
 (defn dbus-talk [ctx name]
-  ;; todo filter with xdg-dbus-proxy
   ; (system/ro-bind "/tmp/my-dbus-proxy" (dbus-bus-path)
   ;; hook it with --filter and --talk
   (-> ctx
-      (dbus-unrestricted)))
+      (sb/warning
+       "!Unrestricted! TODO: filter with xdg-dbus-proxy"
+       (dbus-unrestricted))))
 
 #_(defn dbus-own [])
 
@@ -247,9 +249,9 @@
       (bind-ro "/usr/libexec/flatpak-xdg-utils/xdg-open" "/usr/bin/xdg-open")))
 
 (defn x11 [ctx]
-  ;; will need x11 proxying for better security
   (-> ctx
-      (bind-ro-try "/tmp/.X11-unix/X1")))
+      (sb/warning "will need x11 proxying for better security"
+                  (bind-ro-try "/tmp/.X11-unix/X1"))))
 
 (defn glib [ctx]
   (-> ctx

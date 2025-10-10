@@ -22,6 +22,18 @@
 (defn set-cmd-args [ctx args]
   (assoc ctx ::cmd-args args))
 
+(defn add-comment
+  "Add a comment about the most recent rule or configuration.
+   Level can be :info or :warning. Message is a string explaining
+   the rule or what to be aware of."
+  [ctx level message]
+  (update ctx ::comments (fnil conj []) {:level level :message message}))
+
+(defn get-comments
+  "Retrieve all comments from the context."
+  [ctx]
+  (::comments ctx []))
+
 (defn bind [ctx src dest {:keys [perms try access]}]
   (let [option (cond-> (case access
                          :rw "--bind"
@@ -235,3 +247,8 @@
 (defmacro $->
   [& forms]
   `(tracer/span-> ~@forms))
+
+(defmacro warning [ctx msg form]
+  `(-> ~ctx
+       (add-comment :warning ~msg)
+       ~form))

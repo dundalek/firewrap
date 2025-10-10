@@ -243,6 +243,21 @@
     (when-not dry-run
       (apply *exec-fn* params))))
 
+(defn- print-comments [ctx]
+  (let [comments (sb/get-comments ctx)]
+    (when (seq comments)
+      (binding [*out* *err*]
+        (doseq [{:keys [level message]} comments]
+          (when *interactive*
+            (print (case level
+                     :warning "\033[33m"  ; yellow
+                     :info "\033[36m"     ; cyan
+                     "\033[0m")))          ; default
+          (println (str "[" (name level) "] " message))
+          (when *interactive*
+            (print "\033[0m")))
+        (println)))))
+
 (defn- needs-bwrap-sh-wrapper? [args]
   (->> args
        (some (fn [s] (when (string? s)
@@ -250,6 +265,7 @@
 
 (defn run-bwrap [ctx opts]
   (let [args (sb/ctx->args ctx)]
+    (print-comments ctx)
     (sb/*run-effects!* ctx)
     (if (needs-bwrap-sh-wrapper? args)
       (run-bwrap-sh-wrapper args opts)
