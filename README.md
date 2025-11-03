@@ -84,17 +84,24 @@ Worfklow to create a profile is an iteration loop of:
     - Possible sandbox rules problems:
       - too tight - breaks program functionality
       - too loose - exposes unnecessary resources, violates principle of least privilege
+    - [Inspect sandbox tool](#inspect-sandbox-tool) shows rules of a sandbox in an expandable tree.
 
 ## Concepts
 
-- [Presets](src/firewrap/preset) - Are reusable pieces that define security policy.
-- [Profiles](src/firewrap/preset) - Define sandbox environment for an application and are automatically used if application name matches, usually use one or more presets.
-- Levels - It is usually hard to create minimal profile that does not break any functionality.
-  - The idea is to have common levels that add privileges, from tightest `-b0` to widest `-b9`.  
+- [Presets](src/firewrap/preset)
+  - Are reusable pieces that define security policy.
+- [Profiles](src/firewrap/profile)
+  - Define sandbox environment for an application and are automatically used if application name matches, usually use one or more presets.
+- Levels
+  - It is usually hard to create minimal profile that does not break any functionality.
+  - The idea is to have common levels that add privileges, from tightest `-b0` to widest `-b9` (see CLI usage below for available levels).  
   Then based on risk one can:
     - Start with tightest profile, observe broken program and increase level by trial-and-error until the program works.
     - Or start with a wider profile and working program, and tighten level just until before the program stops working.
   - For practical purposes have an easy to use best-effort base, which does not provide much extra security, but is still useful for the most common case of isolating user data.
+- [Comments](#comments)
+  - Creating a profile is full of trade-offs, often to make things work a compromise has to be made with a looser rule.
+  - Comments are a way to record when such decision is made. Having comments as reified entities in code, can be presented to users to audit sandboxes or review before running a program for the first time.
 
 ## Usage
 
@@ -240,7 +247,7 @@ An idea is to add shorthands for common uses in shell config. Here are some alia
 ```fish
 abbr -a fwe "set -gx FIREWRAP_ARGS -bc" # e - enable
 abbr -a fwd "set -gx FIREWRAP_ARGS ''" # d - disable
-abbr -a fwn "set -gx -bcn" # n - network
+abbr -a fwn "set -gx FIREWRAP_ARGS -bcn" # n - network
 abbr -a fwc "set -gx FIREWRAP_ARGS '--profile cljdev'" # c - cljdev
 ```
 
@@ -274,6 +281,28 @@ Main uses are to register a custom profile function with `profile/register!` and
 (alter-var-root #'base/bind-user-programs
                 (constantly my-bind-user-programs))
 ```
+
+#### Comments
+
+Comments can be added to rules in presets/profiles to document security decisions:
+
+- `warning` - marks rules that are potentially unsafe or too wide, user should carefully review
+- `info` - implementation notes explaining some decision
+
+**Usage in code:**
+
+```clj
+(sb/$-> ctx
+  (sb/warning "passing all env vars"
+    (sb/env-pass-many (keys (sb/getenvs ctx)))))
+```
+
+**Viewing comments:**
+
+Comments are displayed in two ways:
+
+1. **CLI**: When running firewrap, warning comments are printed to stderr in yellow
+2. **Inspector UI**: When using `firehelper inspect` in trace mode, rules with comments are marked with ⚠ in the tree view, and comments are displayed in the rule details panel with appropriate styling
 
 #### Two-step execution
 
@@ -334,6 +363,12 @@ Tip: Set `XDG_` dirs to smaller number of candidates for less noisy trace:
 
 ```
 export XDG_DATA_DIRS="$HOME/.local/share:/usr/share" XDG_CONFIG_DIRS="/etc/xdg"
+```
+
+Or use the strace-helper which passes additional options to strace:
+
+```
+`bin/strace-helper -o tmp/trace bun --help`
 ```
 
 We leverage [b3-strace-parser](https://github.com/dannykopping/b3) to parse strace file as JSON. 
@@ -401,6 +436,18 @@ This can be useful when nested paths are well scoped to the containing directory
 
 TODO consider using [sysdig](https://github.com/draios/sysdig) instead of `strace` for capturing traces since it includes builtin support to output JSON-formatted traces.
 
+## Inspect sandbox tool
+
+Use `firehelper inspect` to inspect sandbox rules in a tree representation.
+
+Pass the same options like you would to `firewrap` CLI:
+
+```sh
+bin/firehelper inspect --profile claude -- claude
+```
+
+![Inspector UI](./doc/img/inspect-sandbox-tool.avif)
+
 ## Implemented mechanisms
 
 Implemented:
@@ -438,3 +485,6 @@ Unimplemented:
   - Python, configuration in YAML
 - [Bubblebox](https://github.com/RalfJung/bubblebox)
   - Python, configuration as Python scripts
+- [Anthropic Sandbox Runtime](https://github.com/anthropic-experimental/sandbox-runtime)
+  - TypeScript, part of Claude Code, uses Bubblewrap on Linux
+  - HTTP and SOCKS5 proxies for network isolation
