@@ -18,13 +18,11 @@
     tree-data))
 
 (defn inspect-sandbox [{:keys [args]}]
-  (main/load-user-config)
   (p/open {:on-load (fn []
                       (load-viewers!)
                       (p/submit (pv/default
                                  (args->tree args)
-                                 ::viewers/profile-tree)))})
-  @(promise))
+                                 ::viewers/profile-tree)))}))
 
 (comment
   (main/load-user-config)
@@ -54,8 +52,12 @@
   (test-interpret firewrap.preset.base/base5)
 
   (compact-tree (args->tree ["firewrap" "--profile" "date" "--" "date"]))
+  (compact-tree (args->tree ["firewrap" "--profile" "date"]))
 
   (compact-tree (args->tree ["firewrap" "--profile" "claude" "--" "claude"]))
 
   (compact-tree (args->tree ["firewrap" "-bcn" "--" "echo"]))
-  (compact-tree (args->tree ["firewrap" "-b5cn" "--" "echo"])))
+  (compact-tree (args->tree ["firewrap" "-b5cn" "--" "echo"]))
+
+  (inspect-sandbox {:args ["firewrap" "-b5cn" "--" "echo"]})
+  (inspect-sandbox {:args ["firewrap" "--profile" "claude" "--" "claude"]}))

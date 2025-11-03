@@ -18,7 +18,7 @@
   (let [config-file (fs/xdg-config-home "firewrap/init.clj")]
     (when (fs/exists? config-file)
       (try
-        (load-file (fs/file config-file))
+        (load-file (.getPath (fs/file config-file)))
         (catch Exception e
           (throw (ex-info "Warning: Failed to load user config" {:path (str config-file)} e)))))))
 

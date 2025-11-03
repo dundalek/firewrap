@@ -7,3 +7,4 @@
 .lsp/.cache
 node_modules
 /target
+.claude

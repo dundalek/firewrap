@@ -2,6 +2,7 @@
   (:require
    #?@(:bb [[babashka.deps :as deps]])
    [babashka.cli :as cli]
+   [firewrap.main :as main]
    [firewrap.tool.inspect :as-alias inspect]
    [firewrap.tool.strace :as strace]))
 
@@ -32,5 +33,7 @@ Commands:
   (if (and (= (first args) "inspect") (> (count args) 1))
     (do
       #?(:bb (deps/add-deps '{:deps {djblue/portal {:mvn/version "0.61.0"}}}))
-      ((requiring-resolve `inspect/inspect-sandbox) {:args (cons "firewrap" (rest args))}))
+      (main/load-user-config)
+      ((requiring-resolve `inspect/inspect-sandbox) {:args (cons "firewrap" (rest args))})
+      @(promise))
     (cli/dispatch cli-table args {})))
