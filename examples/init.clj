@@ -68,11 +68,13 @@
       (sb/env-set "PATH" (str jank-dir "/compiler+runtime/build:" (sb/getenv ctx "PATH"))))))
 
 (defn claude [opts]
-  (sb/$-> opts
-    (claude/wide)
-    (jank)
-    ;; temporary for testing D-BUS implementation
-    (system/dbus-system-bus)))
+  (let [ctx (sb/$-> opts
+              (claude/wide)
+              (jank))]
+              ;; temporary for testing D-BUS implementation
+              ; (system/dbus-system-bus))]
+    (sb/$-> ctx
+      (sb/bind-rw-try (dumpster/home ctx "Dropbox/myfiles/obsidian/skills")))))
 
 (profile/register! "claude" claude)
 ;; Babashka does not work in narrow sandbox, bb fails with:
@@ -105,6 +107,13 @@
 
 (profile/register! "lazygit" lazygit-wide)
 
+(defn claude-skills [ctx]
+  (sb/$->
+    ctx
+    (sb/bind-ro-try (dumpster/home ctx ".claude"))
+    (sb/bind-ro-try (dumpster/home ctx ".config/claude"))
+    (sb/bind-rw-try (dumpster/home ctx "Dropbox/myfiles/obsidian/skills"))))
+
 (defn gemini-wide [opts]
   (let [ctx (base/base4)]
     (sb/$->
@@ -113,6 +122,34 @@
       (base/configurable (update opts :opts assoc
                                  :cwd true
                                  :net true
-                                 :home "gemini")))))
+                                 :home "gemini"))
+      (claude-skills))))
 
 (profile/register! "gemini" gemini-wide)
+
+(defn cursor-cli-wide [opts]
+  (let [ctx (base/base4)]
+    (sb/$->
+      ctx
+      ;; override to always include CWD to be able to change local sources and .git
+      (base/configurable (update opts :opts assoc
+                                 :cwd true
+                                 :net true
+                                 :home "cursor-agent"))
+      (claude-skills))))
+
+(profile/register! "cursor-agent" cursor-cli-wide)
+
+(defn amp-wide [opts]
+  ;; Amp needs unsafe-session otherwise fails to run, can't open /dev/tty
+  (let [ctx (base/base4 {:unsafe-session true})]
+    (sb/$->
+      ctx
+      ;; override to always include CWD to be able to change local sources and .git
+      (base/configurable (update opts :opts assoc
+                                 :cwd true
+                                 :net true
+                                 :home "amp"))
+      (claude-skills))))
+
+(profile/register! "amp" amp-wide)

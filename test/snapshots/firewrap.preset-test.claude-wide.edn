@@ -82,13 +82,4 @@
  "/home/user/dotfiles/clojure/.clojure/deps.edn"
  "--ro-bind-try"
  "/home/user/.clojure/deps.edn"
- "/home/user/.clojure/deps.edn"
- "--ro-bind"
- "/etc/machine-id"
- "/etc/machine-id"
- "--ro-bind"
- "/var/lib/dbus/machine-id"
- "/var/lib/dbus/machine-id"
- "--ro-bind"
- "/bus"
- "/bus")
+ "/home/user/.clojure/deps.edn")
