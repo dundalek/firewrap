@@ -1,13 +1,13 @@
 {:children
- [{:form (sb/unshare-all),
+ [{:children [],
+   :ctx-next #:firewrap.sandbox{:shared-namespaces #{}},
+   :form (sb/unshare-all),
    :location {:file "firewrap/sandbox_test.clj", :line 10, :column 5},
-   :children [],
-   :ctx-prev {},
-   :ctx-next #:firewrap.sandbox{:shared-namespaces #{}}}
-  {:form (sb/new-session),
-   :location {:file "firewrap/sandbox_test.clj", :line 11, :column 5},
-   :children [],
-   :ctx-prev #:firewrap.sandbox{:shared-namespaces #{}},
+   :ctx-prev {}}
+  {:children [],
    :ctx-next
    #:firewrap.sandbox{:shared-namespaces #{},
-                      :args [["--new-session"]]}}]}
+                      :args [["--new-session"]]},
+   :form (sb/new-session),
+   :location {:file "firewrap/sandbox_test.clj", :line 11, :column 5},
+   :ctx-prev #:firewrap.sandbox{:shared-namespaces #{}}}]}

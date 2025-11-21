@@ -70,7 +70,10 @@
 (defn claude [opts]
   (let [ctx (sb/$-> opts
               (claude/wide)
-              (jank))]
+              (jank)
+              (system/command "aineko")
+              (sb/env-pass "AINEKO_SEANCE_ID")
+              (sb/env-pass "AINEKO_SOCKET_PATH"))]
               ;; temporary for testing D-BUS implementation
               ; (system/dbus-system-bus))]
     (sb/$-> ctx
@@ -111,7 +114,7 @@
   (sb/$->
     ctx
     (sb/bind-ro-try (dumpster/home ctx ".claude"))
-    (sb/bind-ro-try (dumpster/home ctx ".config/claude"))
+    ; (sb/bind-ro-try (dumpster/home ctx ".config/claude"))
     (sb/bind-rw-try (dumpster/home ctx "Dropbox/myfiles/obsidian/skills"))))
 
 (defn gemini-wide [opts]

@@ -35,8 +35,9 @@
     (sb/bind-ro-try "/etc/claude-code")
     ;; bind claude files, alternative consider symlinking to sandbox dir
     (sb/bind-rw-try (dumpster/home ctx ".claude"))
-    (sb/bind-rw-try (dumpster/home ctx ".claude.json"))
-    (sb/bind-rw-try (dumpster/home ctx ".config/claude"))
+    (sb/symlink (dumpster/home ctx ".claude/config.json") (dumpster/home ctx ".claude.json"))
+    ; (sb/bind-rw-try (dumpster/home ctx ".claude.json"))
+    ; (sb/bind-rw-try (dumpster/home ctx ".config/claude"))
     ;; Installed via Bun
     ;; have its own packages, install inside sandbox with:
     ;; fw --profile claude -- bun install -g @anthropic-ai/claude-code
@@ -59,7 +60,6 @@
     ; (sb/bind-ro-try (dumpster/home ctx "dotfiles/clojure/.clojure/tools"))
     ; (sb/symlink (dumpster/home ctx "dotfiles/clojure/.clojure/deps.edn") (dumpster/home ctx ".clojure/deps.edn"))
     ; (sb/symlink (dumpster/home ctx "dotfiles/clojure/.clojure/tools") (dumpster/home ctx ".clojure/tools"))
-    (sb/env-pass "CODEHERD_SESSION_ID")
     ;; for sending notification, note that without dbus proxy implementation this is too broad
     ; (system/dbus-talk "org.freedesktop.Notifications")
     (system/command "clojure-mcp")))
