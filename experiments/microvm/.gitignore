@@ -1,0 +1,13 @@
+.tmp
+/var.img
+*virtiofs*.pid
+supervisord.*
+.claude
+.tmp
+
+# Socket files from VM runtime
+*.sock
+*.sock.*
+*.socket
+*.socket.*
+control.socket
