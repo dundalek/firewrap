@@ -1,8 +1,9 @@
 (ns firewrap.preset.base
   (:require
-   [firewrap.sandbox :as sb]
    [firewrap.preset.dumpster :as dumpster]
-   [firewrap.preset.env :as env]))
+   [firewrap.preset.env :as env]
+   [firewrap.preset.oldsystem :as system]
+   [firewrap.sandbox :as sb]))
 
 (defn bind-system-programs [ctx]
   (sb/$-> ctx
@@ -81,8 +82,7 @@
 
 (defn base-gui []
   (sb/$-> (base5)
-    (sb/warning "would need x11 proxying for better security"
-                (sb/bind-ro-try "/tmp/.X11-unix/X1"))))
+    (system/x11)))
 
 (defn base6
   "Low effort sandbox with GUI support, includes X11 display binding"
@@ -90,8 +90,7 @@
   ([{:keys [unsafe-session]}]
    (let [ctx (base5 {:unsafe-session unsafe-session})]
      (sb/$-> ctx
-         ;; would need x11 proxying for better security
-       (sb/bind-ro-try "/tmp/.X11-unix/X1")))))
+       (system/x11)))))
 
 (defn base8
   "Lower effort wider sandbox, does not filter env vars and /tmp, should work better for GUI programs"

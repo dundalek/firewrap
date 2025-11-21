@@ -102,6 +102,13 @@ Worfklow to create a profile is an iteration loop of:
 - [Comments](#comments)
   - Creating a profile is full of trade-offs, often to make things work a compromise has to be made with a looser rule.
   - Comments are a way to record when such decision is made. Having comments as reified entities in code, can be presented to users to audit sandboxes or review before running a program for the first time.
+  - For example a comment in preset code:
+    ```clj
+    (defn x11 [ctx]
+      (-> ctx
+          (sb/warning "will need x11 proxying for better security"
+                      (bind-ro-try "/tmp/.X11-unix/X1"))))
+    ```
 
 ## Usage
 

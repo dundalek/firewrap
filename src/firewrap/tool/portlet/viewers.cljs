@@ -5,14 +5,16 @@
    [portal.ui.inspector :as ins]
    [portal.viewer :as pv]))
 
-(defn profile-tree? [value]
+(defn profile-tree?
   "Predicate to detect profile tree data structure (just the tree, not the full tuple)"
+  [value]
   (and (map? value)
        (contains? value :children)
        (vector? (:children value))))
 
-(defn count-children [node]
+(defn count-children
   "Count total child nodes recursively"
+  [node]
   (let [direct-count (count (:children node []))
         nested-count (reduce + (map count-children (:children node [])))]
     (+ direct-count nested-count)))
@@ -23,6 +25,7 @@
         is-expanded? (contains? @expanded-nodes node-id)
         is-selected? (= @selected-node node)
         children-count (count-children node)
+        has-comments? (seq (:comments node))
         indent-style {:padding-left (str (* level 20) "px")}]
     [:div
      [:div.tree-node
@@ -43,6 +46,15 @@
           (if is-expanded? "▼" "▶")])
        [:span {:style {:font-weight "bold"}}
         (str (:form node))]
+       (when has-comments?
+         [:span {:style {:color "#92400e"
+                         :background-color "#fef3c7"
+                         :font-size "0.85em"
+                         :font-weight "bold"
+                         :padding "2px 6px"
+                         :border-radius "4px"
+                         :margin-left "4px"}}
+          "⚠ comments"])
        (when (> children-count 0)
          [:span {:style {:color "#666" :font-size "0.9em"}}
           (str "(" children-count " children)")])]
@@ -70,6 +82,37 @@
        [:h4 "Form"]
        [:div {:style {:font-family "monospace" :background-color "#f5f5f5" :padding "8px" :border-radius "4px"}}
         (str (:form selected-node))]]
+
+      (when (seq (:comments selected-node))
+        [:div {:style {:margin-bottom "16px"}}
+         [:h4 "Comments"]
+         (for [[idx comment] (map-indexed vector (:comments selected-node))]
+           ^{:key idx}
+           (let [level-color (case (:level comment)
+                               :warning "#fef3c7"
+                               :info "#dbeafe"
+                               "#f3f4f6")
+                 level-text-color (case (:level comment)
+                                    :warning "#92400e"
+                                    :info "#1e40af"
+                                    "#374151")
+                 level-icon (case (:level comment)
+                              :warning "⚠"
+                              :info "ℹ"
+                              "•")]
+             [:div {:style {:background-color level-color
+                            :color level-text-color
+                            :padding "12px"
+                            :border-radius "6px"
+                            :margin-bottom "8px"
+                            :border-left (str "4px solid " level-text-color)}}
+              [:div {:style {:display "flex" :align-items "flex-start" :gap "8px"}}
+               [:span {:style {:font-weight "bold" :font-size "1.1em"}} level-icon]
+               [:div
+                [:div {:style {:font-weight "600" :text-transform "uppercase" :font-size "0.75em" :margin-bottom "4px"}}
+                 (name (:level comment))]
+                [:div {:style {:font-size "0.95em"}}
+                 (:message comment)]]]]))])
 
       (when (:location selected-node)
         [:div {:style {:margin-bottom "16px"}}
@@ -125,8 +168,9 @@
        [:div {:style {:flex "1" :overflow "auto"}}
         [details-panel {:selected-node @selected-node}]]])))
 
-(defn register-viewers! []
+(defn register-viewers!
   "Register the profile tree viewer with Portal"
+  []
   (pui/register-viewer!
    {:name ::profile-tree
     :predicate profile-tree?
