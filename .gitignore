@@ -9,3 +9,4 @@ node_modules
 /target
 .claude
 .beads
+.tmp

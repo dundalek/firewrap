@@ -4,6 +4,7 @@
    [babashka.fs :as fs]
    [babashka.process :as process]
    [clojure.string :as str]
+   [firewrap.microvm :as microvm]
    [firewrap.preset.appimage :as appimage]
    [firewrap.preset.base :as base]
    [firewrap.preset.dumpster :as dumpster]
@@ -62,8 +63,16 @@
                :ref "<var>"
                :collect []}})
 
+(def ^:private microvm-options
+  {:microvm {:desc "Run in microvm instead of bubblewrap"}
+   :publish {:desc "Forward port from host to microvm <hostPort:guestPort>"
+             :ref "<hostPort:guestPort>"
+             :collect []}
+   :packages {:desc "Extra Nix packages to include (comma-separated)"
+              :ref "<pkg1,pkg2,...>"}})
+
 (def ^:private cli-spec
-  (merge cli-options base-options binding-options env-options))
+  (merge cli-options base-options binding-options env-options microvm-options))
 
 (defn preprocess-short-options [args]
   (reduce
@@ -155,7 +164,10 @@
   (println (format-base-levels))
   (println)
   (println "Sandbox options:")
-  (println (cli/format-opts {:spec (merge binding-options env-options)})))
+  (println (cli/format-opts {:spec (merge binding-options env-options)}))
+  (println)
+  (println "Microvm options:")
+  (println (cli/format-opts {:spec microvm-options})))
 
 (defn- escape-shell [s]
   (if (re-matches #"^[-_a-zA-Z0-9]+$" s)
@@ -243,20 +255,19 @@
     (when-not dry-run
       (apply *exec-fn* params))))
 
-(defn- print-comments [ctx]
-  (let [comments (sb/get-comments ctx)]
-    (when (seq comments)
-      (binding [*out* *err*]
-        (doseq [{:keys [level message]} comments]
-          (when *interactive*
-            (print (case level
-                     :warning "\033[33m"  ; yellow
-                     :info "\033[36m"     ; cyan
-                     "\033[0m")))          ; default
-          (println (str "[" (name level) "] " message))
-          (when *interactive*
-            (print "\033[0m")))
-        (println)))))
+(defn- print-comments [comments]
+  (when (seq comments)
+    (binding [*out* *err*]
+      (doseq [{:keys [level message]} comments]
+        (when *interactive*
+          (print (case level
+                   :warning "\033[33m"  ; yellow
+                   :info "\033[36m"     ; cyan
+                   "\033[0m")))          ; default
+        (println (str "[" (name level) "] " message))
+        (when *interactive*
+          (print "\033[0m")))
+      (println))))
 
 (defn- needs-bwrap-sh-wrapper? [args]
   (->> args
@@ -265,7 +276,6 @@
 
 (defn run-bwrap [ctx opts]
   (let [args (sb/ctx->args ctx)]
-    (print-comments ctx)
     (sb/*run-effects!* ctx)
     (if (needs-bwrap-sh-wrapper? args)
       (run-bwrap-sh-wrapper args opts)
@@ -292,7 +302,7 @@
 
 (defn main [& root-args]
   (let [{:keys [opts args] :as parsed} (parse-args root-args)
-        {:keys [dry-run help]} opts]
+        {:keys [dry-run help microvm]} opts]
     (if (or help (empty? args))
       (print-help)
       (let [profile-fn (resolve-profile-fn parsed)
@@ -303,10 +313,21 @@
                   (if (appimage/appimage-command? (first args))
                     (apply appimage/run ctx args)
                     (sb/set-cmd-args ctx args)))]
-        (run-bwrap ctx
-                   {:dry-run dry-run})))))
+        (print-comments (sb/get-comments ctx))
+        (if microvm
+          (let [{:keys [packages publish]} opts
+                {:keys [config warnings]} (microvm/ctx->microvm-config ctx)]
+            (print-comments (map (fn [message] {:level :warning :message message}) warnings))
+            (microvm/run-microvm config {:dry-run dry-run
+                                         :socket-dir (str "/tmp/microvm-" (random-uuid))
+                                         :flake-path (fs/canonicalize (fs/path *file* "../../experiments/microvm"))
+                                         :packages (some-> packages (str/split #","))
+                                         :forward-ports publish}))
+          (run-bwrap ctx {:dry-run dry-run}))))))
 
 (comment
   (main "chrome")
   (main "xx")
-  (main "godmode"))
+  (main "godmode")
+
+  (main "firewrap" "--dry-run" "--microvm" "-b" "--bind-ro" "$PWD" "--packages" "python3" "--" "bash"))

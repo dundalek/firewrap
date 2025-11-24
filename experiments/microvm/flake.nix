@@ -24,42 +24,66 @@
       # Library function to create a parameterized MicroVM configuration
       lib.mkMicroVM =
         {
-          projectDir,
           userName,
           userHome,
           userUid,
           userGid,
           socketDir,
-          claudeConfigDir ? "${userHome}/.claude",
+          chdir ? null,
           extraPackages ? [ ],
           # Port forwarding in Docker-style format: ["hostPort:guestPort"] or ["hostAddr:hostPort:guestPort"]
           forwardPorts ? [ ],
+          # Additional VirtioFS shares: [{ source, target, readOnly }]
+          virtiofsShares ? [ ],
+          # Environment variables to set in VM: { "NAME" = "value"; }
+          environmentVariables ? { },
+          # Enable/disable network (user-mode networking)
+          networkEnabled ? true,
         }:
         let
           pkgs = import nixpkgs { inherit system; };
 
           # Parse Docker-style port specs: "port", "hostPort:guestPort", or "hostAddr:hostPort:guestPort"
-          parsePortSpec = spec:
+          parsePortSpec =
+            spec:
             let
               parts = nixpkgs.lib.splitString ":" spec;
               numParts = builtins.length parts;
             in
-            if numParts == 1 then {
-              hostAddress = "127.0.0.1";
-              hostPort = nixpkgs.lib.toInt (builtins.elemAt parts 0);
-              guestPort = nixpkgs.lib.toInt (builtins.elemAt parts 0);
-            } else if numParts == 2 then {
-              hostAddress = "127.0.0.1";
-              hostPort = nixpkgs.lib.toInt (builtins.elemAt parts 0);
-              guestPort = nixpkgs.lib.toInt (builtins.elemAt parts 1);
-            } else if numParts == 3 then {
-              hostAddress = builtins.elemAt parts 0;
-              hostPort = nixpkgs.lib.toInt (builtins.elemAt parts 1);
-              guestPort = nixpkgs.lib.toInt (builtins.elemAt parts 2);
-            } else
+            if numParts == 1 then
+              {
+                hostAddress = "127.0.0.1";
+                hostPort = nixpkgs.lib.toInt (builtins.elemAt parts 0);
+                guestPort = nixpkgs.lib.toInt (builtins.elemAt parts 0);
+              }
+            else if numParts == 2 then
+              {
+                hostAddress = "127.0.0.1";
+                hostPort = nixpkgs.lib.toInt (builtins.elemAt parts 0);
+                guestPort = nixpkgs.lib.toInt (builtins.elemAt parts 1);
+              }
+            else if numParts == 3 then
+              {
+                hostAddress = builtins.elemAt parts 0;
+                hostPort = nixpkgs.lib.toInt (builtins.elemAt parts 1);
+                guestPort = nixpkgs.lib.toInt (builtins.elemAt parts 2);
+              }
+            else
               throw "Invalid port spec '${spec}': expected 'port', 'hostPort:guestPort', or 'hostAddr:hostPort:guestPort'";
 
           parsedPorts = map parsePortSpec forwardPorts;
+
+          # Generate VirtioFS share configs from virtiofsShares parameter
+          mkVirtiofsShare = idx: share: {
+            proto = "virtiofs";
+            tag = "share-${toString idx}";
+            source = share.source;
+            mountPoint = share.target;
+            socket = "${socketDir}/virtiofs-share-${toString idx}.sock";
+            readOnly = share.readOnly;
+          };
+
+          additionalShares = nixpkgs.lib.imap0 mkVirtiofsShare virtiofsShares;
 
           # Build the NixOS configuration
           nixosConfig = nixpkgs.lib.nixosSystem {
@@ -92,6 +116,14 @@
                   # This is safe as it's only accessible via direct VM console, not network
                   services.getty.autologinUser = userName;
 
+                  # Override getty to shutdown on exit instead of respawning
+                  systemd.services."serial-getty@ttyS0" = {
+                    serviceConfig = {
+                      Restart = lib.mkForce "no";
+                      ExecStopPost = "${pkgs.systemd}/bin/systemctl poweroff";
+                    };
+                  };
+
                   # Ensure SSH is disabled to prevent unauthenticated network access
                   # services.openssh.enable = false;
 
@@ -107,21 +139,9 @@
                     });
                   '';
 
-                  # Allow unfree packages
-                  nixpkgs.config.allowUnfreePredicate =
-                    pkg:
-                    builtins.elem (lib.getName pkg) [
-                      "claude-code"
-                    ];
-
-                  # Make claude-code available in the microvm
-                  environment.systemPackages =
-                    with pkgs;
-                    [
-                      claude-code
-                      bun
-                    ]
-                    ++ (map (pkgName: lib.getAttrFromPath (lib.splitString "." pkgName) pkgs) extraPackages);
+                  environment.systemPackages = (
+                    map (pkgName: lib.getAttrFromPath (lib.splitString "." pkgName) pkgs) extraPackages
+                  );
 
                   # Enable Nix to allow nix-shell and other Nix commands
                   nix.enable = true;
@@ -130,16 +150,27 @@
                     "flakes"
                   ];
 
-                  # Create symlink from ~/.claude/config.json to ~/.claude.json
-                  # need to mv ~/.claude.json ~/.claude/config.json on the host
-                  # Also create a .profile that cd's to the repo directory on login
-                  systemd.tmpfiles.rules = [
-                    "L ${userHome}/.claude.json - - - - ${userHome}/.claude/config.json"
-                    "f ${userHome}/.profile 0644 ${userName} ${userName} - cd ${projectDir}\n"
-                  ];
+                  # Create .profile file with environment variables and chdir
+                  systemd.tmpfiles.rules =
+                    let
+                      envExports = lib.concatStringsSep "\n" (
+                        lib.mapAttrsToList (name: value: "export ${name}=${lib.escapeShellArg value}") environmentVariables
+                      );
+                      chdirCmd = lib.optionalString (chdir != null) "cd ${lib.escapeShellArg chdir}";
+                      profileFile = pkgs.writeText "user-profile" ''
+                        ${envExports}
+                        ${chdirCmd}
+                      '';
+                    in
+                    [
+                      # Link the profile file to user's home directory
+                      "L+ ${userHome}/.profile - - - - ${profileFile}"
+                    ];
 
-                  # Open firewall for forwarded ports
-                  networking.firewall.allowedTCPPorts = map (p: p.guestPort) parsedPorts;
+                  # Open firewall for forwarded ports (only when network is enabled)
+                  networking.firewall.allowedTCPPorts = lib.optionals networkEnabled (
+                    map (p: p.guestPort) parsedPorts
+                  );
 
                   microvm = {
                     # Enable writable overlay for /nix/store to allow nix-shell and package installation
@@ -158,23 +189,10 @@
                         mountPoint = "/nix/.ro-store";
                         socket = "${socketDir}/virtiofs-ro-store.sock";
                       }
-                      {
-                        proto = "virtiofs";
-                        tag = "project";
-                        source = projectDir;
-                        mountPoint = projectDir;
-                        socket = "${socketDir}/virtiofs-project.sock";
-                      }
-                      {
-                        proto = "virtiofs";
-                        tag = "claude-config";
-                        source = claudeConfigDir;
-                        mountPoint = "${userHome}/.claude";
-                        socket = "${socketDir}/virtiofs-claude-config.sock";
-                      }
-                    ];
+                    ]
+                    ++ additionalShares;
 
-                    interfaces = [
+                    interfaces = lib.optionals networkEnabled [
                       {
                         type = "user";
                         id = "qemu";
@@ -182,12 +200,14 @@
                       }
                     ];
 
-                    forwardPorts = map (p: {
-                      from = "host";
-                      host.address = p.hostAddress;
-                      host.port = p.hostPort;
-                      guest.port = p.guestPort;
-                    }) parsedPorts;
+                    forwardPorts = lib.optionals networkEnabled (
+                      map (p: {
+                        from = "host";
+                        host.address = p.hostAddress;
+                        host.port = p.hostPort;
+                        guest.port = p.guestPort;
+                      }) parsedPorts
+                    );
 
                     # "qemu" has 9p built-in!
                     hypervisor = "qemu";
