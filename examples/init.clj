@@ -67,17 +67,25 @@
       (sb/bind-ro jank-dir)
       (sb/env-set "PATH" (str jank-dir "/compiler+runtime/build:" (sb/getenv ctx "PATH"))))))
 
+(defn agents-common [ctx]
+  (sb/$-> ctx
+    (sb/warning
+     "too broad - should restrict to subfolder per project"
+     (sb/bind-rw-try (dumpster/home ctx "Dropbox/myfiles/obsidian/beans")))
+    (sb/bind-rw-try (dumpster/home ctx "Dropbox/myfiles/obsidian/skills"))
+    (sb/bind-rw-try (dumpster/home ctx "Dropbox/myfiles/obsidian/commands"))))
+
 (defn claude [opts]
-  (let [ctx (sb/$-> opts
-              (claude/wide)
-              (jank)
-              (system/command "aineko")
-              (sb/env-pass "AINEKO_SEANCE_ID")
-              (sb/env-pass "AINEKO_SOCKET_PATH"))]
-              ;; temporary for testing D-BUS implementation
-              ; (system/dbus-system-bus))]
-    (sb/$-> ctx
-      (sb/bind-rw-try (dumpster/home ctx "Dropbox/myfiles/obsidian/skills")))))
+  (sb/$-> opts
+    (claude/wide)
+    (jank)
+    (system/command "aineko")
+    (sb/env-pass "AINEKO_SEANCE_ID")
+    (sb/env-pass "AINEKO_SOCKET_PATH")
+    (sb/env-pass "BD_NO_DAEMON")
+            ;; temporary for testing D-BUS implementation
+            ; (system/dbus-system-bus))]
+    (agents-common)))
 
 (profile/register! "claude" claude)
 ;; Babashka does not work in narrow sandbox, bb fails with:
@@ -115,7 +123,7 @@
     ctx
     (sb/bind-ro-try (dumpster/home ctx ".claude"))
     ; (sb/bind-ro-try (dumpster/home ctx ".config/claude"))
-    (sb/bind-rw-try (dumpster/home ctx "Dropbox/myfiles/obsidian/skills"))))
+    (agents-common)))
 
 (defn gemini-wide [opts]
   (let [ctx (base/base4)]
@@ -126,6 +134,8 @@
                                  :cwd true
                                  :net true
                                  :home "gemini"))
+
+      (sb/bind-rw-try (dumpster/home ctx ".gemini"))
       (claude-skills))))
 
 (profile/register! "gemini" gemini-wide)
@@ -156,3 +166,14 @@
       (claude-skills))))
 
 (profile/register! "amp" amp-wide)
+
+(defn chromium-wide [opts]
+  (let [ctx (base/base5)]
+    (sb/$->
+      ctx
+      (base/configurable (-> opts
+                             (update :opts assoc
+                                     :net true)
+                             (update-in [:opts :home] #(or % (first (:args opts)))))))))
+
+(profile/register! "browser" chromium-wide)
