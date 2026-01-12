@@ -36,12 +36,18 @@
     (-> ctx
         (bind-isolated-home sandbox))))
 
-(defn bind-cwd-rw [ctx]
-  (let [cwd (sb/cwd ctx)]
-    (-> ctx
-        (sb/bind-rw cwd)
-        ;; Make sure cwd is set to current dir when we bind cwd
-        (sb/chdir cwd))))
+(defn bind-cwd-rw
+  ([ctx]
+   (bind-cwd-rw ctx {}))
+  ([ctx {:keys [allow-home?]}]
+   (let [cwd (sb/cwd ctx)
+         home-dir (home ctx)]
+     (if (and (not allow-home?) (= cwd home-dir))
+       (sb/add-comment ctx :warning
+                       "Refusing to bind home directory with --cwd. Use --cwd-home to explicitly allow binding home.")
+       (-> ctx
+           (sb/bind-rw cwd)
+           (sb/chdir cwd))))))
 
 (defn network [ctx]
   (-> ctx

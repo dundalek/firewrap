@@ -90,7 +90,11 @@
 
     "firewrap --env-set VAR1 val1 --env-unset VAR2 -- cmd"
     {:args ["cmd"]
-     :opts {:env-vars [[:setenv "VAR1" "val1"] [:unsetenv "VAR2"]]}}))
+     :opts {:env-vars [[:setenv "VAR1" "val1"] [:unsetenv "VAR2"]]}}
+
+    "firewrap --cwd-home -- cmd"
+    {:args ["cmd"]
+     :opts {:cwd-home true}}))
 
 (deftest preprocess-short-options
   (is (= ["--base" "4" "cmd"] (main/preprocess-short-options ["-b4" "cmd"])))

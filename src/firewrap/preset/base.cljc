@@ -137,7 +137,7 @@
 
 (defn configurable [ctx params]
   (let [{:keys [opts args]} params
-        {:keys [profile home tmphome cwd net bindings env-pass env-vars]} opts
+        {:keys [profile home tmphome cwd cwd-home net bindings env-pass env-vars]} opts
         appname (or
                  (when (string? home) home)
                  profile
@@ -146,6 +146,7 @@
       home (bind-isolated-home-with-user-programs appname)
       tmphome (bind-isolated-tmphome-with-user-programs)
       cwd (dumpster/bind-cwd-rw)
+      cwd-home (dumpster/bind-cwd-rw {:allow-home? true})
       net (dumpster/network)
       bindings (apply-bindings bindings)
       env-pass (sb/env-pass-many env-pass)

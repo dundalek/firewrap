@@ -41,6 +41,7 @@
              :alias :t}
    :cwd {:desc ""
          :alias :c}
+   :cwd-home {:desc "Like --cwd but explicitly allows binding home directory"}
    :net {:desc ""
          :alias :n}})
 
