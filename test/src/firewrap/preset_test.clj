@@ -164,3 +164,23 @@
     (is (= (concat default-args ["--unsetenv" "UNSET" "--setenv" "KEEP" "value"
                                  "date"])
            (test-main "firewrap" "--env-set" "KEEP" "value" "--env-unset" "UNSET" "--" "date")))))
+
+(deftest home-override-with-profile
+  (testing "when using a profile with home and overriding home via CLI, the home binding should be replaced not appended"
+    (with-redefs [profile/resolve (fn [name]
+                                    (when (= name "testprofile")
+                                      (fn [_parsed]
+                                        (sb/$-> (base/base)
+                                          (base/configurable {:opts {:home "testprofile"}})))))]
+      (let [result (test-main "firewrap" "--profile" "testprofile" "--home" "testprofile2" "--" "date")]
+        (is (= ["bwrap"
+                "--unshare-all"
+                "--die-with-parent"
+                "--new-session"
+                "--bind"
+                "/home/user/sandboxes/testprofile2"
+                "/home/user"
+                "--unsetenv"
+                "HOME"
+                "date"]
+               result))))))
