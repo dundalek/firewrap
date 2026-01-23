@@ -140,7 +140,7 @@
 
 (profile/register! "gemini" gemini-wide)
 
-(defn cursor-cli-wide [opts]
+(defn kilocode-wide [opts]
   (let [ctx (base/base4)]
     (sb/$->
       ctx
@@ -151,7 +151,7 @@
                                  :home "cursor-agent"))
       (claude-skills))))
 
-(profile/register! "cursor-agent" cursor-cli-wide)
+(profile/register! "cursor-agent" kilocode-wide)
 
 (defn amp-wide [opts]
   ;; Amp needs unsafe-session otherwise fails to run, can't open /dev/tty
@@ -177,3 +177,16 @@
                              (update-in [:opts :home] #(or % (first (:args opts)))))))))
 
 (profile/register! "browser" chromium-wide)
+
+(defn kilocode-wide [opts]
+  (let [ctx (base/base4)]
+    (sb/$->
+      ctx
+      ;; override to always include CWD to be able to change local sources and .git
+      (base/configurable (update opts :opts assoc
+                                 :cwd true
+                                 :net true
+                                 :home "kilocode"))
+      (claude-skills))))
+
+(profile/register! "kilocode" kilocode-wide)
