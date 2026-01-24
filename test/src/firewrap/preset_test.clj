@@ -43,7 +43,7 @@
     (snap/match-snapshot ::base-b-nix (test-main "firewrap" "-b" "--" "date"))))
 
 (deftest profile-windsurf
-  (snap/match-snapshot ::windsurf (test-raw-profile #(windsurf/profile nil))))
+  (snap/match-snapshot ::windsurf (test-raw-profile #(windsurf/profile {}))))
 
 (deftest profile-windsurf-with-options
   (with-redefs [profile/resolve (fn [name]
@@ -52,8 +52,8 @@
     (snap/match-snapshot ::windsurf-cwd (test-main "windsurf" "--cwd" "--" "."))))
 
 (deftest profiles
-  (snap/match-snapshot ::godmode (test-raw-profile #(godmode/profile "/path/to/GodMode.AppImage")))
-  (snap/match-snapshot ::claude-wide (test-raw-profile #(claude/wide nil)))
+  (snap/match-snapshot ::godmode (test-raw-profile #(godmode/profile "/path/to/GodMode.AppImage" {})))
+  (snap/match-snapshot ::claude-wide (test-raw-profile #(claude/wide {})))
 
   (snap/match-snapshot ::ferdium (test-main "ferdium"))
   (snap/match-snapshot ::ferdium-absolute (test-main "/some/path/ferdium"))
@@ -169,9 +169,9 @@
   (testing "when using a profile with home and overriding home via CLI, the home binding should be replaced not appended"
     (with-redefs [profile/resolve (fn [name]
                                     (when (= name "testprofile")
-                                      (fn [_parsed]
+                                      (fn [parsed]
                                         (sb/$-> (base/base)
-                                          (base/configurable {:opts {:home "testprofile"}})))))]
+                                          (base/configurable parsed {:home "testprofile"})))))]
       (let [result (test-main "firewrap" "--profile" "testprofile" "--home" "testprofile2" "--" "date")]
         (is (= ["bwrap"
                 "--unshare-all"

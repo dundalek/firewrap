@@ -27,11 +27,9 @@
         (println "Warning: Failed during worktree git dir detection" e))
       ctx)))
 
-(defn- common [ctx]
+(defn- common [ctx parsed]
   (sb/$-> ctx
-    (base/configurable {:opts {:cwd true
-                               :net true
-                               :home "claude"}})
+    (base/configurable parsed {:cwd true :net true :home "claude"})
     (sb/bind-ro-try "/etc/claude-code")
     ;; bind claude files, alternative consider symlinking to sandbox dir
     (sb/bind-rw-try (dumpster/home ctx ".claude"))
@@ -64,11 +62,11 @@
     ; (system/dbus-talk "org.freedesktop.Notifications")
     (system/command "clojure-mcp")))
 
-(defn wide [_]
+(defn wide [parsed]
   (sb/$-> (base/base4)
-    (common)))
+    (common parsed)))
 
-(defn narrow [_]
+(defn narrow [parsed]
   (sb/$-> (base/base)
     (sb/env-pass-many env/allowed)
     (base/bind-system-and-extra-programs)
@@ -81,4 +79,4 @@
     ; seems to use following, but works without:
     ; `/proc/sys/vm/overcommit_memory` - `/proc/version_signature` - `/proc/meminfo` - `/proc/self`
     ; (dumpster/proc)
-    (common)))
+    (common parsed)))

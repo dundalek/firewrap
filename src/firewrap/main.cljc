@@ -282,18 +282,18 @@
       (run-bwrap-sh-wrapper args opts)
       (run-bwrap-exec args opts))))
 
-(defn- resolve-base-profile [{:keys [opts]}]
+(defn- resolve-base-profile [{:keys [opts] :as parsed}]
   (let [{:keys [base gui unsafe-session]} opts
         base (if (true? base) 4 base)
         profile-fn (->> base-levels
                         (filter #(= (:level %) base))
                         first
                         :profile)]
-    (cond
-      profile-fn (profile-fn {:unsafe-session unsafe-session})
-      gui (base/base-gui)
-      ;; Print warning if no base?
-      :else (base/base {:unsafe-session unsafe-session}))))
+    (cond-> (cond
+              profile-fn (profile-fn {:unsafe-session unsafe-session})
+              gui (base/base-gui)
+              :else (base/base {:unsafe-session unsafe-session}))
+      :always (base/configurable parsed))))
 
 (defn resolve-profile-fn [parsed]
   (let [profile (get-in parsed [:opts :profile])
@@ -308,7 +308,6 @@
       (print-help)
       (let [profile-fn (resolve-profile-fn parsed)
             ctx (profile-fn parsed)
-            ctx (base/configurable ctx parsed)
             ctx (if (sb/cmd-args ctx)
                   ctx
                   (if (appimage/appimage-command? (first args))

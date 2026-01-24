@@ -135,19 +135,23 @@
           ctx
           env-vars))
 
-(defn configurable [ctx params]
-  (let [{:keys [opts args]} params
-        {:keys [profile home tmphome cwd cwd-home net bindings env-pass env-vars]} opts
-        appname (or
-                 (when (string? home) home)
-                 profile
-                 (dumpster/path->appname (first args)))]
-    (cond-> ctx
-      home (bind-isolated-home-with-user-programs appname)
-      tmphome (bind-isolated-tmphome-with-user-programs)
-      cwd (dumpster/bind-cwd-rw)
-      cwd-home (dumpster/bind-cwd-rw {:allow-home? true})
-      net (dumpster/network)
-      bindings (apply-bindings bindings)
-      env-pass (sb/env-pass-many env-pass)
-      env-vars (apply-env-vars env-vars))))
+(defn configurable
+  ([ctx params] (configurable ctx params {}))
+  ([ctx params defaults]
+   (let [{:keys [opts args]} params
+         opts (merge defaults opts)
+         {:keys [profile home tmphome cwd cwd-home net bindings env-pass env-vars]} opts
+         appname (or
+                  (when (string? home) home)
+                  profile
+                  (dumpster/path->appname (first args)))]
+     (cond-> ctx
+       home (bind-isolated-home-with-user-programs appname)
+       tmphome (bind-isolated-tmphome-with-user-programs)
+       cwd (dumpster/bind-cwd-rw)
+       cwd-home (dumpster/bind-cwd-rw {:allow-home? true})
+       net (dumpster/network)
+       bindings (apply-bindings bindings)
+       env-pass (sb/env-pass-many env-pass)
+       env-vars (apply-env-vars env-vars)))))
+
