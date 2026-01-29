@@ -76,16 +76,21 @@
     (sb/bind-rw-try (dumpster/home ctx "Dropbox/myfiles/obsidian/commands"))))
 
 (defn claude [opts]
-  (sb/$-> opts
-    (claude/wide)
-    (jank)
-    (system/command "aineko")
-    (sb/env-pass "AINEKO_SEANCE_ID")
-    (sb/env-pass "AINEKO_SOCKET_PATH")
-    (sb/env-pass "BD_NO_DAEMON")
-            ;; temporary for testing D-BUS implementation
-            ; (system/dbus-system-bus))]
-    (agents-common)))
+  (let [ctx (claude/wide opts)
+        aineko-dir (dumpster/home ctx "projects/aineko/code/aineko")]
+    (sb/$-> ctx
+      (jank)
+      (system/command "aineko")
+      ;; only bind aineko when not running from within it as cwd
+      ((if (not= (sb/cwd ctx) aineko-dir)
+         #(sb/bind-ro % aineko-dir)
+         identity))
+      (sb/env-pass "AINEKO_SEANCE_ID")
+      (sb/env-pass "AINEKO_SOCKET_PATH")
+      (sb/env-pass "BD_NO_DAEMON")
+              ;; temporary for testing D-BUS implementation
+              ; (system/dbus-system-bus))]
+      (agents-common))))
 
 (profile/register! "claude" claude)
 ;; Babashka does not work in narrow sandbox, bb fails with:
