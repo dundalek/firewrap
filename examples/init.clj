@@ -71,9 +71,10 @@
   (sb/$-> ctx
     (sb/warning
      "too broad - should restrict to subfolder per project"
-     (sb/bind-rw-try (dumpster/home ctx "Dropbox/myfiles/obsidian/beans")))
-    (sb/bind-rw-try (dumpster/home ctx "Dropbox/myfiles/obsidian/skills"))
-    (sb/bind-rw-try (dumpster/home ctx "Dropbox/myfiles/obsidian/commands"))))
+     (sb/bind-rw-try (dumpster/home ctx "Dropbox/other/logseq/beans")))
+    (sb/bind-rw-try (dumpster/home ctx "Dropbox/myfiles/obsidian/beans"))
+    (sb/bind-rw-try (dumpster/home ctx "Dropbox/other/logseq/skills"))
+    (sb/bind-rw-try (dumpster/home ctx "Dropbox/other/logseq/commands"))))
 
 (defn claude [opts]
   (let [ctx (claude/wide opts)
@@ -81,12 +82,14 @@
     (sb/$-> ctx
       (jank)
       (system/command "aineko")
+      (system/command "claude-stream")
       ;; only bind aineko when not running from within it as cwd
       ((if (not= (sb/cwd ctx) aineko-dir)
          #(sb/bind-ro % aineko-dir)
          identity))
       (sb/env-pass "AINEKO_SEANCE_ID")
       (sb/env-pass "AINEKO_SOCKET_PATH")
+      (sb/env-pass "CURRENT_BEANS_ID")
       (sb/env-pass "BD_NO_DAEMON")
               ;; temporary for testing D-BUS implementation
               ; (system/dbus-system-bus))]
