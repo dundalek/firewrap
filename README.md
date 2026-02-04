@@ -1,6 +1,6 @@
 # Firewrap
 
-Firewrap is a tool to run programs in an isolated runtime environment using a container-type sandbox.
+Firewrap is a tool to run programs in an isolated runtime environment using a container-type sandbox and experimental micro VM support.
 
 It is similar to [Firejail](https://github.com/netblue30/firejail), but based on [Bubblewrap](https://github.com/containers/bubblewrap).
 
@@ -112,6 +112,7 @@ Worfklow to create a profile is an iteration loop of:
 
 ## Usage
 
+<!-- Use `bb update-readme-help` to update help text -->
 <!-- FIREWRAP_HELP_BEGIN -->
 ```
 Run program in sandbox
@@ -130,6 +131,7 @@ Ad-hoc profile options:
   -h, --home
   -t, --tmphome
   -c, --cwd
+      --cwd-home Like --cwd but explicitly allows binding home directory
   -n, --net
 
 Base levels (-b or --base is same as -b4):
@@ -147,6 +149,11 @@ Sandbox options:
   --env-pass  <env>         Pass environment variable to sandbox
   --env-set   <var> <value> Set an environment variable
   --env-unset <var>         Unset an environment variable
+
+Microvm options:
+  --microvm                       Run in microvm instead of bubblewrap
+  --publish  <hostPort:guestPort> Forward port from host to microvm <hostPort:guestPort>
+  --packages <pkg1,pkg2,...>      Extra Nix packages to include (comma-separated)
 ```
 <!-- /FIREWRAP_HELP_END -->
 
@@ -358,6 +365,31 @@ The `--unsafe-session` option makes the sandbox open to TIOCSTI ioctl attack.
 However, it makes it less easier to forget to run a program under a sandbox by running the whole shell in sandbox.
 So it can end up better when the risk profile is protection against mostly misconfigured programs rather then malicious programs.
 
+## MicroVM
+
+Experimental support for running programs in a MicroVM using [microvm.nix](https://github.com/microvm-nix/microvm.nix) instead of Bubblewrap.
+
+Enable with `--microvm`, it starts a shell, exiting the shell will shutdown the VM. 
+Currently only works using QEMU, firecracker and cloud-hypervisor may come later.
+
+Sandbox options:
+- Mount diirectories with `--bind-ro`, `--bind-rw`, `--cwd` or `-c`.
+- Use `--net` or `-n` to enable networking. 
+- Note that base levels (`-bX`, `--base`, `--gui`) don't apply to microvms, they are based on nix image.
+
+Microvm options:
+- Forward ports from host to guest with `--publish`. Accepts formats like `8000` (same port on both sides), `8000:80` (host:guest), or `127.0.0.1:8000:80` (bind address:host:guest).
+- Add extra Nix packages with `--packages`, comma-separated like `--packages python3,git`.
+
+Example:
+
+```sh
+firewrap --microvm --cwd --net --packages python3 --publish 8000:8000
+python3 -m http.server 8000
+```
+
+See [microvm notes](./experiments/microvm/README.md) for more details.
+
 ## Trace helper tool
 
 Capture a trace using strace (ideally on an isolated physical hardware or in a VM):
@@ -375,7 +407,7 @@ export XDG_DATA_DIRS="$HOME/.local/share:/usr/share" XDG_CONFIG_DIRS="/etc/xdg"
 Or use the strace-helper which passes additional options to strace:
 
 ```
-`bin/strace-helper -o tmp/trace bun --help`
+bin/strace-helper -o tmp/trace bun --help
 ```
 
 We leverage [b3-strace-parser](https://github.com/dannykopping/b3) to parse strace file as JSON. 
