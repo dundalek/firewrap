@@ -301,12 +301,18 @@
                        resolve-base-profile)]
     profile-fn))
 
+(def ^:private microvm-ignored-opts
+  [:base :gui])
+
 (defn main [& root-args]
   (let [{:keys [opts args] :as parsed} (parse-args root-args)
         {:keys [dry-run help microvm]} opts]
     (if (or help (empty? args))
       (print-help)
-      (let [profile-fn (resolve-profile-fn parsed)
+      (let [parsed (if microvm
+                     (apply update parsed :opts dissoc microvm-ignored-opts)
+                     parsed)
+            profile-fn (resolve-profile-fn parsed)
             ctx (profile-fn parsed)
             ctx (if (sb/cmd-args ctx)
                   ctx
