@@ -113,6 +113,9 @@
                       config)
         nix-expr (config->nix-expr config flake-path)]
 
+    (when (and (seq forward-ports) (not (:network-enabled config)))
+      (println "[warning] Port forwarding specified but network is not enabled. Use --net to enable networking."))
+
     (println "Nix expression:" nix-expr)
     (println)
 
