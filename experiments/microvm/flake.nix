@@ -22,6 +22,7 @@
     in
     {
       # Library function to create a parameterized MicroVM configuration
+      # All data is pre-computed by Clojure - this function just passes it through
       lib.mkMicroVM =
         {
           userName,
@@ -29,61 +30,20 @@
           userUid,
           userGid,
           socketDir,
-          chdir ? null,
           extraPackages ? [ ],
-          # Port forwarding in Docker-style format: ["hostPort:guestPort"] or ["hostAddr:hostPort:guestPort"]
+          # Pre-parsed port forwarding: [{ from, host = { address, port }, guest = { port } }]
           forwardPorts ? [ ],
-          # Additional VirtioFS shares: [{ source, target, readOnly }]
+          # Pre-computed firewall ports: [ guestPort1, guestPort2, ... ]
+          firewallPorts ? [ ],
+          # Pre-computed VirtioFS shares with socket paths: [{ proto, tag, source, mountPoint, socket, readOnly }]
           virtiofsShares ? [ ],
-          # Environment variables to set in VM: { "NAME" = "value"; }
-          environmentVariables ? { },
+          # Pre-computed .profile content as a string
+          profileContent ? "",
           # Enable/disable network (user-mode networking)
           networkEnabled ? true,
         }:
         let
           pkgs = import nixpkgs { inherit system; };
-
-          # Parse Docker-style port specs: "port", "hostPort:guestPort", or "hostAddr:hostPort:guestPort"
-          parsePortSpec =
-            spec:
-            let
-              parts = nixpkgs.lib.splitString ":" spec;
-              numParts = builtins.length parts;
-            in
-            if numParts == 1 then
-              {
-                hostAddress = "127.0.0.1";
-                hostPort = nixpkgs.lib.toInt (builtins.elemAt parts 0);
-                guestPort = nixpkgs.lib.toInt (builtins.elemAt parts 0);
-              }
-            else if numParts == 2 then
-              {
-                hostAddress = "127.0.0.1";
-                hostPort = nixpkgs.lib.toInt (builtins.elemAt parts 0);
-                guestPort = nixpkgs.lib.toInt (builtins.elemAt parts 1);
-              }
-            else if numParts == 3 then
-              {
-                hostAddress = builtins.elemAt parts 0;
-                hostPort = nixpkgs.lib.toInt (builtins.elemAt parts 1);
-                guestPort = nixpkgs.lib.toInt (builtins.elemAt parts 2);
-              }
-            else
-              throw "Invalid port spec '${spec}': expected 'port', 'hostPort:guestPort', or 'hostAddr:hostPort:guestPort'";
-
-          parsedPorts = map parsePortSpec forwardPorts;
-
-          # Generate VirtioFS share configs from virtiofsShares parameter
-          mkVirtiofsShare = idx: share: {
-            proto = "virtiofs";
-            tag = "share-${toString idx}";
-            source = share.source;
-            mountPoint = share.target;
-            socket = "${socketDir}/virtiofs-share-${toString idx}.sock";
-            readOnly = share.readOnly;
-          };
-
-          additionalShares = nixpkgs.lib.imap0 mkVirtiofsShare virtiofsShares;
 
           # Build the NixOS configuration
           nixosConfig = nixpkgs.lib.nixosSystem {
@@ -150,27 +110,17 @@
                     "flakes"
                   ];
 
-                  # Create .profile file with environment variables and chdir
+                  # Link pre-computed .profile content to user's home directory
                   systemd.tmpfiles.rules =
                     let
-                      envExports = lib.concatStringsSep "\n" (
-                        lib.mapAttrsToList (name: value: "export ${name}=${lib.escapeShellArg value}") environmentVariables
-                      );
-                      chdirCmd = lib.optionalString (chdir != null) "cd ${lib.escapeShellArg chdir}";
-                      profileFile = pkgs.writeText "user-profile" ''
-                        ${envExports}
-                        ${chdirCmd}
-                      '';
+                      profileFile = pkgs.writeText "user-profile" profileContent;
                     in
                     [
-                      # Link the profile file to user's home directory
                       "L+ ${userHome}/.profile - - - - ${profileFile}"
                     ];
 
                   # Open firewall for forwarded ports (only when network is enabled)
-                  networking.firewall.allowedTCPPorts = lib.optionals networkEnabled (
-                    map (p: p.guestPort) parsedPorts
-                  );
+                  networking.firewall.allowedTCPPorts = lib.optionals networkEnabled firewallPorts;
 
                   microvm = {
                     # Enable writable overlay for /nix/store to allow nix-shell and package installation
@@ -189,8 +139,7 @@
                         mountPoint = "/nix/.ro-store";
                         socket = "${socketDir}/virtiofs-ro-store.sock";
                       }
-                    ]
-                    ++ additionalShares;
+                    ] ++ virtiofsShares;
 
                     interfaces = lib.optionals networkEnabled [
                       {
@@ -200,14 +149,8 @@
                       }
                     ];
 
-                    forwardPorts = lib.optionals networkEnabled (
-                      map (p: {
-                        from = "host";
-                        host.address = p.hostAddress;
-                        host.port = p.hostPort;
-                        guest.port = p.guestPort;
-                      }) parsedPorts
-                    );
+                    # Use pre-computed forwardPorts directly from Clojure
+                    forwardPorts = lib.optionals networkEnabled forwardPorts;
 
                     # "qemu" has 9p built-in!
                     hypervisor = "qemu";

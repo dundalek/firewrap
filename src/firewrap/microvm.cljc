@@ -7,6 +7,49 @@
 
 (def ^:dynamic *exec-fn* process/exec)
 
+(defn parse-port-spec
+  "Parse Docker-style port specs: 'port', 'hostPort:guestPort', or 'hostAddr:hostPort:guestPort'.
+   Returns nested map matching microvm.nix forwardPorts format."
+  [spec]
+  (let [parts (str/split spec #":")
+        [host-address host-port guest-port]
+        (case (count parts)
+          1 ["127.0.0.1" (parse-long (first parts)) (parse-long (first parts))]
+          2 ["127.0.0.1" (parse-long (first parts)) (parse-long (second parts))]
+          3 [(first parts) (parse-long (second parts)) (parse-long (nth parts 2))]
+          (throw (ex-info (str "Invalid port spec '" spec "': expected 'port', 'hostPort:guestPort', or 'hostAddr:hostPort:guestPort'")
+                          {:spec spec})))]
+    {:from "host"
+     :host {:address host-address :port host-port}
+     :guest {:port guest-port}}))
+
+(defn mk-virtiofs-share
+  "Generate a VirtioFS share config with socket path.
+   idx is the share index, socket-dir is the directory for sockets.
+   Returns a complete share config for Nix."
+  [socket-dir idx {:keys [source target read-only]}]
+  (let [tag (str "share-" idx)]
+    {:proto "virtiofs"
+     :tag tag
+     :source source
+     :mount-point target
+     :socket (str socket-dir "/virtiofs-" tag ".sock")
+     :read-only (boolean read-only)}))
+
+(defn- escape-shell-arg
+  "Escape a value for safe use in shell single quotes."
+  [s]
+  (str "'" (str/replace s "'" "'\\''") "'"))
+
+(defn generate-profile-content
+  "Generate .profile content with environment exports and optional chdir.
+   Returns a string suitable for writing to ~/.profile."
+  [environment-variables chdir]
+  (let [exports (map (fn [[k v]] (str "export " k "=" (escape-shell-arg v)))
+                     environment-variables)
+        chdir-cmd (when chdir (str "cd " (escape-shell-arg chdir)))]
+    (str/join "\n" (filter some? (concat exports [chdir-cmd])))))
+
 (defn- get-user-info []
   {:user-name (System/getenv "USER")
    :user-home (System/getenv "HOME")
@@ -49,58 +92,63 @@
     {:config config
      :warnings []}))
 
-(defn- to-nix-str [s]
-  (str "\""
-       (some-> s
-               (str/replace "\\" "\\\\")
-               (str/replace "\"" "\\\"")
-               (str/replace "${" "\\${"))
-       "\""))
+(defn- kebab->camel
+  "Convert kebab-case keyword to camelCase string."
+  [k]
+  (let [s (name k)
+        parts (str/split s #"-")]
+    (apply str (first parts) (map str/capitalize (rest parts)))))
 
-(defn- to-nix-list [items]
-  (str "[ " (str/join " " items) " ]"))
-
-(defn- to-nix-bool [b]
-  (if b "true" "false"))
-
-(defn- to-nix-list-of-strs [items]
-  (to-nix-list (map to-nix-str items)))
-
-(defn- env->nix-attrs [env-map]
-  (str "{ "
-       (str/join " "
-                 (for [[k v] env-map]
-                   (str (to-nix-str k) " = " (to-nix-str v) ";")))
-       " }"))
-
-(defn- share->nix-attrs [{:keys [source target read-only]}]
-  (str "{ source = " (to-nix-str source) "; "
-       "target = " (to-nix-str target) "; "
-       "readOnly = " (to-nix-bool read-only) "; }"))
+(defn clj->nix
+  "Convert Clojure data to Nix expression string.
+   Maps become attrsets, vectors become lists, keywords are camelCased."
+  [x]
+  (cond
+    (nil? x) "null"
+    (boolean? x) (if x "true" "false")
+    (number? x) (str x)
+    (string? x) (str "\""
+                     (-> x
+                         (str/replace "\\" "\\\\")
+                         (str/replace "\"" "\\\"")
+                         (str/replace "${" "\\${"))
+                     "\"")
+    (keyword? x) (clj->nix (name x))
+    (map? x) (str "{ "
+                  (str/join " " (for [[k v] x]
+                                  (str (kebab->camel k) " = " (clj->nix v) ";")))
+                  " }")
+    (sequential? x) (str "[ " (str/join " " (map clj->nix x)) " ]")
+    :else (throw (ex-info "Cannot convert to Nix" {:value x :type (type x)}))))
 
 (defn config->nix-expr
   "Generate Nix expression from microvm configuration map."
   [config flake-path]
   (let [{:keys [user-name user-home user-uid user-gid
                 socket-dir virtiofs-shares chdir
-                environment-variables network-enabled forward-ports extra-packages]} config]
+                environment-variables network-enabled forward-ports extra-packages]} config
+        parsed-ports (mapv parse-port-spec forward-ports)
+        shares-with-sockets (vec (map-indexed (fn [idx share] (mk-virtiofs-share socket-dir idx share))
+                                              virtiofs-shares))
+        profile-content (generate-profile-content environment-variables chdir)
+        firewall-ports (mapv #(get-in % [:guest :port]) parsed-ports)
+        vm-config (sorted-map
+                   :extra-packages (vec extra-packages)
+                   :firewall-ports firewall-ports
+                   :forward-ports parsed-ports
+                   :network-enabled network-enabled
+                   :profile-content profile-content
+                   :socket-dir socket-dir
+                   :user-gid user-gid
+                   :user-home user-home
+                   :user-name user-name
+                   :user-uid user-uid
+                   :virtiofs-shares shares-with-sockets)]
     (str "
   let
-    flake = builtins.getFlake " (to-nix-str flake-path) ";
+    flake = builtins.getFlake " (clj->nix flake-path) ";
     pkgs = flake.inputs.nixpkgs.legacyPackages.x86_64-linux;
-    vmConfig = flake.lib.mkMicroVM {
-      chdir = " (if chdir (to-nix-str chdir) "null") ";
-      environmentVariables = " (env->nix-attrs environment-variables) ";
-      extraPackages = " (to-nix-list-of-strs extra-packages) ";
-      forwardPorts = " (to-nix-list-of-strs forward-ports) ";
-      networkEnabled = " (to-nix-bool network-enabled) ";
-      socketDir = " (to-nix-str socket-dir) ";
-      userGid = " user-gid ";
-      userHome = " (to-nix-str user-home) ";
-      userName = " (to-nix-str user-name) ";
-      userUid = " user-uid ";
-      virtiofsShares = " (to-nix-list (map share->nix-attrs virtiofs-shares)) ";
-    };
+    vmConfig = flake.lib.mkMicroVM " (clj->nix vm-config) ";
   in
     vmConfig.wrappedRunner
 ")))
