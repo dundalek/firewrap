@@ -333,7 +333,7 @@
                                     (str "/run/user/" (System/getenv "UID")))]
             (print-comments (map (fn [message] {:level :warning :message message}) warnings))
             (microvm/export-flake config {:export-dir export-flake
-                                          :socket-dir (str xdg-runtime-dir "/microvm")
+                                          :socket-dir-base (str xdg-runtime-dir "/microvm")
                                           :packages (some-> packages (str/split #","))
                                           :forward-ports publish}))
 
@@ -342,7 +342,7 @@
                 {:keys [config warnings]} (microvm/ctx->microvm-config ctx)]
             (print-comments (map (fn [message] {:level :warning :message message}) warnings))
             (microvm/run-microvm config {:dry-run dry-run
-                                         :socket-dir (str "/tmp/microvm-" (random-uuid))
+                                         :socket-dir-base "/tmp/microvm"
                                          :packages (some-> packages (str/split #","))
                                          :forward-ports publish}))
 

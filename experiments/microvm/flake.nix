@@ -29,13 +29,13 @@
           userHome,
           userUid,
           userGid,
-          socketDir,
+          socketDirBase,
           extraPackages ? [ ],
           # Pre-parsed port forwarding: [{ from, host = { address, port }, guest = { port } }]
           forwardPorts ? [ ],
           # Pre-computed firewall ports: [ guestPort1, guestPort2, ... ]
           firewallPorts ? [ ],
-          # Pre-computed VirtioFS shares with socket paths: [{ proto, tag, source, mountPoint, socket, readOnly }]
+          # Pre-computed VirtioFS shares: [{ proto, tag, source, mountPoint, readOnly }]
           virtiofsShares ? [ ],
           # Pre-computed .profile content as a string
           profileContent ? "",
@@ -45,8 +45,12 @@
         let
           pkgs = import nixpkgs { inherit system; };
 
-          # Build the NixOS configuration
-          nixosConfig = nixpkgs.lib.nixosSystem {
+          # Generate a placeholder socket dir for build-time configuration.
+          # The actual socket dir is created at runtime with a unique ID.
+          socketDirPlaceholder = "@@SOCKET_DIR@@";
+
+          # Build the NixOS configuration with placeholder socket dir
+          mkNixosConfig = socketDir: nixpkgs.lib.nixosSystem {
             inherit system;
             modules = [
               microvm.nixosModules.microvm
@@ -139,7 +143,7 @@
                         mountPoint = "/nix/.ro-store";
                         socket = "${socketDir}/virtiofs-ro-store.sock";
                       }
-                    ] ++ virtiofsShares;
+                    ] ++ (map (s: s // { socket = "${socketDir}/virtiofs-${s.tag}.sock"; }) virtiofsShares);
 
                     interfaces = lib.optionals networkEnabled [
                       {
@@ -161,83 +165,75 @@
             ];
           };
 
-          runner = nixosConfig.config.microvm.declaredRunner;
+          # Build config with placeholder for generating scripts
+          nixosConfigTemplate = mkNixosConfig socketDirPlaceholder;
+          runnerTemplate = nixosConfigTemplate.config.microvm.declaredRunner;
 
-          # Custom virtiofsd wrapper that uses socketDir for all files
-          virtiofsdWrapper = pkgs.writeShellApplication {
-            name = "virtiofsd-wrapper";
-            runtimeInputs = with pkgs.python3Packages; [
-              supervisor
-              pkgs.virtiofsd
-            ];
-            text =
-              let
-                virtiofsShares = builtins.filter (
-                  share: share.proto == "virtiofs"
-                ) nixosConfig.config.microvm.shares;
-                supervisordConfig = pkgs.writeText "supervisord.conf" (
-                  pkgs.lib.generators.toINI { } (
-                    {
-                      supervisord = {
-                        nodaemon = true;
-                        logfile = "${socketDir}/supervisord.log";
-                        pidfile = "${socketDir}/supervisord.pid";
-                        childlogdir = "${socketDir}";
-                        directory = "${socketDir}";
-                      };
-                    }
-                    // builtins.listToAttrs (
-                      map (share: {
-                        name = "program:virtiofsd-${share.tag}";
-                        value = {
-                          stderr_syslog = true;
-                          stdout_syslog = true;
-                          autorestart = true;
-                          directory = "${socketDir}";
-                          command = "${pkgs.virtiofsd}/bin/virtiofsd --socket-path=${share.socket} --shared-dir=${share.source} --thread-pool-size 1 --posix-acl --xattr ${
-                            if share.readOnly or false then "--readonly" else ""
-                          }";
-                        };
-                      }) virtiofsShares
-                    )
-                  )
-                );
-              in
-              ''
-                set -euo pipefail
+          # Get share info for virtiofsd configuration
+          sharesTemplate = builtins.filter (s: s.proto == "virtiofs") nixosConfigTemplate.config.microvm.shares;
 
-                # Ensure socket directory exists
-                mkdir -p "${socketDir}"
-
-                # Start supervisord with our custom config
-                exec supervisord --configuration ${supervisordConfig}
-              '';
-          };
-
-          # Wrapper script that starts virtiofsd before qemu
+          # Wrapper script that creates unique socket dir at runtime and starts everything
           wrappedRunner = pkgs.writeShellApplication {
             name = "microvm-with-virtiofs";
-            runtimeInputs = [
-              runner
-              virtiofsdWrapper
+            runtimeInputs = with pkgs; [
+              coreutils
+              gnused
+              python3Packages.supervisor
+              virtiofsd
+              qemu_kvm
             ];
             text = ''
               set -euo pipefail
 
-              # Start virtiofsd in the background
-              echo "Starting virtiofsd..."
-              virtiofsd-wrapper &
-              VIRTIOFSD_PID=$!
+              # Generate unique socket directory at runtime
+              SOCKET_DIR=$(mktemp -d "${socketDirBase}/microvm.XXXXXX")
+              echo "Using socket directory: $SOCKET_DIR"
 
-              # Function to cleanup virtiofsd on exit
+              # Function to cleanup on exit
               cleanup() {
-                echo "Stopping virtiofsd..."
-                if kill -0 "$VIRTIOFSD_PID" 2>/dev/null; then
+                echo "Cleaning up..."
+                if [ -n "''${VIRTIOFSD_PID:-}" ] && kill -0 "$VIRTIOFSD_PID" 2>/dev/null; then
+                  echo "Stopping virtiofsd..."
                   kill "$VIRTIOFSD_PID" 2>/dev/null || true
                   wait "$VIRTIOFSD_PID" 2>/dev/null || true
                 fi
+                if [ -d "$SOCKET_DIR" ]; then
+                  echo "Removing socket directory: $SOCKET_DIR"
+                  rm -rf "$SOCKET_DIR"
+                fi
               }
               trap cleanup EXIT INT TERM
+
+              # Generate supervisord config at runtime with actual socket paths
+              SUPERVISORD_CONF="$SOCKET_DIR/supervisord.conf"
+              cat > "$SUPERVISORD_CONF" << 'SUPERVISORD_EOF'
+[supervisord]
+nodaemon=true
+logfile=%(ENV_SOCKET_DIR)s/supervisord.log
+pidfile=%(ENV_SOCKET_DIR)s/supervisord.pid
+childlogdir=%(ENV_SOCKET_DIR)s
+directory=%(ENV_SOCKET_DIR)s
+
+${builtins.concatStringsSep "\n" (map (share: ''
+[program:virtiofsd-${share.tag}]
+stderr_syslog=true
+stdout_syslog=true
+autorestart=true
+directory=%(ENV_SOCKET_DIR)s
+command=${pkgs.virtiofsd}/bin/virtiofsd --socket-path=%(ENV_SOCKET_DIR)s/virtiofs-${share.tag}.sock --shared-dir=${share.source} --thread-pool-size 1 --posix-acl --xattr ${if share.readOnly or false then "--readonly" else ""}
+'') sharesTemplate)}
+SUPERVISORD_EOF
+
+              # Start virtiofsd via supervisord
+              echo "Starting virtiofsd..."
+              export SOCKET_DIR
+              supervisord --configuration "$SUPERVISORD_CONF" &
+              VIRTIOFSD_PID=$!
+
+              # Generate runner script with actual socket paths by substituting placeholder
+              RUNNER_SCRIPT="$SOCKET_DIR/microvm-run.sh"
+              sed "s|${socketDirPlaceholder}|$SOCKET_DIR|g" "${runnerTemplate}/bin/microvm-run" > "$RUNNER_SCRIPT"
+              chmod +x "$RUNNER_SCRIPT"
 
               # Try to start microvm with retries for connection failures
               echo "Starting MicroVM..."
@@ -245,7 +241,7 @@
               retry_delay=1
 
               for attempt in $(seq 1 $max_retries); do
-                if microvm-run; then
+                if "$RUNNER_SCRIPT"; then
                   # VM exited cleanly (normal shutdown)
                   exit 0
                 else
@@ -259,14 +255,12 @@
                   fi
                 fi
               done
-
-              # Cleanup will happen automatically via trap
             '';
           };
         in
         {
-          nixosConfiguration = nixosConfig;
-          runner = runner;
+          nixosConfiguration = nixosConfigTemplate;
+          runner = runnerTemplate;
           wrappedRunner = wrappedRunner;
         };
     };

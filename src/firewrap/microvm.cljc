@@ -25,16 +25,15 @@
      :guest {:port guest-port}}))
 
 (defn mk-virtiofs-share
-  "Generate a VirtioFS share config with socket path.
-   idx is the share index, socket-dir is the directory for sockets.
-   Returns a complete share config for Nix."
-  [socket-dir idx {:keys [source target read-only]}]
+  "Generate a VirtioFS share config.
+   idx is the share index.
+   Returns a share config for Nix (socket path is computed at runtime)."
+  [idx {:keys [source target read-only]}]
   (let [tag (str "share-" idx)]
     {:proto "virtiofs"
      :tag tag
      :source source
      :mount-point target
-     :socket (str socket-dir "/virtiofs-" tag ".sock")
      :read-only (boolean read-only)}))
 
 (defn- escape-shell-arg
@@ -126,11 +125,11 @@
   "Transform config into the VM config attrset format expected by mkMicroVM."
   [config]
   (let [{:keys [user-name user-home user-uid user-gid
-                socket-dir virtiofs-shares chdir
+                socket-dir-base virtiofs-shares chdir
                 environment-variables network-enabled forward-ports extra-packages]} config
         parsed-ports (mapv parse-port-spec forward-ports)
-        shares-with-sockets (vec (map-indexed (fn [idx share] (mk-virtiofs-share socket-dir idx share))
-                                              virtiofs-shares))
+        shares (vec (map-indexed (fn [idx share] (mk-virtiofs-share idx share))
+                                 virtiofs-shares))
         profile-content (generate-profile-content environment-variables chdir)
         firewall-ports (mapv #(get-in % [:guest :port]) parsed-ports)]
     (sorted-map
@@ -139,12 +138,12 @@
      :forward-ports parsed-ports
      :network-enabled network-enabled
      :profile-content profile-content
-     :socket-dir socket-dir
+     :socket-dir-base socket-dir-base
      :user-gid user-gid
      :user-home user-home
      :user-name user-name
      :user-uid user-uid
-     :virtiofs-shares shares-with-sockets)))
+     :virtiofs-shares shares)))
 
 (defn generate-args-nix
   "Generate microvm-args.nix content from config.
@@ -188,9 +187,9 @@
 
     temp-dir))
 
-(defn run-microvm [config {:keys [dry-run socket-dir packages forward-ports]}]
+(defn run-microvm [config {:keys [dry-run socket-dir-base packages forward-ports]}]
   (let [config (merge (get-user-info)
-                      {:socket-dir socket-dir
+                      {:socket-dir-base socket-dir-base
                        :extra-packages packages
                        :forward-ports forward-ports}
                       config)]
@@ -203,12 +202,10 @@
         (println "Generated microvm-args.nix:")
         (println (generate-args-nix config)))
       (let [temp-dir (write-temp-flake config)]
-        (fs/create-dirs socket-dir)
+        (fs/create-dirs socket-dir-base)
         (try
           (*exec-fn* "nix" "run" (str temp-dir))
           (finally
-            (println (str "Cleaning up socket directory: " socket-dir))
-            (fs/delete-tree socket-dir)
             (println (str "Cleaning up temp flake: " temp-dir))
             (fs/delete-tree temp-dir)))))))
 
@@ -218,9 +215,9 @@
    - microvm-args.nix: always overwritten
    - microvm-static.nix: created from template if missing, preserved if exists
    - flake.lock: always overwritten from bundled template"
-  [config {:keys [export-dir socket-dir packages forward-ports]}]
+  [config {:keys [export-dir socket-dir-base packages forward-ports]}]
   (let [config (merge (get-user-info)
-                      {:socket-dir socket-dir
+                      {:socket-dir-base socket-dir-base
                        :extra-packages packages
                        :forward-ports forward-ports}
                       config)

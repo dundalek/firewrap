@@ -57,14 +57,13 @@
                           (microvm/parse-port-spec "a:b:c:d")))))
 
 (deftest mk-virtiofs-share-test
-  (testing "generates complete share config with socket path"
+  (testing "generates share config"
     (is (= {:proto "virtiofs"
             :tag "share-0"
             :source "/home/user/project"
             :mount-point "/mnt/project"
-            :socket "/tmp/sockets/virtiofs-share-0.sock"
             :read-only false}
-           (microvm/mk-virtiofs-share "/tmp/sockets" 0
+           (microvm/mk-virtiofs-share 0
                                        {:source "/home/user/project"
                                         :target "/mnt/project"
                                         :read-only false}))))
@@ -74,9 +73,8 @@
             :tag "share-1"
             :source "/etc/config"
             :mount-point "/mnt/config"
-            :socket "/tmp/sockets/virtiofs-share-1.sock"
             :read-only true}
-           (microvm/mk-virtiofs-share "/tmp/sockets" 1
+           (microvm/mk-virtiofs-share 1
                                        {:source "/etc/config"
                                         :target "/mnt/config"
                                         :read-only true})))))
@@ -106,12 +104,12 @@
   (testing "creates temp flake and calls nix run on it"
     (let [exec-calls (atom [])
           mock-exec (fn [& args] (swap! exec-calls conj (vec args)))
-          socket-dir "/tmp/claude/microvm-test-id"
+          socket-dir-base "/tmp/claude/microvm-test"
           config {:user-name "testuser"
                   :user-home "/home/testuser"
                   :user-uid 1000
                   :user-gid 1000
-                  :socket-dir socket-dir
+                  :socket-dir-base socket-dir-base
                   :virtiofs-shares []
                   :environment-variables {}
                   :network-enabled true
@@ -119,7 +117,7 @@
                   :extra-packages []}]
       (binding [microvm/*exec-fn* mock-exec]
         (microvm/run-microvm config {:dry-run false
-                                     :socket-dir "/tmp/claude/microvm-test-test-id"}))
+                                     :socket-dir-base "/tmp/claude/microvm-test"}))
       (is (= 1 (count @exec-calls)))
       (let [[cmd run-arg temp-dir] (first @exec-calls)]
         (is (= "nix" cmd))
@@ -151,7 +149,7 @@
                   :user-home "/home/testuser"
                   :user-uid 1000
                   :user-gid 1000
-                  :socket-dir "/tmp/sockets"
+                  :socket-dir-base "/tmp/sockets"
                   :virtiofs-shares [{:source "/src" :target "/mnt/src" :read-only true}]
                   :chdir "/mnt/src"
                   :environment-variables {"FOO" "bar"}
@@ -163,7 +161,7 @@
       (is (= "/home/testuser" (:user-home result)))
       (is (= 1000 (:user-uid result)))
       (is (= 1000 (:user-gid result)))
-      (is (= "/tmp/sockets" (:socket-dir result)))
+      (is (= "/tmp/sockets" (:socket-dir-base result)))
       (is (= ["git"] (:extra-packages result)))
       (is (= true (:network-enabled result)))
       (is (= [3000] (:firewall-ports result)))
@@ -177,7 +175,7 @@
                   :user-home "/home/testuser"
                   :user-uid 1000
                   :user-gid 1000
-                  :socket-dir "/tmp/sockets"
+                  :socket-dir-base "/tmp/sockets"
                   :virtiofs-shares []
                   :environment-variables {}
                   :network-enabled true
@@ -204,7 +202,7 @@
     (let [result (microvm/generate-static-nix)]
       (is (str/includes? result "{ nixpkgs, microvm }"))
       (is (str/includes? result "userName,"))
-      (is (str/includes? result "socketDir,"))
+      (is (str/includes? result "socketDirBase,"))
       (is (str/includes? result "nixpkgs.lib.nixosSystem"))
       (is (str/includes? result "microvm.nixosModules.microvm"))
       (is (str/includes? result "USER CUSTOMIZATION")))))
@@ -221,7 +219,7 @@
                   :network-enabled true}]
       (try
         (microvm/export-flake config {:export-dir temp-dir
-                                      :socket-dir "/tmp/sockets"
+                                      :socket-dir-base "/tmp/sockets"
                                       :packages []
                                       :forward-ports []})
         (is (fs/exists? (fs/path temp-dir "flake.nix")))
@@ -248,7 +246,7 @@
         (fs/create-dirs temp-dir)
         (spit (str static-path) custom-content)
         (microvm/export-flake config {:export-dir temp-dir
-                                      :socket-dir "/tmp/sockets"
+                                      :socket-dir-base "/tmp/sockets"
                                       :packages []
                                       :forward-ports []})
         (is (= custom-content (slurp (str static-path))))
