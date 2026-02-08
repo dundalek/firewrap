@@ -66,6 +66,9 @@
 
 (def ^:private microvm-options
   {:microvm {:desc "Run in microvm instead of bubblewrap"}
+   :export-flake {:desc "Export microvm as standalone flake to directory (default: current dir)"
+                  :ref "<dir>"
+                  :default-desc "."}
    :publish {:desc "Forward port from host to microvm <hostPort:guestPort>"
              :ref "<hostPort:guestPort>"
              :collect []}
@@ -306,10 +309,12 @@
 
 (defn main [& root-args]
   (let [{:keys [opts args] :as parsed} (parse-args root-args)
-        {:keys [dry-run help microvm]} opts]
+        {:keys [dry-run help microvm]} opts
+        export-flake (let [v (:export-flake opts)]
+                       (if (true? v) "." v))]
     (if (or help (empty? args))
       (print-help)
-      (let [parsed (if microvm
+      (let [parsed (if (or microvm export-flake)
                      (apply update parsed :opts dissoc microvm-ignored-opts)
                      parsed)
             profile-fn (resolve-profile-fn parsed)
@@ -320,15 +325,28 @@
                     (apply appimage/run ctx args)
                     (sb/set-cmd-args ctx args)))]
         (print-comments (sb/get-comments ctx))
-        (if microvm
+        (cond
+          export-flake
+          (let [{:keys [packages publish]} opts
+                {:keys [config warnings]} (microvm/ctx->microvm-config ctx)
+                xdg-runtime-dir (or (System/getenv "XDG_RUNTIME_DIR")
+                                    (str "/run/user/" (System/getenv "UID")))]
+            (print-comments (map (fn [message] {:level :warning :message message}) warnings))
+            (microvm/export-flake config {:export-dir export-flake
+                                          :socket-dir (str xdg-runtime-dir "/microvm")
+                                          :packages (some-> packages (str/split #","))
+                                          :forward-ports publish}))
+
+          microvm
           (let [{:keys [packages publish]} opts
                 {:keys [config warnings]} (microvm/ctx->microvm-config ctx)]
             (print-comments (map (fn [message] {:level :warning :message message}) warnings))
             (microvm/run-microvm config {:dry-run dry-run
                                          :socket-dir (str "/tmp/microvm-" (random-uuid))
-                                         :flake-path (fs/canonicalize (fs/path *file* "../../experiments/microvm"))
                                          :packages (some-> packages (str/split #","))
                                          :forward-ports publish}))
+
+          :else
           (run-bwrap ctx {:dry-run dry-run}))))))
 
 (comment

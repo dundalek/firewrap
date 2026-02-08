@@ -1,4 +1,6 @@
-{:deps {cheshire/cheshire {:mvn/version "6.0.0"}
+{:paths ["src" "resources"]
+
+ :deps {cheshire/cheshire {:mvn/version "6.0.0"}
         babashka/process {:mvn/version "0.6.23"}
         org.babashka/cli {:mvn/version "0.8.66"}
         babashka/fs {:mvn/version "0.5.26"}}

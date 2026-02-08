@@ -8,6 +8,8 @@
 
 (add-classpath (-> (io/file (str *file* "/../../src"))
                    (.getCanonicalPath)))
+(add-classpath (-> (io/file (str *file* "/../../resources"))
+                   (.getCanonicalPath)))
 
 (require '[firewrap.main :as main])
 
