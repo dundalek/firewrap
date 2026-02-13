@@ -349,6 +349,10 @@
           :else
           (run-bwrap ctx {:dry-run dry-run}))))))
 
+(defn -main [script-file & args]
+  (load-user-config)
+  (apply main script-file args))
+
 (comment
   (main "chrome")
   (main "xx")

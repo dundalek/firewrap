@@ -1,17 +1,3 @@
-#!/usr/bin/env bb
-;; -*- clojure -*-
-;; vim: set filetype=clojure:
-
-(require
- '[babashka.classpath :refer [add-classpath]]
- '[clojure.java.io :as io])
-
-(add-classpath (-> (io/file (str *file* "/../../src"))
-                   (.getCanonicalPath)))
-(add-classpath (-> (io/file (str *file* "/../../resources"))
-                   (.getCanonicalPath)))
-
-(require '[firewrap.main :as main])
-
-(main/load-user-config)
-(apply main/main *file* *command-line-args*)
+#!/usr/bin/env bash
+ROOT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")/.."
+exec bb --config /dev/null --classpath "$ROOT_DIR/src:$ROOT_DIR/resources" -m firewrap.main "$0" "$@"
