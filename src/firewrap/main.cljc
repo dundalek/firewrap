@@ -73,7 +73,10 @@
              :ref "<hostPort:guestPort>"
              :collect []}
    :packages {:desc "Extra Nix packages to include (comma-separated)"
-              :ref "<pkg1,pkg2,...>"}})
+              :ref "<pkg1,pkg2,...>"}
+   :shell {:desc "Bake devShell from project flake into VM (default: CWD)"
+           :ref "<dir>"
+           :default-desc "."}})
 
 (def ^:private cli-spec
   (merge cli-options base-options binding-options env-options microvm-options))
@@ -327,23 +330,19 @@
         (print-comments (sb/get-comments ctx))
         (cond
           export-flake
-          (let [{:keys [packages publish]} opts
-                {:keys [config warnings]} (microvm/ctx->microvm-config ctx)
-                xdg-runtime-dir (or (System/getenv "XDG_RUNTIME_DIR")
-                                    (str "/run/user/" (System/getenv "UID")))]
+          (let [{:keys [config packages publish warnings socket-dir-base]} (microvm/prepare-microvm-config ctx opts)]
             (print-comments (map (fn [message] {:level :warning :message message}) warnings))
             (microvm/export-flake config {:export-dir export-flake
-                                          :socket-dir-base (str xdg-runtime-dir "/microvm")
-                                          :packages (some-> packages (str/split #","))
+                                          :socket-dir-base socket-dir-base
+                                          :packages packages
                                           :forward-ports publish}))
 
           microvm
-          (let [{:keys [packages publish]} opts
-                {:keys [config warnings]} (microvm/ctx->microvm-config ctx)]
+          (let [{:keys [config packages publish warnings socket-dir-base]} (microvm/prepare-microvm-config ctx opts)]
             (print-comments (map (fn [message] {:level :warning :message message}) warnings))
             (microvm/run-microvm config {:dry-run dry-run
-                                         :socket-dir-base "/tmp/microvm"
-                                         :packages (some-> packages (str/split #","))
+                                         :socket-dir-base socket-dir-base
+                                         :packages packages
                                          :forward-ports publish}))
 
           :else

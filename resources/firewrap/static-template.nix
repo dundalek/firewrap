@@ -19,12 +19,33 @@
   virtiofsShares ? [ ],
   profileContent ? "",
   networkEnabled ? false,
+  shellType ? null,
+  userProjectPath ? null,
   ...
 }:
 
 let
   system = "x86_64-linux";
   pkgs = import nixpkgs { inherit system; };
+
+  # Resolve dev shell from user project if configured
+  devShell =
+    if shellType == "flake"
+    then (builtins.getFlake "path:${userProjectPath}").devShells.${system}.default
+    else if shellType == "shell-nix"
+    then
+      let shellNix = import "${userProjectPath}/shell.nix";
+      in if builtins.isFunction shellNix then shellNix { inherit pkgs; } else shellNix
+    else null;
+
+  devShellPackages = if devShell != null
+    then (devShell.buildInputs or []) ++ (devShell.nativeBuildInputs or [])
+    else [];
+
+  shellHook = if devShell != null then (devShell.shellHook or "") else "";
+  effectiveProfileContent = if shellHook != ""
+    then profileContent + "\n" + shellHook
+    else profileContent;
 
   # Generate a placeholder socket dir for build-time configuration.
   # The actual socket dir is created at runtime with a unique ID.
@@ -85,9 +106,9 @@ let
               });
             '';
 
-            environment.systemPackages = map (
-              pkgName: lib.getAttrFromPath (lib.splitString "." pkgName) pkgs
-            ) extraPackages;
+            environment.systemPackages =
+              (map (pkgName: lib.getAttrFromPath (lib.splitString "." pkgName) pkgs) extraPackages)
+              ++ devShellPackages;
 
             # Enable Nix to allow nix-shell and other Nix commands
             nix.enable = true;
@@ -98,7 +119,7 @@ let
 
             systemd.tmpfiles.rules =
               let
-                profileFile = pkgs.writeText "user-profile" profileContent;
+                profileFile = pkgs.writeText "user-profile" effectiveProfileContent;
               in
               [ "L+ ${userHome}/.profile - - - - ${profileFile}" ];
 

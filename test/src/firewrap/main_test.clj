@@ -94,7 +94,15 @@
 
     "firewrap --cwd-home -- cmd"
     {:args ["cmd"]
-     :opts {:cwd-home true}}))
+     :opts {:cwd-home true}}
+
+    "firewrap --microvm --shell -- bash"
+    {:args ["bash"]
+     :opts {:microvm true :shell true}}
+
+    "firewrap --microvm --shell /path/to/project -- bash"
+    {:args ["bash"]
+     :opts {:microvm true :shell "/path/to/project"}}))
 
 (deftest preprocess-short-options
   (is (= ["--base" "4" "cmd"] (main/preprocess-short-options ["-b4" "cmd"])))

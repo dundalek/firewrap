@@ -122,28 +122,32 @@
     :else (throw (ex-info "Cannot convert to Nix" {:value x :type (type x)}))))
 
 (defn config->vm-config
-  "Transform config into the VM config attrset format expected by mkMicroVM."
+  "Transform config into the VM config attrset format expected by mkMicroVM.
+   When shell config is present, includes shellType and userProjectPath."
   [config]
   (let [{:keys [user-name user-home user-uid user-gid
                 socket-dir-base virtiofs-shares chdir
-                environment-variables network-enabled forward-ports extra-packages]} config
+                environment-variables network-enabled forward-ports extra-packages
+                shell-flake-path shell-type]} config
         parsed-ports (mapv parse-port-spec forward-ports)
         shares (vec (map-indexed (fn [idx share] (mk-virtiofs-share idx share))
                                  virtiofs-shares))
         profile-content (generate-profile-content environment-variables chdir)
         firewall-ports (mapv #(get-in % [:guest :port]) parsed-ports)]
-    (sorted-map
-     :extra-packages (vec extra-packages)
-     :firewall-ports firewall-ports
-     :forward-ports parsed-ports
-     :network-enabled network-enabled
-     :profile-content profile-content
-     :socket-dir-base socket-dir-base
-     :user-gid user-gid
-     :user-home user-home
-     :user-name user-name
-     :user-uid user-uid
-     :virtiofs-shares shares)))
+    (cond-> (sorted-map
+             :extra-packages (vec extra-packages)
+             :firewall-ports firewall-ports
+             :forward-ports parsed-ports
+             :network-enabled network-enabled
+             :profile-content profile-content
+             :socket-dir-base socket-dir-base
+             :user-gid user-gid
+             :user-home user-home
+             :user-name user-name
+             :user-uid user-uid
+             :virtiofs-shares shares)
+      shell-flake-path (assoc :shell-type shell-type
+                              :user-project-path shell-flake-path))))
 
 (defn generate-args-nix
   "Generate microvm-args.nix content from config.
@@ -161,8 +165,23 @@
   []
   (slurp (io/resource "firewrap/static-template.nix")))
 
+(defn resolve-shell-path
+  "Resolve --shell option value to {:dir path :type :flake/:shell-nix}, or nil if not set.
+   Prefers flake.nix when both exist."
+  [shell-opt]
+  (when shell-opt
+    (let [dir (if (true? shell-opt) "." shell-opt)
+          abs-dir (str (fs/absolutize dir))
+          has-flake (fs/exists? (fs/path abs-dir "flake.nix"))
+          has-shell-nix (fs/exists? (fs/path abs-dir "shell.nix"))]
+      (cond
+        has-flake     {:dir abs-dir :type :flake}
+        has-shell-nix {:dir abs-dir :type :shell-nix}
+        :else (throw (ex-info (str "--shell requires a flake.nix or shell.nix in the project directory: " abs-dir)
+                              {:dir abs-dir}))))))
+
 (defn generate-flake-nix
-  "Generate flake.nix that imports and merges static + args."
+  "Generate flake.nix content from the template."
   []
   (slurp (io/resource "firewrap/flake-template.nix")))
 
@@ -201,10 +220,12 @@
       (do
         (println "Generated microvm-args.nix:")
         (println (generate-args-nix config)))
-      (let [temp-dir (write-temp-flake config)]
+      (let [temp-dir (write-temp-flake config)
+            impure? (:shell-flake-path config)]
         (fs/create-dirs socket-dir-base)
         (try
-          (*exec-fn* "nix" "run" (str temp-dir))
+          (apply *exec-fn* (cond-> ["nix" "run" (str temp-dir)]
+                             impure? (conj "--impure")))
           (finally
             (println (str "Cleaning up temp flake: " temp-dir))
             (fs/delete-tree temp-dir)))))))
@@ -249,6 +270,23 @@
 
     (println)
     (println "To run the exported microvm:")
-    (println (str "  cd " export-dir " && nix run path:."))
+    (if (:shell-flake-path config)
+      (println (str "  cd " export-dir " && nix run path:. --impure"))
+      (println (str "  cd " export-dir " && nix run path:.")))
     (println)
     (println "To customize, edit microvm-static.nix (your changes will be preserved on re-export)")))
+
+(defn prepare-microvm-config [ctx opts]
+  (let [{:keys [packages publish shell]} opts
+        {:keys [dir type]} (resolve-shell-path shell)
+        {:keys [config warnings]} (ctx->microvm-config ctx)
+        config (cond-> config
+                 dir (assoc :shell-flake-path dir :shell-type type))
+
+        xdg-runtime-dir (or (System/getenv "XDG_RUNTIME_DIR")
+                            (str "/run/user/" (System/getenv "UID")))]
+    {:config config
+     :packages (some-> packages (str/split #","))
+     :publish publish
+     :warnings warnings
+     :socket-dir-base (str xdg-runtime-dir "/microvm")}))

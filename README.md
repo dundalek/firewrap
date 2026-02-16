@@ -151,9 +151,11 @@ Sandbox options:
   --env-unset <var>         Unset an environment variable
 
 Microvm options:
-  --microvm                       Run in microvm instead of bubblewrap
-  --publish  <hostPort:guestPort> Forward port from host to microvm <hostPort:guestPort>
-  --packages <pkg1,pkg2,...>      Extra Nix packages to include (comma-separated)
+  --microvm                             Run in microvm instead of bubblewrap
+  --export-flake <dir>                . Export microvm as standalone flake to directory (default: current dir)
+  --publish      <hostPort:guestPort>   Forward port from host to microvm <hostPort:guestPort>
+  --packages     <pkg1,pkg2,...>        Extra Nix packages to include (comma-separated)
+  --shell        <dir>                . Bake devShell from project flake into VM (default: CWD)
 ```
 <!-- /FIREWRAP_HELP_END -->
 
