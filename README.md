@@ -506,6 +506,8 @@ Unimplemented:
 
 ## Alternatives
 
+Other approaches to user-oriented sandboxing/isolation on Linux:
+
 - Linux Security Modules (LSM) systems like SELinux and AppArmor
   - Difficult for an end-user to configure.
 - Containers like Docker, Podman
@@ -517,6 +519,8 @@ Unimplemented:
 - Firejail
   - Larger attack surface, needs SUID.
   - Profiles often use Default Allow instead of Default Deny principle.
+- VMs
+  - usually slow boot time, lower integration with the host system
 
 ### Other Bubblewrap-based projects
 
@@ -529,3 +533,25 @@ Unimplemented:
 - [Anthropic Sandbox Runtime](https://github.com/anthropic-experimental/sandbox-runtime)
   - TypeScript, part of Claude Code, uses Bubblewrap on Linux
   - HTTP and SOCKS5 proxies for network isolation
+
+## Sandboxing Resources
+
+- [Survey of Real-World Process Sandboxing](https://doi.org/10.23919/FRUCT61870.2024.10516417), 2024 - paper with great overview of sandboxing including formal definitions and comparison of various implementations
+  > **Sandboxing** – also known as conﬁnement, containment or jailing – restricts the resources available to a process, protecting sensitive data and reducing the attack surface of the operating system (OS) and system services.
+  >
+  > **Virtualization** forces a resource to be accessed via an abstraction layer. The layer exposes a virtual resource that is – from the user’s perspective – identical to the underlying physical resource.
+- [awesome-sandbox](https://github.com/restyler/awesome-sandbox) - curated guide to code sandboxing solutions
+- [awesome-agent-sandboxes](https://github.com/arjan/awesome-agent-sandboxes) - curated list of code-execution sandboxing solutions for AI/LLM agents 
+
+Overview of categories - different levels where to virtualize resources - from higher to lower levels:
+
+- Language / Runtime - often capability-based
+  - Pony lang, Joe-E Java subset, JavaScript Compartments proposal
+  - Runtimes - Deno sandbox, WASI
+- System level
+  - Containers, Bubblewrap, Minijal, LSMs, Android Binder, Apple Sandbox
+- Kernel level
+  - gVisor, Fuchsia
+- VM-based
+  - MicroVMs - Firecraker, Cloud Hypervisor
+  - Qubes OS
