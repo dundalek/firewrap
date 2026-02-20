@@ -332,6 +332,7 @@
           export-flake
           (let [{:keys [config packages publish warnings socket-dir-base]} (microvm/prepare-microvm-config ctx opts)]
             (print-comments (map (fn [message] {:level :warning :message message}) warnings))
+            (sb/*run-effects!* ctx)
             (microvm/export-flake config {:export-dir export-flake
                                           :socket-dir-base socket-dir-base
                                           :packages packages
@@ -340,6 +341,7 @@
           microvm
           (let [{:keys [config packages publish warnings socket-dir-base]} (microvm/prepare-microvm-config ctx opts)]
             (print-comments (map (fn [message] {:level :warning :message message}) warnings))
+            (sb/*run-effects!* ctx)
             (microvm/run-microvm config {:dry-run dry-run
                                          :socket-dir-base socket-dir-base
                                          :packages packages
